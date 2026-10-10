@@ -1,4 +1,3 @@
-
 name: LinkedIn AI Content and Publishing
 
 on:
@@ -11,7 +10,11 @@ on:
         default: false
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: linkedin-publishing
+  cancel-in-progress: false
 
 jobs:
   generate-and-publish:
@@ -21,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -38,6 +43,7 @@ jobs:
       - name: Generate LinkedIn content
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
         run: python src/generate_content.py
 
       - name: Create animated video
@@ -51,7 +57,7 @@ jobs:
             content.json
             linkedin_video.mp4
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 14
 
       - name: Run LinkedIn publisher
         env:
