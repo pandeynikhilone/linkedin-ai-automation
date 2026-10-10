@@ -7,9 +7,15 @@ on:
       - "src/generate_content.py"
       - "src/create_video.py"
       - "src/publish_linkedin.py"
+      - "src/test_linkedin_video_upload.py"
+      - "src/create_illustration.py"
+      - "src/test_linkedin_image_upload.py"
       - "content-plan.json"
+      - "README.md"
       - ".github/workflows/daily-linkedin.yml"
       - ".github/workflows/validate-content-plan.yml"
+      - ".github/workflows/test-linkedin-image-upload.yml"
+      - ".github/workflows/test-linkedin-video-upload.yml"
   workflow_dispatch:
 
 permissions:
@@ -18,16 +24,22 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install FFmpeg and fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
 
       - name: Validate source and video-only publishing pipeline
         run: |
@@ -38,39 +50,38 @@ jobs:
           from pathlib import Path
 
           source = Path("src/generate_content.py").read_text(encoding="utf-8")
-          doc = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          plan_doc = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
           module = ast.parse(source)
-          plan = None
+          topic_plan = None
           for node in module.body:
               if isinstance(node, ast.Assign) and any(
                   isinstance(target, ast.Name) and target.id == "TOPIC_PLAN"
                   for target in node.targets
               ):
-                  plan = ast.literal_eval(node.value)
+                  topic_plan = ast.literal_eval(node.value)
                   break
 
-          if not isinstance(plan, list) or len(plan) != 30:
+          if not isinstance(topic_plan, list) or len(topic_plan) != 30:
               raise SystemExit("Generator must contain exactly 30 source-grounded topics.")
-          if len(doc.get("topics", [])) != 30:
+          if len(plan_doc.get("topics", [])) != 30:
               raise SystemExit("content-plan.json must contain exactly 30 topics.")
-          titles = [item.get("topic") for item in plan]
-          documented = [item.get("topic") for item in doc["topics"]]
-          if titles != documented:
-              raise SystemExit("Public plan and generator topic order do not match.")
-
-          for index, item in enumerate(plan, 1):
-              if not item.get("facts") or not item.get("angle"):
-                  raise SystemExit(f"Topic {index} lacks source facts or an angle.")
+          generator_titles = [entry.get("topic") for entry in topic_plan]
+          public_titles = [entry.get("topic") for entry in plan_doc["topics"]]
+          if generator_titles != public_titles:
+              raise SystemExit("Topic order differs between the generator and content plan.")
+          for number, entry in enumerate(topic_plan, 1):
+              if not entry.get("facts") or not entry.get("angle"):
+                  raise SystemExit(f"Topic {number} is missing source facts or an angle.")
 
           if '"video_title"' not in source or '"slides"' not in source:
-              raise SystemExit("The content generator must return a video title and slides.")
+              raise SystemExit("Generator must return a video title and slides.")
           if '"illustration_brief"' in source or "GEMINI_IMAGE" in source:
-              raise SystemExit("A separate image-generation path remains in the content generator.")
+              raise SystemExit("Separate illustration-generation code remains in the generator.")
 
           renderer = Path("src/create_video.py").read_text(encoding="utf-8")
           publisher = Path("src/publish_linkedin.py").read_text(encoding="utf-8")
           if "linkedin_video.mp4" not in renderer or "ffmpeg" not in renderer:
-              raise SystemExit("Animated MP4 renderer is missing.")
+              raise SystemExit("Animated MP4 rendering code is missing.")
           if "upload_video(" not in publisher or "urn:li:video:" not in publisher:
               raise SystemExit("LinkedIn video upload code is missing.")
           if "linkedin_image.jpg" in publisher or "upload_image(" in publisher or "IMAGES_URL" in publisher:
@@ -85,9 +96,9 @@ jobs:
               ".github/workflows/test-linkedin-video-upload.yml",
           ]
           for filename in workflow_paths:
-              text = Path(filename).read_text(encoding="utf-8")
-              if "create_illustration.py" in text or "linkedin_image.jpg" in text or "GEMINI_IMAGE" in text:
-                  raise SystemExit(f"A separate image-generation step remains in {filename}")
+              workflow_text = Path(filename).read_text(encoding="utf-8")
+              if "create_illustration.py" in workflow_text or "linkedin_image.jpg" in workflow_text or "GEMINI_IMAGE" in workflow_text:
+                  raise SystemExit(f"Separate illustration generation remains in {filename}")
 
           forbidden = chr(0x2014)
           for filename in [
@@ -110,7 +121,48 @@ jobs:
           if 'PUBLISH_TO_LINKEDIN: "true"' not in daily:
               raise SystemExit("Scheduled publishing is not enabled.")
           if 'cron: "37 9 * * *"' not in daily or 'timezone: "Asia/Kolkata"' not in daily:
-              raise SystemExit("The existing 9:37 AM India schedule changed.")
+              raise SystemExit("The 9:37 AM India schedule was changed.")
+          print("Source and schedule checks passed.")
+          PY
 
-          print("Validation passed: 30 topics, formatted text, five animated slides, MP4 rendering, video publishing, and automatic schedule.")
+      - name: Render a synthetic five-slide video without using an API
+        run: |
+          cat > content.json <<'JSON'
+          {
+            "topic": "Video rendering smoke test",
+            "post": "This synthetic sample checks that the local slide renderer can create an MP4 before any paid text generation or public posting runs.",
+            "video_title": "Video rendering smoke test",
+            "hashtags": ["SoftwareDevelopment", "MCAStudent", "LearningInPublic"],
+            "slides": [
+              {"title": "Start with a clear problem", "body": "A useful feature begins with a specific task to solve.", "visual_type": "flow"},
+              {"title": "Separate data from display", "body": "Keep values distinct from the components that show them.", "visual_type": "code"},
+              {"title": "Draw the information clearly", "body": "A compact chart can make the relationship easier to follow.", "visual_type": "chart"},
+              {"title": "Check each important input", "body": "Validate the information before it changes stored data.", "visual_type": "checklist"},
+              {"title": "Finish with a simple takeaway", "body": "Clear steps help another developer follow the implementation.", "visual_type": "learning"}
+            ]
+          }
+          JSON
+          python src/create_video.py
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -show_entries format=duration,format_name -of json linkedin_video.mp4
+          python - <<'PY'
+          import json
+          import subprocess
+          result = subprocess.run([
+              "ffprobe", "-v", "error",
+              "-show_entries", "stream=codec_name,codec_type,width,height",
+              "-show_entries", "format=duration,format_name",
+              "-of", "json", "linkedin_video.mp4"
+          ], capture_output=True, text=True, check=True)
+          data = json.loads(result.stdout)
+          stream = next((entry for entry in data["streams"] if entry.get("codec_type") == "video"), None)
+          duration = float(data["format"]["duration"])
+          if not stream or stream.get("codec_name") != "h264":
+              raise SystemExit("Smoke-test output must use H.264 video.")
+          if stream.get("width") != 1080 or stream.get("height") != 1350:
+              raise SystemExit("Smoke-test dimensions must be 1080 x 1350.")
+          if not 12 <= duration <= 20:
+              raise SystemExit(f"Unexpected test video duration: {duration:.2f}s.")
+          if Path("linkedin_video.mp4").stat().st_size < 75 * 1024:
+              raise SystemExit("Smoke-test video is smaller than 75 KB.")
+          print("Video renderer smoke test passed.")
           PY
