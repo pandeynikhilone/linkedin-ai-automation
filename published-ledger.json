@@ -1,0 +1,11 @@
+{
+  "timezone": "Asia/Kolkata",
+  "dates": {
+    "2026-10-10": {
+      "status": "published",
+      "post_id": null,
+      "recorded_at": "2026-10-10",
+      "note": "Initial user-confirmed LinkedIn post, published before automated ledger tracking. Seeded to prevent another post on the same India-local date."
+    }
+  }
+}
