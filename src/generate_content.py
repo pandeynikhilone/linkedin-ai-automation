@@ -395,7 +395,7 @@ Video requirements:
 - visual_type must be one of: chart, flow, code, product, database, form, checklist, git, stack, learning.
 - Use a simple sequence: introduce the real problem or task, explain the implementation, show a key detail, add a practical implication, end with a grounded takeaway.
 - Use only the verified facts above. Do not invent UI, product features, data, metrics, or outcomes.
-- Slides will be rendered as a 4:5 vertical animated MP4 with drawn graphics and typography. Do not request or describe a generated image, image asset, photo, or video footage. Select only a visual_type.
+- Slides will be rendered directly into a 4:5 animated MP4 with typography, diagrams, and locally drawn graphics. Do not request external artwork or stock footage. Select only a visual_type.
 - Keep slide copy brief, high contrast, and mobile-readable.
 
 Portfolio CTA instruction: {portfolio_cta_instruction}
