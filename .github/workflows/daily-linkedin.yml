@@ -1,4 +1,4 @@
-name: Daily LinkedIn Career Content
+name: Daily LinkedIn Illustrated Career Post
 
 on:
   schedule:
@@ -10,14 +10,12 @@ on:
 permissions:
   contents: write
 
-# Shared with the other publisher workflows so two workflows cannot publish
-# concurrently and race against the publication ledger.
 concurrency:
   group: linkedin-publishing
   cancel-in-progress: false
 
 jobs:
-  generate-video-and-publish:
+  generate-image-and-publish:
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -32,46 +30,60 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Generate daily career content (with transient-error retries)
+      - name: Generate concise LinkedIn post
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
         run: python src/generate_content.py
 
-      - name: Render animated video
-        run: python src/create_video.py
+      - name: Generate one hand-drawn-style square illustration
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_API_KEY: ${{ secrets.GEMINI_IMAGE_API_KEY || secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image' }}
+          GEMINI_IMAGE_SIZE: "2K"
+        run: python src/create_illustration.py
 
-      - name: Validate and preview assets
+      - name: Validate post and image
         run: |
           test -s content.json
-          test -s linkedin_video.mp4
+          test -s linkedin_image.jpg
           python -m json.tool content.json > /dev/null
-          echo "Generated post and video are present."
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from PIL import Image
 
-      - name: Save content artifact
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          if not data.get("post") or not data.get("illustration_brief") or not data.get("source_facts"):
+              raise SystemExit("Required post content is missing.")
+          if len(data["post"].split()) > 110:
+              raise SystemExit("Post body is longer than 110 words.")
+          with Image.open("linkedin_image.jpg") as image:
+              if image.format != "JPEG" or image.size != (2048, 2048):
+                  raise SystemExit("Illustration must be a 2048x2048 square JPEG.")
+          print("Validated concise LinkedIn copy and square illustration.")
+          PY
+
+      - name: Save post and illustration preview
         uses: actions/upload-artifact@v7
         with:
-          name: linkedin-content-preview
+          name: linkedin-illustrated-content
           path: |
             content.json
-            linkedin_video.mp4
+            linkedin_image.jpg
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish scheduled daily post
+      - name: Publish scheduled post automatically
         if: github.event_name == 'schedule'
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PUBLISH_TO_LINKEDIN: "true"
-          LINKEDIN_VIDEO_API_VERSION: "202609"
+          LINKEDIN_IMAGES_API_VERSION: "202609"
           LINKEDIN_POSTS_API_VERSION: "202609"
         run: python src/publish_linkedin.py
 
@@ -80,6 +92,6 @@ jobs:
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PUBLISH_TO_LINKEDIN: "false"
-          LINKEDIN_VIDEO_API_VERSION: "202609"
+          LINKEDIN_IMAGES_API_VERSION: "202609"
           LINKEDIN_POSTS_API_VERSION: "202609"
         run: python src/publish_linkedin.py
