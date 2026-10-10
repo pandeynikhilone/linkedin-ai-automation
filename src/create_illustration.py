@@ -107,7 +107,7 @@ def main():
         raise RuntimeError("Could not read valid content.json.") from exc
 
     prompt = build_image_prompt(data)
-    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=120_000))
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=60_000))
 
     print(f"Generating one {IMAGE_SIZE} square illustration with {IMAGE_MODEL}...")
     print("Style: hand-inked contours, colored pencil, watercolor washes, and paper texture.")
