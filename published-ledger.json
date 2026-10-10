@@ -8,13 +8,16 @@
       "note": "Initial user-confirmed LinkedIn post, published before automated ledger tracking. Seeded to prevent another post on the same India-local date."
     },
     "2026-10-11-request-18": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-11T01:52:28+05:30",
       "topic": "My Techqueto internship: building charts in React",
       "video_sha256": "8b6756a3220cba9fdb03f65eddf85e0b1fb799806a15c20456cd3b6135b86831",
       "video_size_bytes": 401301,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-11T01:52:41+05:30",
+      "post_id": "urn:li:ugcPost:7514782480348901376",
+      "video_urn": "urn:li:video:D5610AQHsojCJ1dxwCg"
     }
   }
 }
