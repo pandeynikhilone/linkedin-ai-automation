@@ -1,5 +1,4 @@
-
-name: Test AI Content and Video
+name: Test AI LinkedIn Post and Illustration
 
 on:
   workflow_dispatch:
@@ -21,28 +20,48 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Generate LinkedIn post and slides
+      - name: Generate concise LinkedIn post
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
         run: python src/generate_content.py
 
-      - name: Render animated video
-        run: python src/create_video.py
+      - name: Generate hand-drawn-style 2K image
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_API_KEY: ${{ secrets.GEMINI_IMAGE_API_KEY || secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image' }}
+          GEMINI_IMAGE_SIZE: "2K"
+        run: python src/create_illustration.py
 
-      - name: Save generated files
+      - name: Validate and save preview
+        run: |
+          test -s content.json
+          test -s linkedin_image.jpg
+          python -m json.tool content.json > /dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from PIL import Image
+
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          if len(data["post"].split()) > 110:
+              raise SystemExit("Post body is longer than 110 words.")
+          with Image.open("linkedin_image.jpg") as image:
+              if image.size != (2048, 2048) or image.format != "JPEG":
+                  raise SystemExit("Image must be a 2048x2048 JPEG.")
+          print("Preview validation passed.")
+          PY
+
+      - name: Save illustrated content artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linkedin-content-test
+          name: linkedin-illustrated-content
           path: |
             content.json
-            linkedin_video.mp4
+            linkedin_image.jpg
           if-no-files-found: error
           retention-days: 3
