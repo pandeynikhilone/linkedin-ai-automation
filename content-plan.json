@@ -3,7 +3,7 @@
   "startDate": "2026-10-11",
   "durationDays": 30,
   "schedule": "One post per day at 09:37 Asia/Kolkata via the Daily LinkedIn Career Content workflow.",
-  "rule": "The script generates post copy and five slides on the day of publication using only the listed resume and GitHub facts. The topic sequence repeats after 30 days unless refreshed.",
+  "rule": "Each day the script generates post copy and five slides from the listed resume and GitHub facts. It starts on 2026-10-11 and cycles through the 30 topics again after the series ends. Posts must not introduce unsupported personal stories, metrics, features, or results.",
   "topics": [
     {
       "day": 1,
@@ -255,6 +255,16 @@
         "Resume records 200-plus GitHub contributions."
       ],
       "angle": "Connect only these documented areas of work. Do not claim the 200-plus contributions occurred in a particular time period."
+    },
+    {
+      "day": 30,
+      "topic": "Keeping my contribution clear on a collaborative project",
+      "sourceFacts": [
+        "TechFest README credits Nikhil Pandey as frontend developer and Dev Athwani as backend developer.",
+        "The resume describes Nikhil's role as frontend developer volunteer at National Post Graduate College from December 2024 to February 2025.",
+        "TechFest README lists HTML, CSS, JavaScript, and Bootstrap for frontend, Django for backend, and SQLite for the database."
+      ],
+      "angle": "Explain the importance of accurately describing project roles. Do not claim sole ownership of the backend or the entire project."
     }
   ]
 }
