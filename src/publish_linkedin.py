@@ -259,7 +259,15 @@ def main():
         return
 
     now = datetime.now(TIME_ZONE)
-    date_key = now.date().isoformat()
+    request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
+    if request_id:
+        if not request_id.isdigit():
+            raise RuntimeError("PUBLISH_REQUEST_ID must be a numeric GitHub issue number.")
+        # A user-requested one-off post can coexist with the daily scheduled post.
+        # The same issue ID remains idempotent, so retries cannot publish it twice.
+        date_key = f"{now.date().isoformat()}-request-{request_id}"
+    else:
+        date_key = now.date().isoformat()
     ledger = load_ledger()
     existing = ledger["dates"].get(date_key)
 
