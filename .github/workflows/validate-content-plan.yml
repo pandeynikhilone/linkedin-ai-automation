@@ -92,5 +92,27 @@ jobs:
               raise SystemExit("Scheduled publishing must be enabled for unattended runs.")
           if "src/create_video.py" in daily_workflow or "linkedin_video.mp4" in daily_workflow:
               raise SystemExit("Daily publishing workflow must not render or upload video.")
-          print("Validation passed: Python syntax, 30 grounded topics, concise text schema, square image, and unattended daily publishing.")
+          no_video_files = [
+              Path("src/create_video.py"),
+              Path("src/test_linkedin_video_upload.py"),
+              Path(".github/workflows/test-linkedin-video-upload.yml"),
+          ]
+          if any(path.exists() for path in no_video_files):
+              raise SystemExit("Obsolete video-generation or video-upload files remain.")
+
+          if not Path(".github/workflows/test-linkedin-image-upload.yml").exists():
+              raise SystemExit("Image upload-only test workflow is missing.")
+
+          for filename in (
+              ".github/workflows/daily-linkedin.yml",
+              ".github/workflows/publish-linkedin.yml",
+              ".github/workflows/publish-approved-content.yml",
+              ".github/workflows/test-content.yml",
+              ".github/workflows/test-linkedin-image-upload.yml",
+          ):
+              workflow_text = Path(filename).read_text(encoding="utf-8")
+              if "linkedin_video.mp4" in workflow_text or "src/create_video.py" in workflow_text:
+                  raise SystemExit(f"Video generation reference remains in {filename}")
+
+          print("Validation passed: Python syntax, 30 grounded topics, short-form copy, square image, unattended publishing, and no video pipeline.")
           PY
