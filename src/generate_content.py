@@ -7,7 +7,8 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from google import genai, types
+from google import genai
+from google.genai import types
 
 OUTPUT_FILE = Path("content.json")
 PORTFOLIO_URL = "https://pandeynikhilone.github.io/"
