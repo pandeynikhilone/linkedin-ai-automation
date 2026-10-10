@@ -12,8 +12,8 @@ from google import genai
 OUTPUT_FILE = Path("content.json")
 PORTFOLIO_URL = "https://pandeynikhilone.github.io/"
 
-# A 30-topic evergreen rotation. Indexing by date avoids repeating the
-# same topic every Monday, Tuesday, etc. No personal claims are invented.
+# A 30-topic plan built from resume facts and public GitHub project details.
+# The sequence starts on 2026-10-11, then repeats after 30 days.
 TOPIC_PLAN = [
     {
         "topic": "My Techqueto internship: building charts in React",
@@ -236,6 +236,15 @@ TOPIC_PLAN = [
             "Resume records 200-plus GitHub contributions."
         ],
         "angle": "Connect only these documented areas of work. Do not claim the 200-plus contributions occurred in a particular time period."
+    },
+    {
+        "topic": "Keeping my contribution clear on a collaborative project",
+        "facts": [
+            "TechFest README credits Nikhil Pandey as frontend developer and Dev Athwani as backend developer.",
+            "The resume describes Nikhil's role as frontend developer volunteer at National Post Graduate College from December 2024 to February 2025.",
+            "TechFest README lists HTML, CSS, JavaScript, and Bootstrap for frontend, Django for backend, and SQLite for the database."
+        ],
+        "angle": "Explain the importance of accurately describing project roles. Do not claim sole ownership of the backend or the entire project."
     }
 ]
 
@@ -332,7 +341,7 @@ def main():
     topic_index = elapsed_days % len(TOPIC_PLAN)
     selected_topic = TOPIC_PLAN[topic_index]
     topic = selected_topic["topic"]
-    source_facts = "\\n".join(f"- {fact}" for fact in selected_topic["facts"])
+    source_facts = "\n".join(f"- {fact}" for fact in selected_topic["facts"])
     post_angle = selected_topic["angle"]
     include_portfolio_cta = today.date().toordinal() % 3 == 0
     portfolio_cta_instruction = (
