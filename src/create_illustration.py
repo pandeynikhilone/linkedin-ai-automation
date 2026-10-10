@@ -44,7 +44,7 @@ def generate_with_retry(client, prompt):
                 input=prompt,
                 response_format={
                     "type": "image",
-                    "mime_type": "image/png",
+                    "mime_type": "image/jpeg",
                     "aspect_ratio": "1:1",
                     "image_size": IMAGE_SIZE,
                 },
