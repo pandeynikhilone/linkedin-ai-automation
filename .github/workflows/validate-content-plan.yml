@@ -1,0 +1,74 @@
+name: Validate LinkedIn Content Plan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/generate_content.py"
+      - "content-plan.json"
+      - ".github/workflows/validate-content-plan.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate generator syntax and topic plan
+        run: |
+          python -m py_compile src/generate_content.py
+          python - <<'PY'
+          import ast
+          import json
+          from pathlib import Path
+
+          source = Path("src/generate_content.py").read_text(encoding="utf-8")
+          plan_doc = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          module = ast.parse(source)
+          topic_plan = None
+
+          for node in module.body:
+              if isinstance(node, ast.Assign) and any(
+                  isinstance(target, ast.Name) and target.id == "TOPIC_PLAN"
+                  for target in node.targets
+              ):
+                  topic_plan = ast.literal_eval(node.value)
+                  break
+
+          if not isinstance(topic_plan, list) or len(topic_plan) != 30:
+              raise SystemExit("Generator must contain exactly 30 topic entries.")
+          if len(plan_doc.get("topics", [])) != 30:
+              raise SystemExit("content-plan.json must contain exactly 30 topics.")
+
+          generator_titles = [item.get("topic") for item in topic_plan]
+          document_titles = [item.get("topic") for item in plan_doc["topics"]]
+          if generator_titles != document_titles:
+              raise SystemExit("content-plan.json topics do not match the generator.")
+
+          required = {"topic", "facts", "angle"}
+          for index, item in enumerate(topic_plan, start=1):
+              if not required.issubset(item) or not item["facts"]:
+                  raise SystemExit(f"Topic {index} is missing source facts or an angle.")
+
+          forbidden = chr(0x2014)
+          for filename in ("src/generate_content.py", "content-plan.json"):
+              if forbidden in Path(filename).read_text(encoding="utf-8"):
+                  raise SystemExit(f"Forbidden em dash character found in {filename}")
+
+          if "TOPICS = [" in source:
+              raise SystemExit("Old generic topic list is still present.")
+
+          print("Validation passed: Python syntax, 30 source-grounded topics, and topic-plan consistency.")
+          PY
