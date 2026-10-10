@@ -271,6 +271,24 @@ def main():
     ledger = load_ledger()
     existing = ledger["dates"].get(date_key)
 
+    # Permit one specifically requested extra post after an earlier daily post,
+    # but never allow parallel or repeated one-off requests for the same date.
+    if request_id:
+        request_prefix = f"{now.date().isoformat()}-request-"
+        prior_requests = [
+            (key, value)
+            for key, value in ledger["dates"].items()
+            if key.startswith(request_prefix)
+            and key != date_key
+            and isinstance(value, dict)
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_requests:
+            raise RuntimeError(
+                "A one-off LinkedIn post has already been attempted today. "
+                "Inspect LinkedIn and published-ledger.json before requesting another."
+            )
+
     if existing:
         status = existing.get("status")
         if status == "published":
