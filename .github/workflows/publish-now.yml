@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: linkedin-publishing
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   publish-on-request:
@@ -43,8 +43,8 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_IMAGE_API_KEY: ${{ secrets.GEMINI_IMAGE_API_KEY || secrets.GEMINI_API_KEY }}
-          GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image' }}
-          GEMINI_IMAGE_SIZE: "2K"
+          GEMINI_IMAGE_MODEL: 'gemini-3.1-flash-image'
+          GEMINI_IMAGE_SIZE: "1K"
         run: python src/create_illustration.py
 
       - name: Validate generated post and image
