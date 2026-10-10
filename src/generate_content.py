@@ -316,6 +316,18 @@ def clean_hashtags(values):
     return hashtags[:4]
 
 
+def fallback_hashtags(topic):
+    """Return relevant, deterministic tags when the model omits some hashtags."""
+    topic_text = str(topic).casefold()
+    if "techqueto" in topic_text or "chart" in topic_text or "react" in topic_text:
+        return ["ReactJS", "TypeScript", "FrontendDevelopment", "SoftwareDevelopment"]
+    if "truloop" in topic_text or "review" in topic_text or "mongodb" in topic_text:
+        return ["NextJS", "FullStackDevelopment", "WebDevelopment", "MongoDB"]
+    if "techfest" in topic_text or "registration" in topic_text or "student" in topic_text:
+        return ["JavaScript", "FrontendDevelopment", "WebDevelopment", "MCAStudent"]
+    return ["SoftwareDevelopment", "LearningInPublic", "MCAStudent", "WebDevelopment"]
+
+
 def main():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -413,9 +425,11 @@ Return only JSON with these fields: topic, post, hashtags, illustration_brief.
     if not isinstance(data["hashtags"], list):
         raise RuntimeError("Generated hashtags must be a list.")
 
-    data["hashtags"] = clean_hashtags(data["hashtags"])
+    data["hashtags"] = clean_hashtags(
+        data["hashtags"] + fallback_hashtags(topic)
+    )
     if len(data["hashtags"]) < 3:
-        raise RuntimeError("At least three relevant hashtags are required.")
+        raise RuntimeError("Could not prepare three relevant hashtags.")
 
     OUTPUT_FILE.write_text(
         json.dumps(data, ensure_ascii=False, indent=2),
