@@ -1,0 +1,106 @@
+name: Publish One LinkedIn Image Post Now
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: linkedin-publishing
+  cancel-in-progress: false
+
+jobs:
+  publish-on-request:
+    # Only the repository owner can initiate this public posting trigger.
+    if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Publish one LinkedIn image post now' && contains(github.event.issue.body, 'PUBLISH_IMAGE_NOW')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Generate today's source-grounded LinkedIn post
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
+        run: python src/generate_content.py
+
+      - name: Generate one hand-drawn-style square illustration
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_API_KEY: ${{ secrets.GEMINI_IMAGE_API_KEY || secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image' }}
+          GEMINI_IMAGE_SIZE: "2K"
+        run: python src/create_illustration.py
+
+      - name: Validate generated post and image
+        run: |
+          test -s content.json
+          test -s linkedin_image.jpg
+          python -m json.tool content.json > /dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from PIL import Image
+
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          if not data.get("topic") or not data.get("post") or not data.get("source_facts"):
+              raise SystemExit("Source-grounded post content is incomplete.")
+          if len(data["post"].split()) > 110:
+              raise SystemExit("Post body exceeds 110 words.")
+          with Image.open("linkedin_image.jpg") as image:
+              if image.format != "JPEG" or image.size != (2048, 2048):
+                  raise SystemExit("Expected a 2048 x 2048 square JPEG.")
+          print("Post and illustration validation passed.")
+          PY
+
+      - name: Save post and image artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: linkedin-illustrated-content
+          path: |
+            content.json
+            linkedin_image.jpg
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish now through LinkedIn
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PUBLISH_TO_LINKEDIN: "true"
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          LINKEDIN_IMAGES_API_VERSION: "202609"
+          LINKEDIN_POSTS_API_VERSION: "202609"
+        run: python src/publish_linkedin.py
+
+      - name: Mark publish request complete
+        if: success()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "LinkedIn confirmed creation of the illustrated post. The one-off request is complete."
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: "closed"
+            });
