@@ -1,8 +1,8 @@
-name: Daily LinkedIn Illustrated Career Post
+name: Daily LinkedIn Career Video
 
 on:
   schedule:
-    # 9:37 AM India time, every day.
+    # Keep the existing daily time: 9:37 AM India time.
     - cron: "37 9 * * *"
       timezone: "Asia/Kolkata"
   workflow_dispatch:
@@ -15,75 +15,75 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  generate-image-and-publish:
+  generate-video-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
 
+      - name: Install FFmpeg and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          ffmpeg -version
+          ffprobe -version
+
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Generate concise LinkedIn post
+      - name: Generate source-grounded LinkedIn post and five slides
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
         run: python src/generate_content.py
 
-      - name: Generate one hand-drawn-style square illustration
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_IMAGE_API_KEY: ${{ secrets.GEMINI_IMAGE_API_KEY || secrets.GEMINI_API_KEY }}
-          GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image' }}
-          GEMINI_IMAGE_SIZE: "2K"
-        run: python src/create_illustration.py
+      - name: Render animated slides to MP4
+        run: python src/create_video.py
 
-      - name: Validate post and image
+      - name: Validate post and rendered video
         run: |
           test -s content.json
-          test -s linkedin_image.jpg
+          test -s linkedin_video.mp4
           python -m json.tool content.json > /dev/null
           python - <<'PY'
           import json
           from pathlib import Path
-          from PIL import Image
-
           data = json.loads(Path("content.json").read_text(encoding="utf-8"))
-          if not data.get("post") or not data.get("illustration_brief") or not data.get("source_facts"):
-              raise SystemExit("Required post content is missing.")
+          if not data.get("topic") or not data.get("post") or not data.get("video_title"):
+              raise SystemExit("Topic, post, and video title are required.")
+          if len(data["slides"]) != 5:
+              raise SystemExit("Exactly five slides are required.")
           if len(data["post"].split()) > 110:
-              raise SystemExit("Post body is longer than 110 words.")
-          with Image.open("linkedin_image.jpg") as image:
-              if image.format != "JPEG" or image.size != (2048, 2048):
-                  raise SystemExit("Illustration must be a 2048x2048 square JPEG.")
-          print("Validated concise LinkedIn copy and square illustration.")
+              raise SystemExit("Post body exceeds 110 words.")
+          print("Validated concise post and five-slide video content.")
           PY
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -show_entries format=duration,format_name -of json linkedin_video.mp4
 
-      - name: Save post and illustration preview
-        uses: actions/upload-artifact@v7
+      - name: Save post and video artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: linkedin-illustrated-content
+          name: linkedin-video-content
           path: |
             content.json
-            linkedin_image.jpg
+            linkedin_video.mp4
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish scheduled post automatically
+      - name: Publish scheduled video post automatically
         if: github.event_name == 'schedule'
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PUBLISH_TO_LINKEDIN: "true"
-          LINKEDIN_IMAGES_API_VERSION: "202609"
+          LINKEDIN_VIDEO_API_VERSION: "202606"
           LINKEDIN_POSTS_API_VERSION: "202609"
         run: python src/publish_linkedin.py
 
@@ -92,6 +92,6 @@ jobs:
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PUBLISH_TO_LINKEDIN: "false"
-          LINKEDIN_IMAGES_API_VERSION: "202609"
+          LINKEDIN_VIDEO_API_VERSION: "202606"
           LINKEDIN_POSTS_API_VERSION: "202609"
         run: python src/publish_linkedin.py
