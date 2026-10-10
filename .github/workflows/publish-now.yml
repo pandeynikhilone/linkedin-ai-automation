@@ -9,13 +9,13 @@ permissions:
   issues: write
 
 concurrency:
-  group: linkedin-publishing-now-final
+  group: linkedin-publishing-now
   cancel-in-progress: true
 
 jobs:
   publish-on-request:
     # Only the repository owner can initiate this public posting trigger.
-    if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Publish one LinkedIn image post now' && contains(github.event.issue.body, 'PUBLISH_IMAGE_NOW')
+    if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Publish one LinkedIn image post now' && contains(github.event.issue.body, 'PUBLISH_IMAGE_NOW') && !contains(github.event.issue.body, 'CANCEL_ONLY')
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
