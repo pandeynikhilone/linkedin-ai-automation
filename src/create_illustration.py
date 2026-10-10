@@ -1,4 +1,3 @@
-import base64
 import io
 import json
 import os
@@ -37,27 +36,45 @@ def get_http_status(exc):
 
 
 def generate_with_retry(client, prompt):
-    """Retry transient API errors. Never replace a failed illustration with a generic image."""
+    """Generate through the image-capable GenerateContent endpoint with bounded retries."""
     for attempt in range(MAX_ATTEMPTS):
         try:
-            return client.interactions.create(
+            return client.models.generate_content(
                 model=IMAGE_MODEL,
-                input=prompt,
-                response_format={
-                    "type": "image",
-                    "mime_type": "image/jpeg",
-                    "aspect_ratio": "1:1",
-                    "image_size": IMAGE_SIZE,
-                },
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=["TEXT", "IMAGE"],
+                    image_config=types.ImageConfig(
+                        aspect_ratio="1:1",
+                        image_size=IMAGE_SIZE,
+                    ),
+                ),
             )
         except Exception as exc:
             status = get_http_status(exc)
             if status not in RETRYABLE_HTTP_CODES or attempt == MAX_ATTEMPTS - 1:
                 raise
-            delay = min(30, 2 ** (attempt + 1)) + random.uniform(0, 1)
-            print(f"Image model temporarily returned HTTP {status}; retrying in {delay:.1f}s.")
+            delay = min(20, 2 ** (attempt + 1)) + random.uniform(0, 1)
+            print(f"Image model returned retryable HTTP {status}; retrying in {delay:.1f}s.")
             time.sleep(delay)
 
+
+def extract_generated_image(response):
+    """Find the first image part in the Gemini response."""
+    parts = list(getattr(response, "parts", None) or [])
+    if not parts:
+        for candidate in getattr(response, "candidates", None) or []:
+            content = getattr(candidate, "content", None)
+            parts.extend(getattr(content, "parts", None) or [])
+
+    for part in parts:
+        try:
+            image = part.as_image()
+        except Exception:
+            image = None
+        if image is not None:
+            return image
+    return None
 
 def build_image_prompt(data):
     topic = str(data.get("topic", "")).strip()
@@ -107,33 +124,26 @@ def main():
         raise RuntimeError("Could not read valid content.json.") from exc
 
     prompt = build_image_prompt(data)
-    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=60_000))
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=45_000))
 
     print(f"Generating one {IMAGE_SIZE} square illustration with {IMAGE_MODEL}...")
     print("Style: hand-inked contours, colored pencil, watercolor washes, and paper texture.")
 
     with client:
-        interaction = generate_with_retry(client, prompt)
-
-    generated_image = getattr(interaction, "output_image", None)
-    encoded_data = getattr(generated_image, "data", None) if generated_image else None
-    if not encoded_data:
-        raise RuntimeError(
-            "Gemini returned no image data. No text-only fallback will be published."
-        )
+        response = generate_with_retry(client, prompt)
+    generated_image = extract_generated_image(response)
+    if generated_image is None:
+        raise RuntimeError("Gemini returned no image part. No text-only fallback will be published.")
 
     try:
-        image_bytes = base64.b64decode(encoded_data, validate=True)
-        with Image.open(io.BytesIO(image_bytes)) as source_image:
-            source_image.load()
-            image = ImageOps.fit(
-                source_image.convert("RGB"),
-                (TARGET_EDGE, TARGET_EDGE),
-                method=Image.Resampling.LANCZOS,
-                centering=(0.5, 0.5),
-            )
+        image = ImageOps.fit(
+            generated_image.convert("RGB"),
+            (TARGET_EDGE, TARGET_EDGE),
+            method=Image.Resampling.LANCZOS,
+            centering=(0.5, 0.5),
+        )
     except Exception as exc:
-        raise RuntimeError("Gemini returned image data that could not be decoded.") from exc
+        raise RuntimeError("Gemini returned image data that could not be processed.") from exc
 
     image.save(
         OUTPUT_FILE,
