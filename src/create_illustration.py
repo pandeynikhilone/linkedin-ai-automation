@@ -7,7 +7,8 @@ import sys
 import time
 from pathlib import Path
 
-from google import genai, types
+from google import genai
+from google.genai import types
 from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
