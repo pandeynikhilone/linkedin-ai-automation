@@ -8,6 +8,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from google import genai
+from google.genai import types
 
 OUTPUT_FILE = Path("content.json")
 PORTFOLIO_URL = "https://pandeynikhilone.github.io/"
@@ -384,7 +385,7 @@ Return only JSON with these fields: topic, post, hashtags, illustration_brief.
     print("Verified source facts:")
     print(source_facts)
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=60_000))
     model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
     with client:
         response = generate_with_retry(client, model, prompt)
