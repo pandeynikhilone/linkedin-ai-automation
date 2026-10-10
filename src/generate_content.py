@@ -86,7 +86,7 @@ Rules:
 
     with client:
         response = client.models.generate_content(
-            model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
+            mmodel=os.getenv("GEMINI_MODEL", "gemini-flash-latest"),
             contents=prompt,
             config={
                 "response_mime_type": "application/json",
