@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from google import genai
 
 OUTPUT_FILE = Path("content.json")
+PORTFOLIO_URL = "https://pandeynikhilone.github.io/"
 
 # A 30-topic evergreen rotation. Indexing by date avoids repeating the
 # same topic every Monday, Tuesday, etc. No personal claims are invented.
@@ -134,6 +135,12 @@ def main():
     today = datetime.now(ZoneInfo("Asia/Kolkata"))
     topic_index = today.date().toordinal() % len(TOPICS)
     topic = TOPICS[topic_index]
+    include_portfolio_cta = today.date().toordinal() % 3 == 0
+    portfolio_cta_instruction = (
+        f"If it fits naturally, end with a brief invitation to see project work at {PORTFOLIO_URL}. Include the URL exactly once."
+        if include_portfolio_cta
+        else "Do not add a portfolio URL or self-promotional call to action today."
+    )
 
     client = genai.Client(api_key=api_key)
     model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
@@ -158,6 +165,7 @@ Rules:
 - Do not claim the author personally did something unless that fact is provided.
 - Prefer useful educational reflections and actionable examples.
 - The post and slides must teach the same central lesson.
+- Portfolio CTA instruction for today: {portfolio_cta_instruction}
 - Return only data matching the supplied JSON schema.
 """
 
