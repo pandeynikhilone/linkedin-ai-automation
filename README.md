@@ -36,7 +36,7 @@ The plan covers:
 Optional repository variable:
 - `GEMINI_MODEL`, to choose the text-generation model.
 
-The video is rendered locally by Python, Pillow, and FFmpeg. A separate paid image-generation model is not part of this workflow.
+The video graphics are drawn locally by Python and Pillow, then animated and encoded by FFmpeg. No external visual-asset service is used.
 
 ## Accuracy and duplicate protection
 - The post uses only the day's supporting facts and aims to sound like an MCA student describing actual work.
