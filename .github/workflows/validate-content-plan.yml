@@ -5,7 +5,10 @@ on:
     branches: [main]
     paths:
       - "src/generate_content.py"
+      - "src/create_illustration.py"
+      - "src/publish_linkedin.py"
       - "content-plan.json"
+      - ".github/workflows/daily-linkedin.yml"
       - ".github/workflows/validate-content-plan.yml"
   workflow_dispatch:
 
@@ -26,15 +29,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate generator syntax and topic plan
+      - name: Validate source, short-form schema, and image pipeline
         run: |
-          python -m py_compile src/generate_content.py
+          python -m py_compile src/generate_content.py src/create_illustration.py src/publish_linkedin.py
           python - <<'PY'
           import ast
           import json
           from pathlib import Path
 
-          source = Path("src/generate_content.py").read_text(encoding="utf-8")
+          generator_path = Path("src/generate_content.py")
+          source = generator_path.read_text(encoding="utf-8")
           plan_doc = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
           module = ast.parse(source)
           topic_plan = None
@@ -63,12 +67,30 @@ jobs:
                   raise SystemExit(f"Topic {index} is missing source facts or an angle.")
 
           forbidden = chr(0x2014)
-          for filename in ("src/generate_content.py", "content-plan.json"):
+          for filename in (
+              "src/generate_content.py",
+              "src/create_illustration.py",
+              "src/publish_linkedin.py",
+              "content-plan.json",
+          ):
               if forbidden in Path(filename).read_text(encoding="utf-8"):
                   raise SystemExit(f"Forbidden em dash character found in {filename}")
 
-          if "TOPICS = [" in source:
-              raise SystemExit("Old generic topic list is still present.")
+          if '"illustration_brief"' not in source or '"video_title"' in source or '"slides"' in source:
+              raise SystemExit("Generator schema must describe one illustration, not video slides.")
 
-          print("Validation passed: Python syntax, 30 source-grounded topics, and topic-plan consistency.")
+          image_script = Path("src/create_illustration.py").read_text(encoding="utf-8")
+          if '"1:1"' not in image_script or '"2K"' not in image_script or "linkedin_image.jpg" not in image_script:
+              raise SystemExit("Image pipeline must generate one square 2K JPEG.")
+
+          publisher = Path("src/publish_linkedin.py").read_text(encoding="utf-8")
+          if "linkedin_video.mp4" in publisher or "upload_video(" in publisher:
+              raise SystemExit("Publisher must use image upload calls, not video uploads.")
+
+          daily_workflow = Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8")
+          if 'PUBLISH_TO_LINKEDIN: "true"' not in daily_workflow:
+              raise SystemExit("Scheduled publishing must be enabled for unattended runs.")
+          if "src/create_video.py" in daily_workflow or "linkedin_video.mp4" in daily_workflow:
+              raise SystemExit("Daily publishing workflow must not render or upload video.")
+          print("Validation passed: Python syntax, 30 grounded topics, concise text schema, square image, and unattended daily publishing.")
           PY
