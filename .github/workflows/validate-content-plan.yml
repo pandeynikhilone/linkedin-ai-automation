@@ -147,6 +147,7 @@ jobs:
           python - <<'PY'
           import json
           import subprocess
+          from pathlib import Path
           result = subprocess.run([
               "ffprobe", "-v", "error",
               "-show_entries", "stream=codec_name,codec_type,width,height",
