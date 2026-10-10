@@ -7,14 +7,13 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from google import genai
-from google.genai import types
+from google import genai, types
 
 OUTPUT_FILE = Path("content.json")
 PORTFOLIO_URL = "https://pandeynikhilone.github.io/"
 
-# The 30-topic plan below is grounded in the resume and public GitHub repositories.
-# The sequence starts on 2026-10-11 and repeats after 30 days.
+# Source-grounded plan based on the resume and public GitHub repositories.
+# The sequence starts on 2026-10-11 and cycles every 30 days.
 TOPIC_PLAN = [
     {
         "topic": "My Techqueto internship: building charts in React",
@@ -251,15 +250,32 @@ TOPIC_PLAN = [
 
 PLAN_START_DATE = date(2026, 10, 11)
 
+SLIDE_VISUAL_TYPES = {
+    "chart", "flow", "code", "product", "database",
+    "form", "checklist", "git", "stack", "learning",
+}
+
 SCHEMA = {
     "type": "OBJECT",
     "properties": {
         "topic": {"type": "STRING"},
         "post": {"type": "STRING"},
         "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}},
-        "illustration_brief": {"type": "STRING"},
+        "video_title": {"type": "STRING"},
+        "slides": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "title": {"type": "STRING"},
+                    "body": {"type": "STRING"},
+                    "visual_type": {"type": "STRING"},
+                },
+                "required": ["title", "body", "visual_type"],
+            },
+        },
     },
-    "required": ["topic", "post", "hashtags", "illustration_brief"],
+    "required": ["topic", "post", "hashtags", "video_title", "slides"],
 }
 
 RETRYABLE_HTTP_CODES = {408, 429, 500, 502, 503, 504}
@@ -282,7 +298,7 @@ def get_http_status(exc):
 
 
 def generate_with_retry(client, model, prompt):
-    """Retry temporary API overloads without inventing fallback content."""
+    """Retry transient service failures without inventing fallback post content."""
     for attempt in range(MAX_ATTEMPTS):
         try:
             return client.models.generate_content(
@@ -302,29 +318,31 @@ def generate_with_retry(client, model, prompt):
             time.sleep(delay)
 
 
+def clean_text(value):
+    return str(value).replace("\u2014", ",").replace("\u2013", "-").strip()
+
+
 def clean_hashtags(values):
-    hashtags = []
+    result = []
     seen = set()
     for value in values:
         tag = "".join(
-            character
-            for character in str(value).strip().lstrip("#")
-            if character.isalnum() or character == "_"
+            char for char in str(value).strip().lstrip("#")
+            if char.isalnum() or char == "_"
         )
         if tag and tag.casefold() not in seen:
             seen.add(tag.casefold())
-            hashtags.append(tag)
-    return hashtags[:4]
+            result.append(tag)
+    return result[:4]
 
 
 def fallback_hashtags(topic):
-    """Return relevant, deterministic tags when the model omits some hashtags."""
-    topic_text = str(topic).casefold()
-    if "techqueto" in topic_text or "chart" in topic_text or "react" in topic_text:
+    text = str(topic).casefold()
+    if "techqueto" in text or "chart" in text or "react" in text:
         return ["ReactJS", "TypeScript", "FrontendDevelopment", "SoftwareDevelopment"]
-    if "truloop" in topic_text or "review" in topic_text or "mongodb" in topic_text:
+    if "truloop" in text or "review" in text or "mongodb" in text:
         return ["NextJS", "FullStackDevelopment", "WebDevelopment", "MongoDB"]
-    if "techfest" in topic_text or "registration" in topic_text or "student" in topic_text:
+    if "techfest" in text or "registration" in text or "student" in text:
         return ["JavaScript", "FrontendDevelopment", "WebDevelopment", "MCAStudent"]
     return ["SoftwareDevelopment", "LearningInPublic", "MCAStudent", "WebDevelopment"]
 
@@ -341,6 +359,7 @@ def main():
     topic = selected_topic["topic"]
     source_facts = "\n".join(f"- {fact}" for fact in selected_topic["facts"])
     post_angle = selected_topic["angle"]
+
     include_portfolio_cta = today.date().toordinal() % 3 == 0
     portfolio_cta_instruction = (
         f"If it fits naturally, end with a brief invitation to see project work at {PORTFOLIO_URL}. Include the URL exactly once."
@@ -349,101 +368,114 @@ def main():
     )
 
     prompt = f"""
-Write one concise LinkedIn post and a visual brief for a single editorial illustration.
-Base everything only on Nikhil Pandey's actual resume and public GitHub project details.
+Create one LinkedIn post plus exactly five short animated-video slide scripts.
+Everything must be grounded in Nikhil Pandey's resume and public GitHub project details.
 
 Today's topic: {topic}
 Verified source facts:
 {source_facts}
 
-Angle for this post: {post_angle}
+Topic angle: {post_angle}
 
-Writing style and formatting:
-- Aim for 70 to 95 words. The post body must not exceed 110 words.
-- Sound like an MCA student or early-career developer describing real work in a clear, grounded way. Do not sound like a corporate marketer or AI assistant.
-- Start with one specific, natural opening line.
-- Use short paragraphs separated by blank lines. If it helps explain the actual implementation, use at most 3 short bullet points beginning with "• ".
-- End with one concise takeaway. Avoid generic motivation, filler, exaggerated claims, fake excitement, and engagement bait.
-- Do not invent personal feelings, conversations, incidents, difficulties, fixes, outcomes, users, metrics, features, technical decisions, dates, or reasons that are absent from the facts.
+LinkedIn text requirements:
+- Aim for 70 to 95 words. Hard maximum: 110 words.
+- Write like an MCA student or early-career developer describing real work in a direct, natural voice.
+- Start with a clear, specific opening line. Use short paragraphs separated by blank lines. At most three short bullet points if useful.
+- Finish with a concise takeaway. Avoid generic motivation, sales language, excessive excitement, engagement bait, and stock phrases.
+- Do not invent personal stories, feelings, incidents, fixes, outcomes, users, metrics, dates, features, technical decisions, or achievements.
 - Use first person only for contributions explicitly attributed to Nikhil. Credit collaborators accurately.
-- Do not describe Truloop's receipt-validation code as guaranteed proof of purchase or fraud-proof.
+- Do not describe Truloop's receipt validation as guaranteed proof of purchase.
 - Do not use long dash punctuation. Use ordinary punctuation and short sentences.
 - Return 3 or 4 relevant hashtags separately from the post body.
 
-Illustration brief:
-- Describe one simple, specific visual metaphor or explanatory scene that helps a reader understand today's topic.
-- The illustration will be rendered separately as a hand-drawn editorial illustration. Do not ask for text, letters, numbers, labels, captions, logos, watermarks, or a collage.
-- Use only visual facts compatible with the verified facts. Do not invent product features, users, metrics, or business results.
-- Keep the main visual simple and readable at mobile-feed size.
+Video requirements:
+- Give a short, accurate video title.
+- Return exactly five slides, each with a short title, a body of 5 to 18 words, and one visual_type.
+- Slide titles should generally be 3 to 7 words and readable on a phone.
+- visual_type must be one of: chart, flow, code, product, database, form, checklist, git, stack, learning.
+- Use a simple sequence: introduce the real problem or task, explain the implementation, show a key detail, add a practical implication, end with a grounded takeaway.
+- Use only the verified facts above. Do not invent UI, product features, data, metrics, or outcomes.
+- Slides will be rendered as a 4:5 vertical animated MP4 with drawn graphics and typography. Do not request or describe a generated image, image asset, photo, or video footage. Select only a visual_type.
+- Keep slide copy brief, high contrast, and mobile-readable.
 
 Portfolio CTA instruction: {portfolio_cta_instruction}
 
-Return only JSON with these fields: topic, post, hashtags, illustration_brief.
+Return only JSON with topic, post, hashtags, video_title, and slides.
 """
 
     print(f"Generating day {topic_index + 1}/{len(TOPIC_PLAN)} for {today.date()}: {topic}")
     print("Verified source facts:")
     print(source_facts)
 
-    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=60_000))
+    client = genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(timeout=60_000),
+    )
     model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
     with client:
         response = generate_with_retry(client, model, prompt)
 
     if not response.text:
         raise RuntimeError("Gemini returned an empty response.")
-
     try:
         data = json.loads(response.text)
     except json.JSONDecodeError as exc:
         raise RuntimeError("Gemini did not return valid JSON.") from exc
 
-    required = {"topic", "post", "hashtags", "illustration_brief"}
+    required = {"topic", "post", "hashtags", "video_title", "slides"}
     if not isinstance(data, dict) or not required.issubset(data):
         raise RuntimeError("Generated content is missing required fields.")
 
-    # The code supplies the topic and source facts, rather than trusting model output.
     data["topic"] = topic
     data["source_facts"] = selected_topic["facts"]
-    data["post"] = (
-        str(data["post"])
-        .replace("\u2014", ",")
-        .replace("\u2013", "-")
-        .strip()
-    )
-    data["illustration_brief"] = (
-        str(data["illustration_brief"])
-        .replace("\u2014", ",")
-        .replace("\u2013", "-")
-        .strip()
-    )
+    data["post"] = clean_text(data["post"])
+    data["video_title"] = clean_text(data["video_title"])[:180]
 
     word_count = len(data["post"].split())
     if word_count < 45 or word_count > 110:
         raise RuntimeError(f"Post body must contain 45 to 110 words, received {word_count}.")
-    if not data["illustration_brief"]:
-        raise RuntimeError("Generated illustration brief is empty.")
+    if not data["video_title"]:
+        data["video_title"] = topic[:180]
     if not isinstance(data["hashtags"], list):
         raise RuntimeError("Generated hashtags must be a list.")
-
-    data["hashtags"] = clean_hashtags(
-        data["hashtags"] + fallback_hashtags(topic)
-    )
+    data["hashtags"] = clean_hashtags(data["hashtags"] + fallback_hashtags(topic))
     if len(data["hashtags"]) < 3:
         raise RuntimeError("Could not prepare three relevant hashtags.")
 
-    OUTPUT_FILE.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    print(f"Success: generated a {word_count}-word LinkedIn post.")
+    slides = data["slides"]
+    if not isinstance(slides, list) or len(slides) != 5:
+        raise RuntimeError("Exactly five video slides are required.")
+
+    cleaned_slides = []
+    for number, slide in enumerate(slides, start=1):
+        if not isinstance(slide, dict):
+            raise RuntimeError(f"Slide {number} is not a valid object.")
+        title = clean_text(slide.get("title", ""))
+        body = clean_text(slide.get("body", ""))
+        visual_type = clean_text(slide.get("visual_type", "")).casefold()
+        if not title or not body:
+            raise RuntimeError(f"Slide {number} is missing its title or body.")
+        if len(title.split()) > 9:
+            raise RuntimeError(f"Slide {number} title is too long for mobile viewing.")
+        body_words = len(body.split())
+        if body_words < 4 or body_words > 20:
+            raise RuntimeError(f"Slide {number} body must contain 4 to 20 words.")
+        if visual_type not in SLIDE_VISUAL_TYPES:
+            raise RuntimeError(f"Slide {number} uses unsupported visual_type: {visual_type}")
+        cleaned_slides.append({"title": title, "body": body, "visual_type": visual_type})
+
+    data["slides"] = cleaned_slides
+    OUTPUT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    print(f"Success: generated {word_count}-word post and five video slides.")
     print(f"Topic: {topic}")
-    print(f"Saved to {OUTPUT_FILE}")
     print("\nPost preview:\n")
     print(data["post"])
     print("\nHashtags:", " ".join(f"#{tag}" for tag in data["hashtags"]))
-    print("\nIllustration brief:\n")
-    print(data["illustration_brief"])
+    print("\nSlides:")
+    for index, slide in enumerate(data["slides"], start=1):
+        print(f"{index}. {slide['title']} [{slide['visual_type']}]")
+        print(f"   {slide['body']}")
 
 
 if __name__ == "__main__":
