@@ -52,6 +52,21 @@ def generate_with_retry(client, prompt):
             )
         except Exception as exc:
             status = get_http_status(exc)
+            message = str(exc).casefold()
+
+            # A zero free-tier quota or a long server-suggested wait cannot be
+            # fixed by short retries. Fail immediately and avoid wasting runner time.
+            if status == 429 and (
+                "limit: 0" in message
+                or "resource_exhausted" in message and "retry in" in message
+            ):
+                raise RuntimeError(
+                    "Gemini image generation is unavailable on the current API quota. "
+                    "The response reports zero free-tier quota or a long retry delay. "
+                    "Enable billing for the image model or configure a different image "
+                    "provider with available quota. No image or LinkedIn post was published."
+                ) from exc
+
             if status not in RETRYABLE_HTTP_CODES or attempt == MAX_ATTEMPTS - 1:
                 raise
             delay = min(20, 2 ** (attempt + 1)) + random.uniform(0, 1)
