@@ -1,0 +1,48 @@
+
+name: Test AI Content and Video
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Generate LinkedIn post and slides
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python src/generate_content.py
+
+      - name: Render animated video
+        run: python src/create_video.py
+
+      - name: Save generated files
+        uses: actions/upload-artifact@v4
+        with:
+          name: linkedin-content-test
+          path: |
+            content.json
+            linkedin_video.mp4
+          if-no-files-found: error
+          retention-days: 3
