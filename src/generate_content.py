@@ -12,8 +12,8 @@ from google import genai
 OUTPUT_FILE = Path("content.json")
 PORTFOLIO_URL = "https://pandeynikhilone.github.io/"
 
-# A 30-topic plan built from resume facts and public GitHub project details.
-# The sequence starts on 2026-10-11, then repeats after 30 days.
+# The 30-topic plan below is grounded in the resume and public GitHub repositories.
+# The sequence starts on 2026-10-11 and repeats after 30 days.
 TOPIC_PLAN = [
     {
         "topic": "My Techqueto internship: building charts in React",
@@ -255,24 +255,10 @@ SCHEMA = {
     "properties": {
         "topic": {"type": "STRING"},
         "post": {"type": "STRING"},
-        "hashtags": {
-            "type": "ARRAY",
-            "items": {"type": "STRING"},
-        },
-        "video_title": {"type": "STRING"},
-        "slides": {
-            "type": "ARRAY",
-            "items": {
-                "type": "OBJECT",
-                "properties": {
-                    "title": {"type": "STRING"},
-                    "body": {"type": "STRING"},
-                },
-                "required": ["title", "body"],
-            },
-        },
+        "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}},
+        "illustration_brief": {"type": "STRING"},
     },
-    "required": ["topic", "post", "hashtags", "video_title", "slides"],
+    "required": ["topic", "post", "hashtags", "illustration_brief"],
 }
 
 RETRYABLE_HTTP_CODES = {408, 429, 500, 502, 503, 504}
@@ -280,7 +266,6 @@ MAX_ATTEMPTS = 5
 
 
 def get_http_status(exc):
-    """Read an HTTP status from common Google GenAI SDK exception shapes."""
     for attribute in ("code", "status_code", "status"):
         value = getattr(exc, attribute, None)
         if callable(value):
@@ -288,20 +273,15 @@ def get_http_status(exc):
                 value = value()
             except Exception:
                 value = None
-
         if isinstance(value, int):
             return value
-
-        if isinstance(value, str):
-            digits = value.strip()
-            if digits.isdigit():
-                return int(digits)
-
+        if isinstance(value, str) and value.strip().isdigit():
+            return int(value.strip())
     return None
 
 
 def generate_with_retry(client, model, prompt):
-    """Retry only transient service, rate-limit, and gateway errors."""
+    """Retry temporary API overloads without inventing fallback content."""
     for attempt in range(MAX_ATTEMPTS):
         try:
             return client.models.generate_content(
@@ -316,26 +296,31 @@ def generate_with_retry(client, model, prompt):
             status = get_http_status(exc)
             if status not in RETRYABLE_HTTP_CODES or attempt == MAX_ATTEMPTS - 1:
                 raise
-
-            # Exponential backoff with jitter: approximately 2, 4, 8, 16 seconds.
             delay = min(30, 2 ** (attempt + 1)) + random.uniform(0, 1)
-            print(
-                f"Gemini temporarily returned HTTP {status}; "
-                f"attempt {attempt + 1}/{MAX_ATTEMPTS - 1} failed. "
-                f"Retrying in {delay:.1f}s."
-            )
+            print(f"Gemini temporarily returned HTTP {status}; retrying in {delay:.1f}s.")
             time.sleep(delay)
+
+
+def clean_hashtags(values):
+    hashtags = []
+    seen = set()
+    for value in values:
+        tag = "".join(
+            character
+            for character in str(value).strip().lstrip("#")
+            if character.isalnum() or character == "_"
+        )
+        if tag and tag.casefold() not in seen:
+            seen.add(tag.casefold())
+            hashtags.append(tag)
+    return hashtags[:4]
 
 
 def main():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise RuntimeError(
-            "GEMINI_API_KEY is missing. Add it to GitHub Actions secrets."
-        )
+        raise RuntimeError("GEMINI_API_KEY is missing. Add it to GitHub Actions secrets.")
 
-    # Keep the 30-day personal work series in a stable order, starting
-    # on the next scheduled publication date. After day 30 it cycles again.
     today = datetime.now(ZoneInfo("Asia/Kolkata"))
     elapsed_days = max(0, (today.date() - PLAN_START_DATE).days)
     topic_index = elapsed_days % len(TOPIC_PLAN)
@@ -350,41 +335,45 @@ def main():
         else "Do not add a portfolio URL or self-promotional call to action today."
     )
 
-    client = genai.Client(api_key=api_key)
-    model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
-
     prompt = f"""
-Write one LinkedIn post and an accompanying animated-slide video outline
-based only on Nikhil Pandey's actual resume and public GitHub project details.
+Write one concise LinkedIn post and a visual brief for a single editorial illustration.
+Base everything only on Nikhil Pandey's actual resume and public GitHub project details.
 
 Today's topic: {topic}
-Verified source facts for this topic:
+Verified source facts:
 {source_facts}
 
 Angle for this post: {post_angle}
 
-Rules:
-- Write approximately 100-180 words in a natural voice that sounds like an MCA student describing real software work, not a marketing agency or an AI assistant.
-- Anchor the post in the specific project, task, or implementation details above. Do not substitute generic career advice or motivational filler.
-- You may write in first person only for contributions explicitly attributed to Nikhil in the facts. Credit collaborator/backend work accurately where specified.
-- Do not invent personal feelings, conversations, incidents, difficulties, fixes, outcomes, users, metrics, project features, technical decisions, or reasons not present in the source facts.
-- Do not turn the current proof-validation implementation into a claim of guaranteed or fraud-proof verification.
-- Do not claim Truloop has achieved adoption or business results beyond what the source facts state.
-- Do not invent projects, internship experiences, achievements, dates, statistics, certifications, or engagement numbers.
-- Create exactly 5 concise, mobile-readable slides that reinforce the same verified topic. Slides must not introduce facts absent from the source facts.
-- Include 3-5 relevant hashtags, separate from the post body.
-- The post, hashtags, video title, and slides must all match today's topic and source facts.
-- Portfolio CTA instruction for today: {portfolio_cta_instruction}
-- Return only data matching the supplied JSON schema.
+Writing style and formatting:
+- Aim for 70 to 95 words. The post body must not exceed 110 words.
+- Sound like an MCA student or early-career developer describing real work in a clear, grounded way. Do not sound like a corporate marketer or AI assistant.
+- Start with one specific, natural opening line.
+- Use short paragraphs separated by blank lines. If it helps explain the actual implementation, use at most 3 short bullet points beginning with "• ".
+- End with one concise takeaway. Avoid generic motivation, filler, exaggerated claims, fake excitement, and engagement bait.
+- Do not invent personal feelings, conversations, incidents, difficulties, fixes, outcomes, users, metrics, features, technical decisions, dates, or reasons that are absent from the facts.
+- Use first person only for contributions explicitly attributed to Nikhil. Credit collaborators accurately.
+- Do not describe Truloop's receipt-validation code as guaranteed proof of purchase or fraud-proof.
+- Do not use long dash punctuation. Use ordinary punctuation and short sentences.
+- Return 3 or 4 relevant hashtags separately from the post body.
+
+Illustration brief:
+- Describe one simple, specific visual metaphor or explanatory scene that helps a reader understand today's topic.
+- The illustration will be rendered separately as a hand-drawn editorial illustration. Do not ask for text, letters, numbers, labels, captions, logos, watermarks, or a collage.
+- Use only visual facts compatible with the verified facts. Do not invent product features, users, metrics, or business results.
+- Keep the main visual simple and readable at mobile-feed size.
+
+Portfolio CTA instruction: {portfolio_cta_instruction}
+
+Return only JSON with these fields: topic, post, hashtags, illustration_brief.
 """
 
-    print(
-        f"Generating day {topic_index + 1}/{len(TOPIC_PLAN)} "
-        f"for {today.date()}: {topic}"
-    )
-    print("Source facts used for this post:")
+    print(f"Generating day {topic_index + 1}/{len(TOPIC_PLAN)} for {today.date()}: {topic}")
+    print("Verified source facts:")
     print(source_facts)
 
+    client = genai.Client(api_key=api_key)
+    model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
     with client:
         response = generate_with_retry(client, model, prompt)
 
@@ -396,36 +385,50 @@ Rules:
     except json.JSONDecodeError as exc:
         raise RuntimeError("Gemini did not return valid JSON.") from exc
 
-    required = {"topic", "post", "hashtags", "video_title", "slides"}
+    required = {"topic", "post", "hashtags", "illustration_brief"}
     if not isinstance(data, dict) or not required.issubset(data):
         raise RuntimeError("Generated content is missing required fields.")
 
-    if not isinstance(data["post"], str) or not data["post"].strip():
-        raise RuntimeError("Generated LinkedIn post is empty.")
+    # The code supplies the topic and source facts, rather than trusting model output.
+    data["topic"] = topic
+    data["source_facts"] = selected_topic["facts"]
+    data["post"] = (
+        str(data["post"])
+        .replace("\u2014", ",")
+        .replace("\u2013", "-")
+        .strip()
+    )
+    data["illustration_brief"] = (
+        str(data["illustration_brief"])
+        .replace("\u2014", ",")
+        .replace("\u2013", "-")
+        .strip()
+    )
 
-    if not isinstance(data["video_title"], str) or not data["video_title"].strip():
-        raise RuntimeError("Generated video title is empty.")
-
+    word_count = len(data["post"].split())
+    if word_count < 45 or word_count > 110:
+        raise RuntimeError(f"Post body must contain 45 to 110 words, received {word_count}.")
+    if not data["illustration_brief"]:
+        raise RuntimeError("Generated illustration brief is empty.")
     if not isinstance(data["hashtags"], list):
         raise RuntimeError("Generated hashtags must be a list.")
 
-    if not isinstance(data["slides"], list) or len(data["slides"]) != 5:
-        raise RuntimeError("Expected exactly 5 slides.")
-
-    for slide in data["slides"]:
-        if not isinstance(slide, dict) or not slide.get("title") or not slide.get("body"):
-            raise RuntimeError("A slide is missing its title or body.")
+    data["hashtags"] = clean_hashtags(data["hashtags"])
+    if len(data["hashtags"]) < 3:
+        raise RuntimeError("At least three relevant hashtags are required.")
 
     OUTPUT_FILE.write_text(
         json.dumps(data, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-
-    print(f"Success: generated the post and {len(data['slides'])} slides.")
+    print(f"Success: generated a {word_count}-word LinkedIn post.")
+    print(f"Topic: {topic}")
     print(f"Saved to {OUTPUT_FILE}")
     print("\nPost preview:\n")
     print(data["post"])
-    print("\nHashtags:", " ".join(f"#{str(tag).lstrip('#')}" for tag in data["hashtags"]))
+    print("\nHashtags:", " ".join(f"#{tag}" for tag in data["hashtags"]))
+    print("\nIllustration brief:\n")
+    print(data["illustration_brief"])
 
 
 if __name__ == "__main__":
