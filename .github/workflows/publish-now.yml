@@ -9,7 +9,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: linkedin-publishing-now-fast
+  group: linkedin-publishing-now-final
   cancel-in-progress: true
 
 jobs:
