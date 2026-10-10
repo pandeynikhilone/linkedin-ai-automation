@@ -1,4 +1,4 @@
-name: LinkedIn AI Content and Publishing
+name: LinkedIn AI Illustrated Content and Publishing
 
 on:
   workflow_dispatch:
@@ -32,37 +32,37 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Generate LinkedIn content
+      - name: Generate concise LinkedIn post
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
         run: python src/generate_content.py
 
-      - name: Create animated video
-        run: python src/create_video.py
+      - name: Generate one hand-drawn-style illustration
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_API_KEY: ${{ secrets.GEMINI_IMAGE_API_KEY || secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image' }}
+          GEMINI_IMAGE_SIZE: "2K"
+        run: python src/create_illustration.py
 
-      - name: Upload preview files
+      - name: Save post and image artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linkedin-content-preview
+          name: linkedin-illustrated-content
           path: |
             content.json
-            linkedin_video.mp4
+            linkedin_image.jpg
           if-no-files-found: error
           retention-days: 14
 
-      - name: Run LinkedIn publisher
+      - name: Publish or preview the post
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PUBLISH_TO_LINKEDIN: ${{ inputs.publish }}
-          LINKEDIN_VIDEO_API_VERSION: "202609"
+          LINKEDIN_IMAGES_API_VERSION: "202609"
           LINKEDIN_POSTS_API_VERSION: "202609"
         run: python src/publish_linkedin.py
