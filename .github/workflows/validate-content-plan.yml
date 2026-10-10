@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "src/generate_content.py"
-      - "src/create_illustration.py"
+      - "src/create_video.py"
       - "src/publish_linkedin.py"
       - "content-plan.json"
       - ".github/workflows/daily-linkedin.yml"
@@ -29,90 +29,88 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate source, short-form schema, and image pipeline
+      - name: Validate source and video-only publishing pipeline
         run: |
-          python -m py_compile src/generate_content.py src/create_illustration.py src/publish_linkedin.py
+          python -m py_compile src/generate_content.py src/create_video.py src/publish_linkedin.py src/test_linkedin_video_upload.py
           python - <<'PY'
           import ast
           import json
           from pathlib import Path
 
-          generator_path = Path("src/generate_content.py")
-          source = generator_path.read_text(encoding="utf-8")
-          plan_doc = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          source = Path("src/generate_content.py").read_text(encoding="utf-8")
+          doc = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
           module = ast.parse(source)
-          topic_plan = None
-
+          plan = None
           for node in module.body:
               if isinstance(node, ast.Assign) and any(
                   isinstance(target, ast.Name) and target.id == "TOPIC_PLAN"
                   for target in node.targets
               ):
-                  topic_plan = ast.literal_eval(node.value)
+                  plan = ast.literal_eval(node.value)
                   break
 
-          if not isinstance(topic_plan, list) or len(topic_plan) != 30:
-              raise SystemExit("Generator must contain exactly 30 topic entries.")
-          if len(plan_doc.get("topics", [])) != 30:
+          if not isinstance(plan, list) or len(plan) != 30:
+              raise SystemExit("Generator must contain exactly 30 source-grounded topics.")
+          if len(doc.get("topics", [])) != 30:
               raise SystemExit("content-plan.json must contain exactly 30 topics.")
+          titles = [item.get("topic") for item in plan]
+          documented = [item.get("topic") for item in doc["topics"]]
+          if titles != documented:
+              raise SystemExit("Public plan and generator topic order do not match.")
 
-          generator_titles = [item.get("topic") for item in topic_plan]
-          document_titles = [item.get("topic") for item in plan_doc["topics"]]
-          if generator_titles != document_titles:
-              raise SystemExit("content-plan.json topics do not match the generator.")
+          for index, item in enumerate(plan, 1):
+              if not item.get("facts") or not item.get("angle"):
+                  raise SystemExit(f"Topic {index} lacks source facts or an angle.")
 
-          required = {"topic", "facts", "angle"}
-          for index, item in enumerate(topic_plan, start=1):
-              if not required.issubset(item) or not item["facts"]:
-                  raise SystemExit(f"Topic {index} is missing source facts or an angle.")
+          if '"video_title"' not in source or '"slides"' not in source:
+              raise SystemExit("The content generator must return a video title and slides.")
+          if '"illustration_brief"' in source or "GEMINI_IMAGE" in source:
+              raise SystemExit("A separate image-generation path remains in the content generator.")
 
-          forbidden = chr(0x2014)
-          for filename in (
-              "src/generate_content.py",
-              "src/create_illustration.py",
-              "src/publish_linkedin.py",
-              "content-plan.json",
-          ):
-              if forbidden in Path(filename).read_text(encoding="utf-8"):
-                  raise SystemExit(f"Forbidden em dash character found in {filename}")
-
-          if '"illustration_brief"' not in source or '"video_title"' in source or '"slides"' in source:
-              raise SystemExit("Generator schema must describe one illustration, not video slides.")
-
-          image_script = Path("src/create_illustration.py").read_text(encoding="utf-8")
-          if '"1:1"' not in image_script or '"2K"' not in image_script or "linkedin_image.jpg" not in image_script:
-              raise SystemExit("Image pipeline must generate one square 2K JPEG.")
-
+          renderer = Path("src/create_video.py").read_text(encoding="utf-8")
           publisher = Path("src/publish_linkedin.py").read_text(encoding="utf-8")
-          if "linkedin_video.mp4" in publisher or "upload_video(" in publisher:
-              raise SystemExit("Publisher must use image upload calls, not video uploads.")
+          if "linkedin_video.mp4" not in renderer or "ffmpeg" not in renderer:
+              raise SystemExit("Animated MP4 renderer is missing.")
+          if "upload_video(" not in publisher or "urn:li:video:" not in publisher:
+              raise SystemExit("LinkedIn video upload code is missing.")
+          if "linkedin_image.jpg" in publisher or "upload_image(" in publisher or "IMAGES_URL" in publisher:
+              raise SystemExit("A standalone image publishing path remains in the publisher.")
 
-          daily_workflow = Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8")
-          if 'PUBLISH_TO_LINKEDIN: "true"' not in daily_workflow:
-              raise SystemExit("Scheduled publishing must be enabled for unattended runs.")
-          if "src/create_video.py" in daily_workflow or "linkedin_video.mp4" in daily_workflow:
-              raise SystemExit("Daily publishing workflow must not render or upload video.")
-          no_video_files = [
-              Path("src/create_video.py"),
-              Path("src/test_linkedin_video_upload.py"),
-              Path(".github/workflows/test-linkedin-video-upload.yml"),
-          ]
-          if any(path.exists() for path in no_video_files):
-              raise SystemExit("Obsolete video-generation or video-upload files remain.")
-
-          if not Path(".github/workflows/test-linkedin-image-upload.yml").exists():
-              raise SystemExit("Image upload-only test workflow is missing.")
-
-          for filename in (
+          workflow_paths = [
               ".github/workflows/daily-linkedin.yml",
               ".github/workflows/publish-linkedin.yml",
               ".github/workflows/publish-approved-content.yml",
+              ".github/workflows/publish-now.yml",
               ".github/workflows/test-content.yml",
-              ".github/workflows/test-linkedin-image-upload.yml",
-          ):
-              workflow_text = Path(filename).read_text(encoding="utf-8")
-              if "linkedin_video.mp4" in workflow_text or "src/create_video.py" in workflow_text:
-                  raise SystemExit(f"Video generation reference remains in {filename}")
+              ".github/workflows/test-linkedin-video-upload.yml",
+          ]
+          for filename in workflow_paths:
+              text = Path(filename).read_text(encoding="utf-8")
+              if "create_illustration.py" in text or "linkedin_image.jpg" in text or "GEMINI_IMAGE" in text:
+                  raise SystemExit(f"A separate image-generation step remains in {filename}")
 
-          print("Validation passed: Python syntax, 30 grounded topics, short-form copy, square image, unattended publishing, and no video pipeline.")
+          forbidden = chr(0x2014)
+          for filename in [
+              "src/generate_content.py", "src/create_video.py",
+              "src/publish_linkedin.py", "content-plan.json", "README.md",
+          ]:
+              if forbidden in Path(filename).read_text(encoding="utf-8"):
+                  raise SystemExit(f"Forbidden em dash character found in {filename}")
+
+          obsolete = [
+              "src/create_illustration.py",
+              "src/test_linkedin_image_upload.py",
+              ".github/workflows/test-linkedin-image-upload.yml",
+              "src/.github/workflows/publish-linkedin.yml",
+          ]
+          if any(Path(filename).exists() for filename in obsolete):
+              raise SystemExit("Obsolete files remain in the repository.")
+
+          daily = Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8")
+          if 'PUBLISH_TO_LINKEDIN: "true"' not in daily:
+              raise SystemExit("Scheduled publishing is not enabled.")
+          if 'cron: "37 9 * * *"' not in daily or 'timezone: "Asia/Kolkata"' not in daily:
+              raise SystemExit("The existing 9:37 AM India schedule changed.")
+
+          print("Validation passed: 30 topics, formatted text, five animated slides, MP4 rendering, video publishing, and automatic schedule.")
           PY
