@@ -36,7 +36,7 @@ jobs:
       - name: Generate today's source-grounded LinkedIn post
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
+          GEMINI_MODEL: 'gemini-3.1-flash-lite'
         run: python src/generate_content.py
 
       - name: Generate one hand-drawn-style square illustration
