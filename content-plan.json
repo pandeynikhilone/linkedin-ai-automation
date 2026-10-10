@@ -1,0 +1,260 @@
+{
+  "title": "Nikhil Pandey LinkedIn Content Series",
+  "startDate": "2026-10-11",
+  "durationDays": 30,
+  "schedule": "One post per day at 09:37 Asia/Kolkata via the Daily LinkedIn Career Content workflow.",
+  "rule": "The script generates post copy and five slides on the day of publication using only the listed resume and GitHub facts. The topic sequence repeats after 30 days unless refreshed.",
+  "topics": [
+    {
+      "day": 1,
+      "topic": "My Techqueto internship: building charts in React",
+      "sourceFacts": [
+        "Resume: frontend developer intern at Techqueto Pvt Ltd. from December 2025 to January 2026.",
+        "Built line, bar, area, and pie charts using React and Google Charts."
+      ],
+      "angle": "Describe the actual chart work and what the components displayed. Do not invent dashboard users or business outcomes."
+    },
+    {
+      "day": 2,
+      "topic": "Replacing hardcoded chart values with JSON-driven data",
+      "sourceFacts": [
+        "At Techqueto, chart data and configuration were moved to JSON-driven values instead of being hardcoded.",
+        "The work used TypeScript, React, and Google Charts."
+      ],
+      "angle": "Explain this specific implementation choice. Do not claim measured improvements in speed or performance."
+    },
+    {
+      "day": 3,
+      "topic": "Why I created reusable chart utilities in common.ts",
+      "sourceFacts": [
+        "Resume: designed reusable chart utilities in common.ts for shared data and chart options."
+      ],
+      "angle": "Explain reuse and consistency in the context of this real task. Do not invent other functions or modules."
+    },
+    {
+      "day": 4,
+      "topic": "Loading chart data asynchronously with useEffect",
+      "sourceFacts": [
+        "Resume: integrated asynchronous data loading with proper useEffect usage in the React chart work at Techqueto."
+      ],
+      "angle": "Stay with the described React implementation. Do not invent a particular API endpoint or loading-state feature."
+    },
+    {
+      "day": 5,
+      "topic": "Debugging TypeScript and chart rendering issues",
+      "sourceFacts": [
+        "Resume: debugged TypeScript, data-shape, and rendering issues across multiple chart types at Techqueto."
+      ],
+      "angle": "Use the exact debugging areas listed. Do not invent a specific bug, incident, or resolution timeline."
+    },
+    {
+      "day": 6,
+      "topic": "Making chart components easier to extend",
+      "sourceFacts": [
+        "Resume: the chart work was designed to be backend-ready and easy to extend.",
+        "The charts covered line, bar, area, and pie types."
+      ],
+      "angle": "Explain the stated intent without claiming the system was deployed to a particular customer or had a quantified impact."
+    },
+    {
+      "day": 7,
+      "topic": "The technologies I used during my frontend internship",
+      "sourceFacts": [
+        "Techqueto internship, December 2025 to January 2026.",
+        "Resume lists TypeScript, React.js, and Google Charts for this role.",
+        "Tasks included dynamic charts, JSON-driven configuration, reusable utilities, async loading, and debugging."
+      ],
+      "angle": "Summarize the real scope of the internship, not a fictional day-in-the-life story."
+    },
+    {
+      "day": 8,
+      "topic": "The problem Truloop is designed to address",
+      "sourceFacts": [
+        "Truloop README says sponsored posts and fake or incentivized reviews can make it difficult to find trustworthy product information.",
+        "The project aims to emphasize honest, unbiased, real-world product reviews."
+      ],
+      "angle": "Describe the product motivation as stated in the README. Do not claim Truloop has eliminated fake reviews or proven market impact."
+    },
+    {
+      "day": 9,
+      "topic": "What Truloop means by real usage experience",
+      "sourceFacts": [
+        "Truloop README says reviews should be based on real usage experience.",
+        "The README gives battery life and software stability as examples."
+      ],
+      "angle": "Explain the intended review focus. Do not invent reviews from actual named users."
+    },
+    {
+      "day": 10,
+      "topic": "Designing a product browsing and review flow",
+      "sourceFacts": [
+        "Truloop provides a growing product catalog, product specifications, in-depth user reviews, and a way for users to submit their own reviews, according to its README."
+      ],
+      "angle": "Describe the product flow at a high level without inventing user research or conversion results."
+    },
+    {
+      "day": 11,
+      "topic": "Building Truloop's frontend with Next.js App Router",
+      "sourceFacts": [
+        "Resume: built a responsive, component-based frontend using Next.js App Router and Tailwind CSS.",
+        "The goal described in the resume was clean navigation and mobile-first design."
+      ],
+      "angle": "Discuss the actual frontend structure and responsive design focus."
+    },
+    {
+      "day": 12,
+      "topic": "Reusable navigation, product cards, and review sections",
+      "sourceFacts": [
+        "Resume: built reusable UI components including navigation menus, product cards, and review sections in Truloop."
+      ],
+      "angle": "Explain the purpose of reusable components in this project. Do not invent design-system metrics."
+    },
+    {
+      "day": 13,
+      "topic": "Separating Truloop's frontend and backend",
+      "sourceFacts": [
+        "Truloop repository has a Next.js frontend folder and an Express backend folder.",
+        "The root README describes running the frontend and backend together or separately."
+      ],
+      "angle": "Describe the actual project structure, not a claim that the architecture is microservices."
+    },
+    {
+      "day": 14,
+      "topic": "Connecting Truloop's interface to backend APIs",
+      "sourceFacts": [
+        "Resume: integrated Node.js and Express.js backend APIs to manage products, reviews, and user interactions."
+      ],
+      "angle": "Stay with these three areas. Do not invent API traffic, latency, or endpoint counts."
+    },
+    {
+      "day": 15,
+      "topic": "Structuring review data with MongoDB",
+      "sourceFacts": [
+        "Resume: structured MongoDB schemas to support review data, user submissions, and authentication workflows."
+      ],
+      "angle": "Explain the data areas supported by the schema. Do not invent table counts or database scale."
+    },
+    {
+      "day": 16,
+      "topic": "A look at Truloop's receipt proof validation",
+      "sourceFacts": [
+        "GitHub source backend/src/services/proofValidator.js uses Tesseract.js for OCR on image files and pdf-parse for PDFs.",
+        "The code checks extracted text for receipt-related terms and a match with the product name.",
+        "The validation is a text-based check, not a guarantee of genuine purchase."
+      ],
+      "angle": "Be transparent that this is the current implementation logic and avoid calling it foolproof or fraud-proof."
+    },
+    {
+      "day": 17,
+      "topic": "Checking purchase dates against product release dates",
+      "sourceFacts": [
+        "GitHub source in backend/src/controllers/review.controller.js rejects a purchase date earlier than a product's release date when both dates are present."
+      ],
+      "angle": "Explain the specific validation rule and why dates need validation. Do not claim wider fraud prevention."
+    },
+    {
+      "day": 18,
+      "topic": "Validating the data required to submit a Truloop review",
+      "sourceFacts": [
+        "GitHub review controller requires productId, rating, comment, reviewer, usageDuration, and recommend before creating a review."
+      ],
+      "angle": "Describe the real review-submission validation. Do not invent other required fields."
+    },
+    {
+      "day": 19,
+      "topic": "Keeping product ratings current after a new review",
+      "sourceFacts": [
+        "GitHub review controller retrieves a product's reviews, calculates the average rating, updates averageRating and reviewCount, and saves the product after review creation."
+      ],
+      "angle": "Explain how the current code updates aggregates. Do not claim benchmarks or production volume."
+    },
+    {
+      "day": 20,
+      "topic": "Organizing Truloop's routes by responsibility",
+      "sourceFacts": [
+        "GitHub has separate frontend routes for products, product information, product reviews, submit review, profile, and authentication.",
+        "Backend source has distinct route files for auth, products, reviews, uploads, and admin."
+      ],
+      "angle": "Explain how the repository organizes areas of responsibility without claiming perfect separation or comprehensive test coverage."
+    },
+    {
+      "day": 21,
+      "topic": "Iterating on Truloop with Git",
+      "sourceFacts": [
+        "Resume: used Git for version control and iterative development to enhance features and architecture.",
+        "GitHub repository shows separate frontend, backend, and scratch folders, with a recorded commit history."
+      ],
+      "angle": "Discuss the documented iterative process. Do not invent specific teamwork rituals or pull-request statistics."
+    },
+    {
+      "day": 22,
+      "topic": "Why the TechFest site was built as an alternative to Google Forms",
+      "sourceFacts": [
+        "TechFest README describes a registration website built to offer students an alternative to traditional forms such as Google Forms.",
+        "Resume identifies Nikhil as frontend developer volunteer for National Post Graduate College, December 2024 to February 2025."
+      ],
+      "angle": "Describe the project's purpose and your documented frontend role."
+    },
+    {
+      "day": 23,
+      "topic": "Helping students browse and choose a TechFest event",
+      "sourceFacts": [
+        "TechFest README lists student registration and event selection as features."
+      ],
+      "angle": "Explain the registration journey based only on the documented features."
+    },
+    {
+      "day": 24,
+      "topic": "Making manual payment details clearer in TechFest",
+      "sourceFacts": [
+        "TechFest README lists a manual payment method with an organized summary and detailed information."
+      ],
+      "angle": "Describe the feature as implemented in the project README. Do not imply online payment gateway integration."
+    },
+    {
+      "day": 25,
+      "topic": "Generating an admit card after payment in TechFest",
+      "sourceFacts": [
+        "TechFest README lists an admit card after successful payment as a project feature."
+      ],
+      "angle": "Explain the stated user flow and do not invent QR codes, email delivery, or verification features."
+    },
+    {
+      "day": 26,
+      "topic": "The actual stack behind the TechFest registration project",
+      "sourceFacts": [
+        "TechFest README lists HTML, CSS, JavaScript, and Bootstrap for frontend, Django for backend, and SQLite for the database.",
+        "The README credits Nikhil Pandey as frontend developer and Dev Athwani as backend developer."
+      ],
+      "angle": "Credit the documented roles accurately. Do not present the whole backend as Nikhil's individual work."
+    },
+    {
+      "day": 27,
+      "topic": "What supporting registration for 8,000-plus students involved",
+      "sourceFacts": [
+        "Resume: supported live event operations by handling registrations for over 8,000 students during the TechFest.",
+        "Resume: tested and refined UI behaviour for diverse inputs under time constraints."
+      ],
+      "angle": "Use the 8,000-plus number exactly as in the resume. Do not claim requests per second, uptime, or individual ownership of the full system."
+    },
+    {
+      "day": 28,
+      "topic": "Testing forms with different inputs and time constraints",
+      "sourceFacts": [
+        "Resume: tested and refined the TechFest user interface for diverse user inputs under time constraints."
+      ],
+      "angle": "Discuss the documented testing responsibility without inventing a specific bug or test count."
+    },
+    {
+      "day": 29,
+      "topic": "My documented work across charts, reviews, and registration",
+      "sourceFacts": [
+        "Resume lists a frontend internship at Techqueto focused on React, TypeScript, and Google Charts.",
+        "Resume lists Truloop as a full-stack product review platform using Next.js, React, Tailwind CSS, Node.js, Express, and MongoDB.",
+        "Resume lists frontend volunteer work on a TechFest registration platform for over 8,000 students.",
+        "Resume records 200-plus GitHub contributions."
+      ],
+      "angle": "Connect only these documented areas of work. Do not claim the 200-plus contributions occurred in a particular time period."
+    }
+  ]
+}
