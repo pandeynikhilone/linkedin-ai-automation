@@ -73,8 +73,8 @@ jobs:
           import json
           from pathlib import Path
           video_size = Path("linkedin_video.mp4").stat().st_size
-          if not 450_000_000 <= video_size <= 490_000_000:
-              raise SystemExit(f"Video size must be 450-490 MB for the configured high-bitrate target; got {video_size:,} bytes.")
+          if not 50_000_000 <= video_size <= 70_000_000:
+              raise SystemExit(f"Video size must be 50-70 MB for the configured 30 Mbps, ~16-second clip; got {video_size:,} bytes.")
           data = json.loads(Path("content.json").read_text(encoding="utf-8"))
           if not data.get("topic") or not data.get("post") or not data.get("video_title"):
               raise SystemExit("Topic, post, and video title are required.")
