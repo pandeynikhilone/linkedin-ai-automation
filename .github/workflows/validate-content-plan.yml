@@ -120,8 +120,9 @@ jobs:
           daily = Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8")
           if 'PUBLISH_TO_LINKEDIN: "true"' not in daily:
               raise SystemExit("Scheduled publishing is not enabled.")
-          if 'cron: "37 9 * * *"' not in daily or 'timezone: "Asia/Kolkata"' not in daily:
-              raise SystemExit("The 9:37 AM India schedule was changed.")
+          # GitHub Actions cron is UTC: 04:07 UTC is 09:37 in India (UTC+05:30).
+          if 'cron: "7 4 * * *"' not in daily or "04:07 UTC" not in daily or "09:37 Asia/Kolkata" not in daily:
+              raise SystemExit("Expected the 09:37 Asia/Kolkata daily schedule (04:07 UTC).")
           print("Source and schedule checks passed.")
           PY
 
