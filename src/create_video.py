@@ -411,10 +411,15 @@ def main():
     )
 
     size_bytes = OUTPUT_FILE.stat().st_size
-    if size_bytes < 75 * 1024:
-        raise RuntimeError(f"LinkedIn video is smaller than 75 KB: {size_bytes:,} bytes.")
-    if size_bytes > 200 * 1024 * 1024:
-        raise RuntimeError(f"LinkedIn video exceeds the workflow's 200 MB safety limit: {size_bytes:,} bytes.")
+    if size_bytes < TARGET_MIN_BYTES:
+        raise RuntimeError(
+            f"LinkedIn video is below the configured high-bitrate target: {size_bytes:,} bytes; "
+            f"expected at least {TARGET_MIN_BYTES:,} bytes."
+        )
+    if size_bytes > TARGET_MAX_BYTES:
+        raise RuntimeError(
+            f"LinkedIn video exceeds the workflow's 490 MB safety cap: {size_bytes:,} bytes."
+        )
 
     probe = subprocess.run(
         [
