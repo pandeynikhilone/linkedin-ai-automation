@@ -14,7 +14,7 @@ A daily content workflow that uses Nikhil Pandey's resume and public GitHub proj
 - Scheduled runs publish automatically without per-post approval when the required APIs, credentials, and GitHub runner are available.
 - Manually running the daily workflow creates a preview only. Use the separate manual publisher input when you intentionally want an immediate public post.
 - A lightweight ledger preflight runs before FFmpeg, dependency installation, or Gemini. If today's India-local slot is already published, the generation/publishing job is skipped. Ambiguous `publishing` or `needs_review` entries stop safely for manual inspection.
-- Scheduled posts upload directly to LinkedIn without duplicating the 480 MB MP4 as an Actions artifact. Manual preview runs retain the video artifact for one day.
+- Scheduled posts upload directly to LinkedIn without duplicating the MP4 as an Actions artifact. Manual preview runs retain the video artifact for one day.
 - If content generation, video rendering, upload, or LinkedIn processing fails, the workflow stops instead of publishing a text-only substitute.
 
 ## Thirty-day content plan
