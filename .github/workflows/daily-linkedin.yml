@@ -3,8 +3,8 @@ name: Daily LinkedIn Career Video
 on:
   schedule:
     # Keep the existing daily time: 9:37 AM India time.
-    - cron: "37 9 * * *"
-      timezone: "Asia/Kolkata"
+    # GitHub Actions schedule uses UTC: 04:07 UTC = 09:37 Asia/Kolkata.
+    - cron: "7 4 * * *"
   workflow_dispatch:
 
 permissions:
