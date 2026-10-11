@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: linkedin-publishing
@@ -17,6 +17,8 @@ concurrency:
 jobs:
   publication-preflight:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       should_run: ${{ steps.slot.outputs.should_run }}
     steps:
@@ -32,6 +34,9 @@ jobs:
     needs: publication-preflight
     if: needs.publication-preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    # This job needs write access only to persist the publication ledger on main.
+    permissions:
+      contents: write
     timeout-minutes: 35
 
     steps:
