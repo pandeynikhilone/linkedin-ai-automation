@@ -20,7 +20,11 @@ TOPIC_PLAN = [
         "topic": "My Techqueto internship: building charts in React",
         "facts": [
             "Resume: frontend developer intern at Techqueto Pvt Ltd. from December 2025 to January 2026.",
-            "Built line, bar, area, and pie charts using React and Google Charts."
+            "Worked with React, TypeScript, and Google Charts on line, bar, area, and pie charts.",
+            "Chart data and configuration were JSON-driven rather than hardcoded.",
+            "Created reusable chart utilities in common.ts.",
+            "Worked with asynchronous loading using React useEffect.",
+            "Debugged TypeScript, data-shape, and chart-rendering problems."
         ],
         "angle": "Describe the actual chart work and what the components displayed. Do not invent dashboard users or business outcomes."
     },
