@@ -5,8 +5,8 @@ on:
     types: [opened]
 
 permissions:
-  contents: write
-  issues: write
+  contents: read
+  issues: read
 
 concurrency:
   group: linkedin-publishing
@@ -14,6 +14,9 @@ concurrency:
 
 jobs:
   publication-preflight:
+    permissions:
+      contents: read
+      issues: read
     if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Publish one LinkedIn video post now' && contains(github.event.issue.body, 'PUBLISH_VIDEO_NOW')
     runs-on: ubuntu-latest
     outputs:
@@ -29,6 +32,9 @@ jobs:
         run: python3 src/check_publication_slot.py
 
   publish-on-request:
+    permissions:
+      contents: write
+      issues: write
     needs: publication-preflight
     if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Publish one LinkedIn video post now' && contains(github.event.issue.body, 'PUBLISH_VIDEO_NOW') && needs.publication-preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
