@@ -9,7 +9,7 @@ A daily content workflow that uses Nikhil Pandey's resume and public GitHub proj
 - Formats the post with a clear opening, short paragraphs, optional short bullets, and 3 or 4 relevant hashtags.
 - Produces exactly five slides with short titles, concise explanatory text, and drawn graphics.
 - Renders a 1080 x 1350 portrait MP4 at 24 fps, with gentle movement and transitions.
-- Encodes at a 240 Mbit/s constant-bitrate target to produce an approximately 476 MB (about 480 MB) MP4 for the 15.9-second clip. The renderer and publisher both reject files outside 450-490 MB, staying under LinkedIn's 500 MB high-level file-size specification for non-CTV videos.
+- Encodes at 30 Mbit/s constant bitrate, the upper bitrate in LinkedIn's published member-video guidance. For the ~15.9-second clip this produces about 60 MB; the renderer and publisher reject files outside 50-70 MB.
 - Uploads the MP4 through LinkedIn's Videos API, waits for processing to complete, then publishes the post text and video together through the Posts API.
 - Scheduled runs publish automatically without per-post approval when the required APIs, credentials, and GitHub runner are available.
 - Manually running the daily workflow creates a preview only. Use the separate manual publisher input when you intentionally want an immediate public post.
@@ -54,4 +54,4 @@ The video graphics are drawn locally by Python and Pillow, then animated and enc
 - [Gemini API documentation](https://ai.google.dev/gemini-api/docs)
 
 
-LinkedIn's current [Videos API documentation](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api) lists high-level non-CTV video files between 75 KB and 500 MB; the workflow targets about 476 MB and uses a 490 MB hard cap for safety.
+LinkedIn's [video sharing requirements](https://www.linkedin.com/help/linkedin/answer/a7486279) list a 30 Mbps maximum bitrate for member video uploads. This workflow uses that bitrate target for its ~16-second clip and validates the expected 50-70 MB output range. The [Videos API documentation](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api) separately lists a 500 MB high-level file-size ceiling; file size alone does not override the bitrate guidance.
