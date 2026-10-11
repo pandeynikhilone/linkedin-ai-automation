@@ -24,8 +24,8 @@ POSTS_URL = "https://api.linkedin.com/rest/posts"
 VIDEO_API_VERSION = os.getenv("LINKEDIN_VIDEO_API_VERSION", "202606")
 POSTS_API_VERSION = os.getenv("LINKEDIN_POSTS_API_VERSION", "202609")
 MIN_VIDEO_BYTES = 75 * 1024
-TARGET_MIN_VIDEO_BYTES = 450_000_000
-MAX_VIDEO_BYTES = 490_000_000
+TARGET_MIN_VIDEO_BYTES = 50_000_000
+MAX_VIDEO_BYTES = 70_000_000
 
 
 def check_response(response, operation):
@@ -104,8 +104,8 @@ def validate_video(video_path):
         )
     if size_bytes > MAX_VIDEO_BYTES:
         raise RuntimeError(
-            f"Video exceeds the workflow's 490 MB safety cap: {size_bytes:,} bytes. "
-            "LinkedIn's high-level non-CTV specification is 500 MB."
+            f"Video exceeds the workflow's 70 MB safety cap: {size_bytes:,} bytes. "
+            "This workflow keeps the ~16-second clip within LinkedIn's published 30 Mbps bitrate guidance."
         )
 
     if not shutil_which("ffprobe"):
