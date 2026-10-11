@@ -17,6 +17,11 @@ HEIGHT = 1350
 FPS = 24
 SLIDE_SECONDS = 3.4
 TRANSITION_SECONDS = 0.28
+# 240 Mbit/s across the ~15.9 s clip targets about 476 MB, below LinkedIn's
+# 500 MB high-level non-CTV file-size specification.
+TARGET_BITRATE = "240M"
+TARGET_MIN_BYTES = 450_000_000
+TARGET_MAX_BYTES = 490_000_000
 
 PAPER = (248, 247, 239)
 PAPER_DARK = (239, 240, 228)
@@ -376,7 +381,13 @@ def main():
             "-an",
             "-c:v", "libx264",
             "-preset", "medium",
-            "-crf", "20",
+            "-b:v", TARGET_BITRATE,
+            "-minrate", TARGET_BITRATE,
+            "-maxrate", TARGET_BITRATE,
+            "-bufsize", "240M",
+            "-profile:v", "high",
+            "-level:v", "5.2",
+            "-x264-params", "nal-hrd=cbr:force-cfr=1",
             "-pix_fmt", "yuv420p",
             "-r", str(FPS),
             "-movflags", "+faststart",
@@ -387,6 +398,17 @@ def main():
         result = subprocess.run(args, capture_output=True, text=True, check=False)
         if result.returncode != 0:
             raise RuntimeError("FFmpeg render failed: " + (result.stderr[-1800:] or "unknown error"))
+
+    size_bytes = OUTPUT_FILE.stat().st_size
+    if not TARGET_MIN_BYTES <= size_bytes <= TARGET_MAX_BYTES:
+        raise RuntimeError(
+            f"Rendered video is {size_bytes:,} bytes; the high-bitrate target is "
+            f"{TARGET_MIN_BYTES:,}-{TARGET_MAX_BYTES:,} bytes. Refusing to continue."
+        )
+    print(
+        f"Rendered {OUTPUT_FILE.name}: {size_bytes:,} bytes "
+        f"({size_bytes / 1_000_000:.1f} MB), H.264 at an approximately 240 Mbit/s target."
+    )
 
     size_bytes = OUTPUT_FILE.stat().st_size
     if size_bytes < 75 * 1024:
