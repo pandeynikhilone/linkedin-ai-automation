@@ -282,6 +282,15 @@ def publish_post(data, video_urn, owner_urn):
     return post_id
 
 
+def sha256_file(file_path, chunk_size=1024 * 1024):
+    """Hash a potentially large video without loading the entire file into memory."""
+    digest = hashlib.sha256()
+    with file_path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(chunk_size), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def load_ledger():
     if not LEDGER_FILE.exists():
         return {"timezone": "Asia/Kolkata", "dates": {}}
@@ -424,7 +433,7 @@ def main():
             )
         raise RuntimeError(f"Unknown publication-ledger status for {date_key}; refusing to publish.")
 
-    video_hash = hashlib.sha256(VIDEO_FILE.read_bytes()).hexdigest()
+    video_hash = sha256_file(VIDEO_FILE)
     ledger["dates"][date_key] = {
         "status": "publishing",
         "started_at": now.isoformat(timespec="seconds"),
