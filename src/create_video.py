@@ -17,11 +17,11 @@ HEIGHT = 1350
 FPS = 24
 SLIDE_SECONDS = 3.4
 TRANSITION_SECONDS = 0.28
-# 240 Mbit/s across the ~15.9 s clip targets about 476 MB, below LinkedIn's
-# 500 MB high-level non-CTV file-size specification.
-TARGET_BITRATE = "240M"
-TARGET_MIN_BYTES = 450_000_000
-TARGET_MAX_BYTES = 490_000_000
+# LinkedIn's published member video guidance lists 30 Mbps as the upper
+# bitrate. For this ~15.9 s clip, CBR at 30 Mbps produces about 60 MB.
+TARGET_BITRATE = "30M"
+TARGET_MIN_BYTES = 50_000_000
+TARGET_MAX_BYTES = 70_000_000
 
 PAPER = (248, 247, 239)
 PAPER_DARK = (239, 240, 228)
@@ -384,9 +384,9 @@ def main():
             "-b:v", TARGET_BITRATE,
             "-minrate", TARGET_BITRATE,
             "-maxrate", TARGET_BITRATE,
-            "-bufsize", "240M",
+            "-bufsize", "30M",
             "-profile:v", "high",
-            "-level:v", "5.2",
+            "-level:v", "4.2",
             "-x264-params", "nal-hrd=cbr:force-cfr=1",
             "-pix_fmt", "yuv420p",
             "-r", str(FPS),
@@ -407,19 +407,8 @@ def main():
         )
     print(
         f"Rendered {OUTPUT_FILE.name}: {size_bytes:,} bytes "
-        f"({size_bytes / 1_000_000:.1f} MB), H.264 at an approximately 240 Mbit/s target."
+        f"({size_bytes / 1_000_000:.1f} MB), H.264 at an approximately 30 Mbit/s target."
     )
-
-    size_bytes = OUTPUT_FILE.stat().st_size
-    if size_bytes < TARGET_MIN_BYTES:
-        raise RuntimeError(
-            f"LinkedIn video is below the configured high-bitrate target: {size_bytes:,} bytes; "
-            f"expected at least {TARGET_MIN_BYTES:,} bytes."
-        )
-    if size_bytes > TARGET_MAX_BYTES:
-        raise RuntimeError(
-            f"LinkedIn video exceeds the workflow's 490 MB safety cap: {size_bytes:,} bytes."
-        )
 
     probe = subprocess.run(
         [
