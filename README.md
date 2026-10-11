@@ -8,10 +8,13 @@ A daily content workflow that uses Nikhil Pandey's resume and public GitHub proj
 - Writes 70 to 95 words of copy, with a hard maximum of 110 words.
 - Formats the post with a clear opening, short paragraphs, optional short bullets, and 3 or 4 relevant hashtags.
 - Produces exactly five slides with short titles, concise explanatory text, and drawn graphics.
-- Renders a 1080 x 1350 portrait MP4 at 24 fps, with gentle movement and transitions. The portrait format is designed for a readable mobile feed while also fitting desktop and tablet feeds.
+- Renders a 1080 x 1350 portrait MP4 at 24 fps, with gentle movement and transitions.
+- Encodes at a 240 Mbit/s constant-bitrate target to produce an approximately 476 MB (about 480 MB) MP4 for the 15.9-second clip. The renderer and publisher both reject files outside 450-490 MB, staying under LinkedIn's 500 MB high-level file-size specification for non-CTV videos.
 - Uploads the MP4 through LinkedIn's Videos API, waits for processing to complete, then publishes the post text and video together through the Posts API.
 - Scheduled runs publish automatically without per-post approval when the required APIs, credentials, and GitHub runner are available.
 - Manually running the daily workflow creates a preview only. Use the separate manual publisher input when you intentionally want an immediate public post.
+- A lightweight ledger preflight runs before FFmpeg, dependency installation, or Gemini. If today's India-local slot is already published, the generation/publishing job is skipped. Ambiguous `publishing` or `needs_review` entries stop safely for manual inspection.
+- Scheduled posts upload directly to LinkedIn without duplicating the 480 MB MP4 as an Actions artifact. Manual preview runs retain the video artifact for one day.
 - If content generation, video rendering, upload, or LinkedIn processing fails, the workflow stops instead of publishing a text-only substitute.
 
 ## Thirty-day content plan
@@ -49,3 +52,6 @@ The video graphics are drawn locally by Python and Pillow, then animated and enc
 - [LinkedIn Videos API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api)
 - [LinkedIn Posts API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api)
 - [Gemini API documentation](https://ai.google.dev/gemini-api/docs)
+
+
+LinkedIn's current [Videos API documentation](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api) lists high-level non-CTV video files between 75 KB and 500 MB; the workflow targets about 476 MB and uses a 490 MB hard cap for safety.
