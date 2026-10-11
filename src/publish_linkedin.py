@@ -24,7 +24,8 @@ POSTS_URL = "https://api.linkedin.com/rest/posts"
 VIDEO_API_VERSION = os.getenv("LINKEDIN_VIDEO_API_VERSION", "202606")
 POSTS_API_VERSION = os.getenv("LINKEDIN_POSTS_API_VERSION", "202609")
 MIN_VIDEO_BYTES = 75 * 1024
-MAX_VIDEO_BYTES = 200 * 1024 * 1024
+TARGET_MIN_VIDEO_BYTES = 450_000_000
+MAX_VIDEO_BYTES = 490_000_000
 
 
 def check_response(response, operation):
@@ -96,8 +97,16 @@ def validate_video(video_path):
     size_bytes = video_path.stat().st_size
     if size_bytes < MIN_VIDEO_BYTES:
         raise RuntimeError(f"Video is smaller than LinkedIn's 75 KB minimum: {size_bytes:,} bytes.")
+    if size_bytes < TARGET_MIN_VIDEO_BYTES:
+        raise RuntimeError(
+            f"Video is below the configured high-bitrate target: {size_bytes:,} bytes; "
+            f"expected at least {TARGET_MIN_VIDEO_BYTES:,} bytes."
+        )
     if size_bytes > MAX_VIDEO_BYTES:
-        raise RuntimeError(f"Video exceeds the 200 MB workflow safety limit: {size_bytes:,} bytes.")
+        raise RuntimeError(
+            f"Video exceeds the workflow's 490 MB safety cap: {size_bytes:,} bytes. "
+            "LinkedIn's high-level non-CTV specification is 500 MB."
+        )
 
     if not shutil_which("ffprobe"):
         raise RuntimeError("ffprobe is unavailable. Install FFmpeg before publishing.")
