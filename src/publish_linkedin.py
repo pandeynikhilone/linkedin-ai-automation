@@ -355,11 +355,25 @@ def main():
 
     ledger = load_ledger()
     existing = ledger["dates"].get(date_key)
+    daily_key = now.date().isoformat()
+    request_prefix = f"{daily_key}-request-"
 
+    # Treat the India-local calendar date as the duplicate-protection boundary,
+    # regardless of whether the earlier publication came from a scheduled run
+    # or a one-off request. This prevents a scheduled run from publishing again
+    # later on a day when a one-off post has already been confirmed.
+    daily_slot = ledger["dates"].get(daily_key)
     if request_id:
-        request_prefix = f"{now.date().isoformat()}-request-"
+        if isinstance(daily_slot, dict) and daily_slot.get("status") in {
+            "published", "publishing", "needs_review"
+        }:
+            raise RuntimeError(
+                "A scheduled/daily LinkedIn publication already exists or was attempted today. "
+                "Inspect LinkedIn and the ledger before requesting another."
+            )
+
         prior_requests = [
-            key for key, value in ledger["dates"].items()
+            (key, value) for key, value in ledger["dates"].items()
             if key.startswith(request_prefix)
             and key != date_key
             and isinstance(value, dict)
@@ -369,6 +383,25 @@ def main():
             raise RuntimeError(
                 "A one-off LinkedIn post has already been attempted today. "
                 "Inspect LinkedIn and the ledger before requesting another."
+            )
+    else:
+        prior_requests = [
+            value for key, value in ledger["dates"].items()
+            if key.startswith(request_prefix)
+            and isinstance(value, dict)
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_requests:
+            statuses = {value.get("status") for value in prior_requests}
+            if "published" in statuses:
+                print(
+                    "SKIP: A one-off LinkedIn post is already recorded for today's India-local date. "
+                    "Refusing to publish a second post."
+                )
+                return
+            raise RuntimeError(
+                "A one-off LinkedIn publication was attempted today and is not safely confirmed. "
+                "Inspect LinkedIn and the ledger before retrying."
             )
 
     if existing:
