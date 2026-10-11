@@ -1,5 +1,7 @@
 name: Validate LinkedIn Content Plan
 
+# Keep video-only publishing, date safety, and workflow permissions checked together.
+
 on:
   push:
     branches: [main]
