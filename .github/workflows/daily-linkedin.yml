@@ -15,7 +15,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  publication-preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.slot.outputs.should_run }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Check today's publication slot before generation
+        id: slot
+        env:
+          PUBLISH_INTENT: ${{ github.event_name == 'workflow_dispatch' && 'preview' || 'scheduled' }}
+        run: python3 src/check_publication_slot.py
+
   generate-video-and-publish:
+    needs: publication-preflight
+    if: needs.publication-preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -57,6 +72,9 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
+          video_size = Path("linkedin_video.mp4").stat().st_size
+          if not 450_000_000 <= video_size <= 490_000_000:
+              raise SystemExit(f"Video size must be 450-490 MB for the configured high-bitrate target; got {video_size:,} bytes.")
           data = json.loads(Path("content.json").read_text(encoding="utf-8"))
           if not data.get("topic") or not data.get("post") or not data.get("video_title"):
               raise SystemExit("Topic, post, and video title are required.")
@@ -68,7 +86,8 @@ jobs:
           PY
           ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -show_entries format=duration,format_name -of json linkedin_video.mp4
 
-      - name: Save post and video artifact
+      - name: Save preview artifact
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: linkedin-video-content
@@ -76,7 +95,7 @@ jobs:
             content.json
             linkedin_video.mp4
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 1
 
       - name: Publish scheduled video post automatically
         if: github.event_name == 'schedule'
