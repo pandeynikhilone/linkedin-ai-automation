@@ -2,9 +2,11 @@ name: Daily LinkedIn Career Video
 
 on:
   schedule:
-    # Keep the existing daily time: 9:37 AM India time.
-    # GitHub Actions schedule uses UTC: 04:07 UTC = 09:37 Asia/Kolkata.
-    - cron: "7 4 * * *"
+    # Primary time: 9:37 AM India time. GitHub Actions schedule uses UTC.
+    # Same-day hourly recovery runs retry missed/failed pre-generation attempts.
+    # The publication ledger skips these runs immediately after one post is confirmed.
+    # 04:07 UTC = 09:37 IST; last recovery run 13:07 UTC = 18:37 IST.
+    - cron: "7 4-13 * * *"
   workflow_dispatch:
 
 permissions:
