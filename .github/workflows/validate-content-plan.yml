@@ -124,7 +124,7 @@ jobs:
           if 'PUBLISH_TO_LINKEDIN: "true"' not in daily:
               raise SystemExit("Scheduled publishing is not enabled.")
           # GitHub Actions cron is UTC: 04:07 UTC is 09:37 in India (UTC+05:30).
-          if 'cron: "7 4 * * *"' not in daily or "04:07 UTC" not in daily or "09:37 Asia/Kolkata" not in daily:
+          if 'cron: "7 4-13 * * *"' not in daily or "04:07 UTC" not in daily or "09:37 IST" not in daily or "13:07 UTC" not in daily or "18:37 IST" not in daily:
               raise SystemExit("Expected the 09:37 Asia/Kolkata daily schedule (04:07 UTC).")
           print("Source and schedule checks passed.")
           PY
