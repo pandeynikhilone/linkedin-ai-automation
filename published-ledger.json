@@ -30,6 +30,15 @@
       "published_at": "2026-10-12T14:13:09+05:30",
       "post_id": "urn:li:ugcPost:7515331211968282624",
       "video_urn": "urn:li:video:D5610AQGyR6o40r3GKw"
+    },
+    "2026-10-12-correction-22": {
+      "status": "publishing",
+      "started_at": "2026-10-12T16:19:21+05:30",
+      "topic": "Replacing hardcoded chart values with JSON-driven data",
+      "video_sha256": "69521a23982f3e8159fb579a53efa3bda847c0bb9dae6c8e8de1a96794c74342",
+      "video_size_bytes": 59319755,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
