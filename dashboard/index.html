@@ -14,7 +14,7 @@ a{color:inherit}.shell{max-width:1240px;margin:0 auto;padding:28px 22px 48px}.to
 .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}.eyebrow{color:var(--blue);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.hero h1{font-size:clamp(30px,5vw,46px);line-height:1.08;letter-spacing:-.05em;margin:8px 0 12px;max-width:720px}.hero p{color:var(--muted);max-width:680px;margin:0}.sync-pill{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted);font-size:12px}
 .notice{display:flex;align-items:flex-start;gap:12px;background:#111b2b;border:1px solid #2a3d56;border-radius:14px;padding:14px 16px;margin:24px 0}.notice-icon{color:var(--amber);font-size:18px}.notice strong{display:block;margin-bottom:2px}.notice p{color:var(--muted);font-size:13px;margin:0}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0 30px}.metric{background:linear-gradient(145deg,#151f31,#101724);border:1px solid var(--line);border-radius:16px;padding:18px}.metric-label{color:var(--muted);font-size:12px;font-weight:650}.metric-value{font-size:30px;letter-spacing:-.04em;font-weight:760;margin-top:8px}.metric-foot{color:#8193ab;font-size:11px;margin-top:2px}
-.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:26px 0 14px}.section-head h2{font-size:20px;margin:0;letter-spacing:-.03em}.section-head p{color:var(--muted);font-size:13px;margin:4px 0 0}.filterbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.field{border:1px solid var(--line);border-radius:10px;background:#0e1624;color:var(--text);padding:11px 13px;font:inherit;min-width:190px}.field:focus{outline:2px solid #446ca2;outline-offset:1px}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:26px 0 14px}.section-head h2{font-size:20px;margin:0;letter-spacing:-.03em}.section-head p{color:var(--muted);font-size:13px;margin:4px 0 0}.section-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.filterbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.field{border:1px solid var(--line);border-radius:10px;background:#0e1624;color:var(--text);padding:11px 13px;font:inherit;min-width:190px}.field:focus{outline:2px solid #446ca2;outline-offset:1px}
 .table-wrap{border:1px solid var(--line);border-radius:15px;overflow:hidden;background:#0d1522}.table-scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:780px;text-align:left}thead{background:#141e2d;color:#8295ad;font-size:11px;letter-spacing:.08em;text-transform:uppercase}th,td{padding:15px 17px;border-bottom:1px solid #202d3f}th{font-weight:750}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#111c2b}.day-cell{width:94px}.day-number{color:#fff;font-weight:760}.day-label{color:var(--muted);font-size:11px}.date-main{font-weight:650;white-space:nowrap}.date-sub{font-size:11px;color:var(--muted)}.topic-title{font-weight:680;line-height:1.35;max-width:500px}.topic-sub{font-size:11px;color:var(--muted);margin-top:4px}.status{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:5px 9px;font-size:11px;font-weight:750;white-space:nowrap}.status:before{content:"";width:6px;height:6px;background:currentColor;border-radius:50%}.status.published{color:var(--green);background:#10271f;border-color:#25533f}.status.planned{color:#c4d0e0;background:#172132}.status.queued{color:var(--amber);background:#302615;border-color:#594324}.status.publishing{color:var(--blue);background:#14243a;border-color:#29466b}.status.needs_review,.status.failed{color:var(--red);background:#311a24;border-color:#5b2d3b}.status.skipped{color:#b4bdcb;background:#232b38}.post-link{display:inline-block;font-size:11px;color:#8cbaff;text-decoration:none;margin-top:6px}.post-link:hover{text-decoration:underline}.action-cell{width:150px}.action-btn{padding:8px 11px;font-size:12px;white-space:nowrap}.empty{padding:48px 20px;text-align:center;color:var(--muted)}.footer{display:flex;align-items:center;justify-content:space-between;gap:14px;color:#71849d;font-size:11px;margin-top:18px}.footer a{color:#9eb9df;text-decoration:none}.footnote{max-width:760px}.hidden{display:none!important}
 @media(max-width:800px){.shell{padding:19px 14px 34px}.topbar{align-items:flex-start;margin-bottom:27px}.hero{display:block}.sync-pill{display:inline-flex;margin-top:18px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{padding:14px}.metric-value{font-size:26px}.section-head{align-items:flex-start;flex-direction:column}.footer{align-items:flex-start;flex-direction:column}.brand-sub{max-width:210px}}
 @media(max-width:440px){.brand-sub{display:none}.actions .btn{padding:9px 10px;font-size:12px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-label{font-size:11px}}
@@ -35,7 +35,7 @@ a{color:inherit}.shell{max-width:1240px;margin:0 auto;padding:28px 22px 48px}.to
       <div class="sync-pill" id="syncLabel">Connecting to publication ledger…</div>
     </section>
     <section class="notice" aria-live="polite">
-      <div class="notice-icon">ⓘ</div><div><strong id="noticeTitle">Safe publish controls</strong><p id="noticeText">The dashboard never stores GitHub or LinkedIn credentials. A Publish request opens a prefilled GitHub issue; submit that issue while signed in as the repository owner. The workflow checks the request and protects the daily publishing slot against duplicates.</p></div>
+      <div class="notice-icon">ⓘ</div><div><strong id="noticeTitle">Publish with sequence protection</strong><p id="noticeText">Publish opens a prefilled GitHub request. On GitHub, select Submit new issue to trigger publication. Only the next topic in sequence can be published, credentials stay out of this public page, and the scheduled 4:00 AM IST time remains unchanged.</p></div>
     </section>
     <section class="metrics" aria-label="Publication summary">
       <div class="metric"><div class="metric-label">Topics in plan</div><div class="metric-value" id="metricTotal">30</div><div class="metric-foot">One content series</div></div>
@@ -44,7 +44,7 @@ a{color:inherit}.shell{max-width:1240px;margin:0 auto;padding:28px 22px 48px}.to
       <div class="metric"><div class="metric-label">Needs attention</div><div class="metric-value" id="metricReview">—</div><div class="metric-foot">Uncertain or failed attempts</div></div>
     </section>
     <section>
-      <div class="section-head"><div><h2>Content plan</h2><p id="planSummary">Dates and statuses will appear when the first sync completes.</p></div><div class="sync-pill" id="slotLabel">Today’s slot: checking…</div></div>
+      <div class="section-head"><div><h2>Content plan</h2><p id="planSummary">Dates and statuses will appear when the first sync completes.</p></div><div class="section-actions"><button class="btn primary" id="publishNextBtn" type="button" disabled>Publish next post</button><div class="sync-pill" id="slotLabel">Today’s slot: checking…</div></div></div>
       <div class="filterbar">
         <input class="field" type="search" id="searchInput" placeholder="Search content topics…" aria-label="Search content topics">
         <select class="field" id="statusFilter" aria-label="Filter by status">
@@ -62,7 +62,7 @@ a{color:inherit}.shell{max-width:1240px;margin:0 auto;padding:28px 22px 48px}.to
       </div>
     </section>
   </main>
-  <footer class="footer"><div class="footnote">Status is refreshed from a sanitized snapshot of the private repository’s plan and ledger. GitHub Pages may take a short time to redeploy after a workflow finishes. The repository remains private; the Pages website itself is public.</div><div><a href="https://github.com/pandeynikhilone/linkedin-ai-automation" target="_blank" rel="noopener">Source repository ↗</a></div></footer>
+  <footer class="footer"><div class="footnote">This GitHub repository and website are public. The dashboard data feed exposes only topic titles, dates, status and confirmed post links; the repository files themselves remain publicly readable. Keep credentials and secrets out of the repository.</div><div><a href="https://github.com/pandeynikhilone/linkedin-ai-automation" target="_blank" rel="noopener">Source repository ↗</a></div></footer>
 </div>
 <script>
 (function(){
@@ -127,6 +127,13 @@ a{color:inherit}.shell{max-width:1240px;margin:0 auto;padding:28px 22px 48px}.to
     document.getElementById("metricQueued").textContent = latestData.summary ? latestData.summary.queued : rows.filter(function(r){return r.requestOpen;}).length;
     document.getElementById("metricReview").textContent = latestData.summary ? latestData.summary.needsAttention : rows.filter(function(r){return r.status==="needs_review"||r.status==="failed";}).length;
     document.getElementById("planSummary").textContent = "Next in sequence: " + (latestData.nextTopic ? "Day " + latestData.nextTopic.day + " · " + latestData.nextTopic.topic : "not yet determined") + ". Dates use Asia/Kolkata.";
+    var nextRow = latestData.nextTopic ? rows.find(function(row){return Number(row.day) === Number(latestData.nextTopic.day);}) : null;
+    var publishNextButton = document.getElementById("publishNextBtn");
+    publishNextButton.disabled = !(nextRow && nextRow.canPublish);
+    publishNextButton.textContent = nextRow && nextRow.canPublish ? "Publish Day " + nextRow.day + " now ↗" : (latestData.slotAvailable ? "Publish next post" : "Today's slot used");
+    publishNextButton.title = nextRow && nextRow.canPublish
+      ? "Opens a prefilled GitHub request for the next topic. Submit the issue on GitHub to start publishing."
+      : (latestData.slotAvailable ? "The next topic is not currently eligible for a manual publish request." : "Today's India-local publishing slot is already reserved or used.");
     document.getElementById("slotLabel").textContent = latestData.slotAvailable ? "Today’s slot: available" : "Today’s slot: protected";
     document.getElementById("slotLabel").style.color = latestData.slotAvailable ? "var(--green)" : "var(--amber)";
     document.getElementById("syncLabel").textContent = "Synced " + (fmtTime(latestData.generatedAt) || "just now") + " · refreshes every 30s";
@@ -158,6 +165,12 @@ a{color:inherit}.shell{max-width:1240px;margin:0 auto;padding:28px 22px 48px}.to
     }
   }
   document.getElementById("refreshBtn").addEventListener("click",refresh);
+  document.getElementById("publishNextBtn").addEventListener("click",function(){
+    if(!latestData || !latestData.nextTopic)return;
+    var row=(latestData.topics||[]).find(function(item){return Number(item.day)===Number(latestData.nextTopic.day);});
+    if(!row || !row.canPublish)return;
+    window.open(buildPublishUrl(row),"_blank","noopener,noreferrer");
+  });
   document.getElementById("searchInput").addEventListener("input",render);
   document.getElementById("statusFilter").addEventListener("change",render);
   refresh();
