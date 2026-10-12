@@ -9,7 +9,7 @@ permissions:
   issues: read
 
 concurrency:
-  group: linkedin-plan-day-publication
+  group: linkedin-publishing
   cancel-in-progress: false
 
 jobs:
@@ -53,6 +53,56 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write("topic_day=" + str(title_day) + "\n")
           print("Validated explicit request for content-plan Day " + str(title_day) + ".")
+          PY
+
+      - name: Verify request follows the next topic in sequence
+        env:
+          REQUESTED_TOPIC_DAY: ${{ steps.request.outputs.topic_day }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          plan = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          ledger = json.loads(Path("published-ledger.json").read_text(encoding="utf-8"))
+          topics = plan.get("topics", [])
+          dates = ledger.get("dates", {})
+          if not topics or not isinstance(dates, dict):
+              raise SystemExit("The content plan or publication ledger is not valid.")
+          topic_days = {
+              str(item["topic"]): int(item.get("day", index + 1))
+              for index, item in enumerate(topics)
+          }
+          records = []
+          for key, record in dates.items():
+              if not isinstance(record, dict) or record.get("status") != "published":
+                  continue
+              topic = str(record.get("topic") or "")
+              if topic not in topic_days:
+                  continue
+              stamp_text = record.get("published_at") or record.get("started_at") or record.get("recorded_at") or str(key)[:10]
+              try:
+                  stamp = datetime.fromisoformat(str(stamp_text).replace("Z", "+00:00"))
+              except (TypeError, ValueError):
+                  stamp = datetime.fromisoformat(str(key)[:10])
+              if stamp.tzinfo is None:
+                  stamp = stamp.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+              records.append((stamp.timestamp(), str(key), topic_days[topic]))
+          if records:
+              latest_day = max(records, key=lambda item: (item[0], item[1]))[2]
+              expected_day = latest_day % len(topics) + 1
+          else:
+              expected_day = int(topics[0].get("day", 1))
+          requested_day = int(os.environ["REQUESTED_TOPIC_DAY"])
+          if requested_day != expected_day:
+              raise SystemExit(
+                  f"Only the next plan topic may be manually published: expected Day {expected_day}, "
+                  f"received Day {requested_day}. This protects the next 04:00 IST scheduled topic."
+              )
+          print(f"Sequence check passed: Day {requested_day} is next. The daily 04:00 IST schedule remains unchanged.")
           PY
 
       - name: Check today's publication slot before generation
