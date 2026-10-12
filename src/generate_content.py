@@ -392,6 +392,11 @@ LinkedIn text requirements:
 - Do not describe Truloop's receipt validation as guaranteed proof of purchase.
 - Do not use long dash punctuation. Use ordinary punctuation and short sentences.
 - Return 3 or 4 relevant hashtags separately from the post body.
+- The post body is the LinkedIn caption accompanying the video, not text to place in a video footer.
+- Make the caption clearly explain the specific work shown in today's video and why the implementation detail matters.
+- Use 2 or 3 short paragraphs with blank lines. Keep the first line specific, not generic.
+- The caption must make sense when read without watching the video. Do not leave it as just a title or a teaser.
+- Keep the hashtags separate so the publisher can append them after the main body.
 
 Video requirements:
 - Give a short, accurate video title.
