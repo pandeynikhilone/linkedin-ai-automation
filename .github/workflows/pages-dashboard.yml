@@ -1,0 +1,79 @@
+name: Publish LinkedIn Content Dashboard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dashboard/**"
+      - "scripts/build_dashboard_data.py"
+      - "content-plan.json"
+      - "published-ledger.json"
+      - ".github/workflows/pages-dashboard.yml"
+  issues:
+    types: [opened, closed]
+  workflow_run:
+    workflows:
+      - "Daily LinkedIn Career Video"
+      - "Republish Corrected LinkedIn Video Post"
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  issues: read
+
+concurrency:
+  group: linkedin-dashboard-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy-dashboard:
+    if: >-
+      github.event_name != 'issues' ||
+      (
+        github.event.issue.user.login == github.repository_owner &&
+        startsWith(github.event.issue.title, 'Publish Day ') &&
+        endsWith(github.event.issue.title, ' LinkedIn post now') &&
+        contains(github.event.issue.body, 'PUBLISH_PLAN_DAY=')
+      ) ||
+      (
+        github.event_name == 'issues' &&
+        github.event.issue.user.login == github.repository_owner &&
+        github.event.issue.title == 'Republish corrected LinkedIn video post'
+      )
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Fetch public-safe request status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/issues?state=all&per_page=100&sort=updated&direction=desc" \
+            --jq '[.[] | select(has("pull_request") | not) | {number, title, body, state, created_at, updated_at, closed_at, html_url}]' \
+            > "$RUNNER_TEMP/dashboard-issues.json"
+
+      - name: Build sanitized dashboard data
+        env:
+          DASHBOARD_ISSUES_FILE: ${{ runner.temp }}/dashboard-issues.json
+        run: python scripts/build_dashboard_data.py
+
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dashboard
+
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
