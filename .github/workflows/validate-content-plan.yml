@@ -130,11 +130,69 @@ jobs:
               raise SystemExit("Expected daily 04:00 Asia/Kolkata publishing with recovery runs through 14:00 IST.")
           if "04:00 Asia/Kolkata" not in plan_doc.get("schedule", "") or "4:00 AM India time" not in readme:
               raise SystemExit("The README and content plan must document the current 04:00 IST schedule.")
+          if "next_topic_index_from_ledger" not in source or "published-ledger.json" not in source:
+              raise SystemExit("Scheduled topic progression must use the publication ledger.")
+          if "most recently confirmed published plan topic" not in plan_doc.get("rule", ""):
+              raise SystemExit("The content plan must document ledger-driven topic progression.")
           renderer = Path("src/create_video.py").read_text(encoding="utf-8")
           for setting in ['WIDTH = 1080', 'HEIGHT = 1350', 'FPS = 24', 'TARGET_BITRATE = "30M"', 'TARGET_MIN_BYTES = 50_000_000', 'TARGET_MAX_BYTES = 70_000_000']:
               if setting not in renderer:
                   raise SystemExit(f"Expected video format setting is missing: {setting}")
           print("Source, publishing schedule, and video-format checks passed.")
+          PY
+
+      - name: Test ledger-driven topic progression
+        run: |
+          python - <<'PY'
+          from src.generate_content import TOPIC_PLAN, next_topic_index_from_ledger
+
+          day1, day2, day3, day4 = [entry["topic"] for entry in TOPIC_PLAN[:4]]
+          history = {
+              "2026-10-11-request-18": {
+                  "status": "published",
+                  "topic": day1,
+                  "published_at": "2026-10-11T01:52:41+05:30",
+              },
+              "2026-10-12-request-20": {
+                  "status": "published",
+                  "topic": day2,
+                  "published_at": "2026-10-12T14:13:09+05:30",
+              },
+              "2026-10-12-correction-22": {
+                  "status": "published",
+                  "topic": day2,
+                  "published_at": "2026-10-12T16:19:44+05:30",
+              },
+              "2026-10-12-extra-23": {
+                  "status": "published",
+                  "topic": day3,
+                  "published_at": "2026-10-12T20:52:58+05:30",
+              },
+              "2026-10-13-failed-attempt": {
+                  "status": "needs_review",
+                  "topic": day4,
+                  "started_at": "2026-10-13T04:01:00+05:30",
+              },
+          }
+          if next_topic_index_from_ledger(history) != 3:
+              raise SystemExit("After confirmed Day 3, the next topic must be Day 4 even when a later attempt is uncertain.")
+
+          history["2026-10-13-day4"] = {
+              "status": "published",
+              "topic": day4,
+              "published_at": "2026-10-13T04:04:00+05:30",
+          }
+          if next_topic_index_from_ledger(history) != 4:
+              raise SystemExit("After confirmed Day 4, the next topic must be Day 5.")
+
+          history["2026-11-08-day30"] = {
+              "status": "published",
+              "topic": TOPIC_PLAN[-1]["topic"],
+              "published_at": "2026-11-08T04:04:00+05:30",
+          }
+          if next_topic_index_from_ledger(history) != 0:
+              raise SystemExit("After confirmed Day 30, the topic sequence must wrap to Day 1.")
+          print("Ledger topic progression passed: Day 3 -> Day 4 -> Day 5, and Day 30 -> Day 1.")
           PY
 
       - name: Render a synthetic five-slide video without using an API
