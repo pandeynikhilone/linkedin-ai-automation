@@ -15,6 +15,7 @@ on:
     workflows:
       - "Daily LinkedIn Career Video"
       - "Republish Corrected LinkedIn Video Post"
+      - "Publish Selected LinkedIn Plan Day"
     types: [completed]
   workflow_dispatch:
 
