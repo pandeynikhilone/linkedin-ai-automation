@@ -3,7 +3,7 @@
 A daily content workflow that uses Nikhil Pandey's resume and public GitHub projects to create a concise LinkedIn post and a five-slide animated MP4.
 
 ## Daily automatic publishing
-- Scheduled for 9:37 AM Asia/Kolkata every day.
+- Scheduled to begin at 4:00 AM Asia/Kolkata every day. Hourly recovery attempts continue until 2:00 PM IST if no publication is recorded.
 - Uses the existing 30-day plan based on the Techqueto internship, Truloop, and the TechFest registration project.
 - Writes 70 to 95 words of copy, with a hard maximum of 110 words.
 - Formats the post with a clear opening, short paragraphs, optional short bullets, and 3 or 4 relevant hashtags.
@@ -30,7 +30,7 @@ The plan covers:
 2. Select **Run workflow**. Manual runs are preview-only.
 3. Download the `linkedin-video-content` artifact.
 4. Inspect `content.json` and play `linkedin_video.mp4`.
-5. Scheduled runs publish automatically at 9:37 AM India time.
+5. Scheduled runs begin automatically at 4:00 AM India time; video generation and LinkedIn processing may mean the post appears a few minutes later. Hourly recovery attempts continue until 2:00 PM IST if no publication is recorded.
 
 ## Required GitHub Actions secrets
 - `GEMINI_API_KEY`
