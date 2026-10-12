@@ -275,8 +275,10 @@ def render_slide(slide, index, total, topic, output_path):
         WIDTH - 160, line_gap=12, max_lines=3
     )
 
-    visual_top = max(body_bottom + 35, 670)
-    visual_bottom = min(visual_top + 360, 1165)
+    # Keep copy inside the main slide content, not in a separate text footer.
+    # Expand the illustration into the reclaimed space and leave only a visual progress bar.
+    visual_top = max(body_bottom + 28, 650)
+    visual_bottom = min(visual_top + 470, 1220)
     draw_visual(
         draw,
         slide.get("visual_type", "learning"),
@@ -284,14 +286,9 @@ def render_slide(slide, index, total, topic, output_path):
         index,
     )
 
-    footer_y = 1214
-    draw.line((78, footer_y, WIDTH - 78, footer_y), fill=LINE, width=3)
-    draw.text((78, footer_y + 22), short_topic(topic), font=load_font(19, True), fill=GREEN_DARK)
-    draw.text((78, footer_y + 54), "LEARNING IN PUBLIC  /  REAL PROJECT DETAILS", font=load_font(15), fill=MUTED)
-
     progress_x1 = 78
     progress_x2 = WIDTH - 78
-    progress_y = HEIGHT - 34
+    progress_y = HEIGHT - 48
     draw.rounded_rectangle((progress_x1, progress_y, progress_x2, progress_y + 7),
                            radius=4, fill=LINE)
     fill_end = progress_x1 + int((progress_x2 - progress_x1) * ((index + 1) / total))
