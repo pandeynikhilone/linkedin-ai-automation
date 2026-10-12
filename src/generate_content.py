@@ -15,7 +15,8 @@ LEDGER_FILE = Path("published-ledger.json")
 PORTFOLIO_URL = "https://pandeynikhilone.github.io/"
 
 # Source-grounded plan based on the resume and public GitHub repositories.
-# The sequence starts on 2026-10-11 and cycles every 30 days.
+# The first topic was published on 2026-10-11. Scheduled progression follows the latest
+# confirmed published plan topic in the ledger, then wraps after 30 topics.
 TOPIC_PLAN = [
     {
         "topic": "My Techqueto internship: building charts in React",
