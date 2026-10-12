@@ -2,7 +2,7 @@
   "title": "Nikhil Pandey LinkedIn Content Series",
   "startDate": "2026-10-11",
   "durationDays": 30,
-  "schedule": "One post per day at 09:37 Asia/Kolkata via the Daily LinkedIn Career Content workflow.",
+  "schedule": "One post per day beginning at 04:00 Asia/Kolkata via the Daily LinkedIn Career Video workflow. Hourly recovery attempts continue through 14:00 IST if no publication is recorded.",
   "rule": "Each day the script generates post copy and five slides from the listed resume and GitHub facts. It starts on 2026-10-11 and cycles through the 30 topics again after the series ends. Posts must not introduce unsupported personal stories, metrics, features, or results.",
   "topics": [
     {
