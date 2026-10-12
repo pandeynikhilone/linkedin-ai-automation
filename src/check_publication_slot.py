@@ -38,16 +38,50 @@ def main() -> int:
         print("PREVIEW: Manual workflow run is preview-only, so the publication ledger will not block it.")
         write_output("should_run", "true")
         return 0
-    if intent not in {"scheduled", "request"}:
+    if intent not in {"scheduled", "request", "correction"}:
         raise RuntimeError(f"Unsupported PUBLISH_INTENT: {intent!r}")
 
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
-    if intent == "request" and not request_id.isdigit():
+    if intent in {"request", "correction"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for one-off publication requests.")
 
     today = datetime.now(TIME_ZONE).date().isoformat()
-    request_prefix = f"{today}-request-"
     dates = load_dates()
+
+    if intent == "correction":
+        correction_key = f"{today}-correction-{request_id}"
+        day_prefix = f"{today}-"
+        day_records = [
+            (key, record) for key, record in dates.items()
+            if key == today or key.startswith(day_prefix)
+        ]
+        baseline_published = any(
+            record.get("status") == "published" and "-correction-" not in key
+            for key, record in day_records if isinstance(record, dict)
+        )
+        if not baseline_published:
+            raise RuntimeError("A correction post is allowed only when today's original post is confirmed published.")
+        uncertain = [
+            key for key, record in day_records
+            if isinstance(record, dict) and record.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger contains an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before trying a correction."
+            )
+        if any(
+            key.startswith(f"{today}-correction-")
+            and isinstance(record, dict)
+            and record.get("status") in {"published", "publishing", "needs_review"}
+            for key, record in day_records
+        ):
+            raise RuntimeError("A correction video was already attempted today. Refusing a second correction post.")
+        if correction_key in dates:
+            raise RuntimeError(f"Correction ledger entry {correction_key} already exists; refusing to retry.")
+        print(f"READY: Today's original post is confirmed. One corrected replacement post may be published ({today}).")
+        write_output("should_run", "true")
+        return 0
 
     relevant = []
     daily_record = dates.get(today)
@@ -56,6 +90,7 @@ def main() -> int:
             raise RuntimeError(f"Malformed ledger entry for {today}; refusing to continue.")
         relevant.append((today, daily_record))
 
+    request_prefix = f"{today}-request-"
     for key, record in dates.items():
         if key.startswith(request_prefix):
             if not isinstance(record, dict):
