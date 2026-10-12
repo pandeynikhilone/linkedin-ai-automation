@@ -352,6 +352,54 @@ def fallback_hashtags(topic):
     return ["SoftwareDevelopment", "LearningInPublic", "MCAStudent", "WebDevelopment"]
 
 
+def source_grounded_fallback(topic):
+    """Small, verified backup for today's Day 2 post if Gemini is unavailable."""
+    if topic != "Replacing hardcoded chart values with JSON-driven data":
+        raise RuntimeError("No deterministic fallback is defined for this topic.")
+    return {
+        "topic": topic,
+        "post": (
+            "One improvement from my Techqueto internship was moving chart data and configuration "
+            "out of hardcoded frontend files.\n\n"
+            "I worked with React, TypeScript, and Google Charts. Keeping values and chart settings "
+            "in structured JSON made the display components cleaner and easier to adjust, instead "
+            "of mixing data setup into rendering code.\n\n"
+            "The lesson is simple: keeping data separate from presentation can make frontend "
+            "components easier to maintain as requirements change. It was a useful reminder to keep "
+            "configuration and rendering responsibilities distinct."
+        ),
+        "hashtags": ["ReactJS", "TypeScript", "GoogleCharts", "WebDevelopment"],
+        "video_title": "From hardcoded chart values to JSON",
+        "slides": [
+            {
+                "title": "Why hardcoded values hurt",
+                "body": "Mixing chart values into frontend files can make components rigid.",
+                "visual_type": "code",
+            },
+            {
+                "title": "Move chart settings into JSON",
+                "body": "Structured JSON keeps chart data and configuration separate from rendering.",
+                "visual_type": "flow",
+            },
+            {
+                "title": "Built with React and TypeScript",
+                "body": "The internship work used React, TypeScript, and Google Charts.",
+                "visual_type": "chart",
+            },
+            {
+                "title": "Keep rendering logic cleaner",
+                "body": "Separating settings from display makes adjustments easier to manage.",
+                "visual_type": "stack",
+            },
+            {
+                "title": "The practical takeaway",
+                "body": "Separate data from presentation to make frontend code easier to maintain.",
+                "visual_type": "learning",
+            },
+        ],
+    }
+
+
 def main():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -422,15 +470,20 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         http_options=types.HttpOptions(timeout=60_000),
     )
     model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
-    with client:
-        response = generate_with_retry(client, model, prompt)
-
-    if not response.text:
-        raise RuntimeError("Gemini returned an empty response.")
     try:
+        with client:
+            response = generate_with_retry(client, model, prompt)
+        if not response.text:
+            raise RuntimeError("Gemini returned an empty response.")
         data = json.loads(response.text)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("Gemini did not return valid JSON.") from exc
+    except Exception as exc:
+        if topic != "Replacing hardcoded chart values with JSON-driven data":
+            raise
+        print(
+            "WARNING: Gemini generation failed for today's Day 2 topic "
+            f"({type(exc).__name__}: {exc}). Using a verified, source-grounded fallback."
+        )
+        data = source_grounded_fallback(topic)
 
     required = {"topic", "post", "hashtags", "video_title", "slides"}
     if not isinstance(data, dict) or not required.issubset(data):
