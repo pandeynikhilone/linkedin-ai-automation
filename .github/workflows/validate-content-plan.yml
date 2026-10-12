@@ -272,11 +272,17 @@ jobs:
           forbidden = {"sourceFacts", "hashtags", "postText", "accessToken", "ledger"}
           if forbidden.intersection(data):
               raise SystemExit("The public dashboard snapshot must not expose source facts, post copy, credentials, or the raw ledger.")
-          if "window.setInterval(refresh,30000)" not in page or "PUBLISH_PLAN_DAY=" not in page:
-              raise SystemExit("The dashboard must auto-refresh and create a day-specific request.")
+          if "window.setInterval(refresh,30000)" not in page or "PUBLISH_PLAN_DAY=" not in page or "publishNextBtn" not in page:
+              raise SystemExit("The dashboard must auto-refresh and expose a next-post publish control.")
+          if "day == next_day_expected" not in Path("scripts/build_dashboard_data.py").read_text(encoding="utf-8"):
+              raise SystemExit("The dashboard must enable publishing only for the next plan topic.")
           if "PUBLISH_TOPIC_DAY:" not in publisher or "github.event.issue.user.login == github.repository_owner" not in publisher:
               raise SystemExit("Selected-day publishing must validate the requested day and remain owner-only.")
+          if "expected_day" not in publisher or "group: linkedin-publishing" not in publisher:
+              raise SystemExit("Manual publishing must validate sequence and share the daily publication concurrency lock.")
           if "actions/deploy-pages@" not in deployer or "DASHBOARD_ISSUES_FILE" not in deployer:
               raise SystemExit("The dashboard deployment workflow must publish Pages with a sanitized status snapshot.")
-          print("Dashboard validation passed: 30 topics, status/date fields, auto-refresh, sanitized data, owner-only publish requests.")
+          if 'cron: "35 18 * * *"' not in deployer or 'cron: "30 22-23,0-8 * * *"' not in Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8"):
+              raise SystemExit("The dashboard must refresh after midnight IST without changing the daily publishing schedule.")
+          print("Dashboard validation passed: 30 topics, next-topic publish guard, owner-only request workflow, stable 04:00 IST schedule, and auto-refresh.")
           PY
