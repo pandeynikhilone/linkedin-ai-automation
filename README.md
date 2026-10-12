@@ -18,7 +18,7 @@ A daily content workflow that uses Nikhil Pandey's resume and public GitHub proj
 - If content generation, video rendering, upload, or LinkedIn processing fails, the workflow stops instead of publishing a text-only substitute.
 
 ## Thirty-day content plan
-The topic sequence starts on 11 October 2026 and cycles after 30 days. Every topic is based on the resume or public GitHub source. See [content-plan.json](content-plan.json) for the full list of topics and their supporting facts.
+The first topic was published on 11 October 2026. Scheduled runs select the next topic after the most recently confirmed published plan topic in `published-ledger.json`, and wrap after Day 30. Failed or uncertain attempts do not advance the sequence, so recovery runs retry the same topic. Day 2 and the explicitly requested Day 3 were both published on 12 October 2026, so the next scheduled post is Day 4 on 13 October 2026. Every topic is based on the resume or public GitHub source. See [content-plan.json](content-plan.json) for the full list of topics and their supporting facts.
 
 The plan covers:
 - Techqueto: React, TypeScript, Google Charts, JSON-driven configuration, reusable utilities in common.ts, asynchronous loading, and debugging.
