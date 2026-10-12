@@ -406,8 +406,19 @@ def main():
         raise RuntimeError("GEMINI_API_KEY is missing. Add it to GitHub Actions secrets.")
 
     today = datetime.now(ZoneInfo("Asia/Kolkata"))
-    elapsed_days = max(0, (today.date() - PLAN_START_DATE).days)
-    topic_index = elapsed_days % len(TOPIC_PLAN)
+    requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
+    if requested_day:
+        try:
+            topic_day = int(requested_day)
+        except ValueError as exc:
+            raise RuntimeError("PUBLISH_TOPIC_DAY must be an integer from 1 to 30.") from exc
+        if not 1 <= topic_day <= len(TOPIC_PLAN):
+            raise RuntimeError(f"PUBLISH_TOPIC_DAY must be between 1 and {len(TOPIC_PLAN)}.")
+        topic_index = topic_day - 1
+        print(f"Using explicitly requested content-plan day {topic_day}.")
+    else:
+        elapsed_days = max(0, (today.date() - PLAN_START_DATE).days)
+        topic_index = elapsed_days % len(TOPIC_PLAN)
     selected_topic = TOPIC_PLAN[topic_index]
     topic = selected_topic["topic"]
     source_facts = "\n".join(f"- {fact}" for fact in selected_topic["facts"])
