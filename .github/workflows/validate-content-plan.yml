@@ -14,6 +14,8 @@ on:
       - "src/test_linkedin_image_upload.py"
       - "content-plan.json"
       - "README.md"
+      - "dashboard/**"
+      - "scripts/build_dashboard_data.py"
       - ".github/workflows/daily-linkedin.yml"
       - ".github/workflows/validate-content-plan.yml"
       - ".github/workflows/**"
@@ -243,4 +245,36 @@ jobs:
           if not 50_000_000 <= size <= 70_000_000:
               raise SystemExit(f"Expected a 50-70 MB video matching the current upload format, got {size:,} bytes.")
           print("Video renderer smoke test passed: H.264 MP4, 1080x1350, 24 fps, 15.5-16.2 seconds, no audio, 50-70 MB.")
+          PY
+
+
+      - name: Validate dashboard data and owner-only publishing request
+        env:
+          DASHBOARD_ISSUES_FILE: ${{ runner.temp }}/dashboard-issues.json
+        run: |
+          python -m py_compile scripts/build_dashboard_data.py
+          echo '[]' > "$DASHBOARD_ISSUES_FILE"
+          python scripts/build_dashboard_data.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path("dashboard/data.json").read_text(encoding="utf-8"))
+          page = Path("dashboard/index.html").read_text(encoding="utf-8")
+          publisher = Path(".github/workflows/publish-plan-day.yml").read_text(encoding="utf-8")
+          deployer = Path(".github/workflows/pages-dashboard.yml").read_text(encoding="utf-8")
+          if len(data.get("topics", [])) != 30:
+              raise SystemExit("The dashboard must render all 30 content-plan topics.")
+          if not all({"day", "topic", "plannedDate", "status", "canPublish"} <= set(row) for row in data["topics"]):
+              raise SystemExit("Each dashboard row must include day, topic, date, status, and publish availability.")
+          forbidden = {"sourceFacts", "hashtags", "postText", "accessToken", "ledger"}
+          if forbidden.intersection(data):
+              raise SystemExit("The public dashboard snapshot must not expose source facts, post copy, credentials, or the raw ledger.")
+          if "window.setInterval(refresh,30000)" not in page or "PUBLISH_PLAN_DAY=" not in page:
+              raise SystemExit("The dashboard must auto-refresh and create a day-specific request.")
+          if "PUBLISH_TOPIC_DAY:" not in publisher or "github.event.issue.user.login == github.repository_owner" not in publisher:
+              raise SystemExit("Selected-day publishing must validate the requested day and remain owner-only.")
+          if "actions/deploy-pages@" not in deployer or "DASHBOARD_ISSUES_FILE" not in deployer:
+              raise SystemExit("The dashboard deployment workflow must publish Pages with a sanitized status snapshot.")
+          print("Dashboard validation passed: 30 topics, status/date fields, auto-refresh, sanitized data, owner-only publish requests.")
           PY
