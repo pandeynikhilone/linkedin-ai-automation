@@ -214,7 +214,7 @@ def main() -> None:
             post_url = "https://www.linkedin.com/feed/update/" + post_id + "/"
 
         row_unresolved = status in {"publishing", "needs_review"}
-        can_publish = bool(slot_available and not row_unresolved and not open_issue)
+        can_publish = bool(slot_available and status == "planned" and not row_unresolved and not open_issue)
         if status == "queued":
             can_publish = False
         topics_out.append({
