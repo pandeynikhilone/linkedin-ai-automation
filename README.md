@@ -33,7 +33,8 @@ A GitHub Pages dashboard lists all 30 plan topics with a projected/actual date, 
 - Website source: [dashboard/index.html](dashboard/index.html)
 - The dashboard publishes only topic titles, status/date information, and confirmed LinkedIn post links. It does not expose supporting resume/source facts, post copy, the ledger file, or secrets.
 - Each Publish button opens a prefilled GitHub issue. Submit it while signed in as the repository owner; the request workflow validates the selected Day 1–30, keeps the existing video validation, and respects daily duplicate protection.
-- The source repository stays private. GitHub Pages websites are public, even when the source repository is private, and private-repository Pages availability depends on the GitHub plan. Enable **Settings → Pages → Build and deployment → Source: GitHub Actions** if Pages is not already configured.
+- The source repository stays private. The Pages website may be visible publicly; the dashboard therefore exposes only topic titles, coarse statuses/dates, and confirmed post links. GitHub Pages for a private source repository requires GitHub Pro, Team, or Enterprise. See [GitHub Pages availability](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
+- One-time activation is required in [repository Pages settings](https://github.com/pandeynikhilone/linkedin-ai-automation/settings/pages): choose **Build and deployment → Source: GitHub Actions** and save. The Actions token available to this workflow cannot create the Pages site itself, so the workflow cannot complete this setup automatically. After Pages is enabled, rerun the latest failed **Publish LinkedIn Content Dashboard** workflow from the [Actions page](https://github.com/pandeynikhilone/linkedin-ai-automation/actions/workflows/pages-dashboard.yml).
 
 ## Preview a video before publishing
 1. Open **Actions** and choose **Daily LinkedIn Career Video**.
