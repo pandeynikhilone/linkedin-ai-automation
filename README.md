@@ -25,6 +25,16 @@ The plan covers:
 - Truloop: Next.js, reusable UI components, Express APIs, MongoDB, review validation, purchase-date checks, and documented receipt text validation logic.
 - TechFest: registration, event selection, manual payment summary, admit card flow, documented frontend and backend responsibilities, and the resume's 8,000-plus registration figure.
 
+## Live dashboard
+
+A GitHub Pages dashboard lists all 30 plan topics with a projected/actual date, status, confirmed LinkedIn link, and a per-topic publish request. It refreshes its sanitized status feed every 30 seconds and redeploys after publication workflows or recognized request issues finish.
+
+- Website URL (once Pages deployment is enabled): https://pandeynikhilone.github.io/linkedin-ai-automation/
+- Website source: [dashboard/index.html](dashboard/index.html)
+- The dashboard publishes only topic titles, status/date information, and confirmed LinkedIn post links. It does not expose supporting resume/source facts, post copy, the ledger file, or secrets.
+- Each Publish button opens a prefilled GitHub issue. Submit it while signed in as the repository owner; the request workflow validates the selected Day 1–30, keeps the existing video validation, and respects daily duplicate protection.
+- The source repository stays private. GitHub Pages websites are public, even when the source repository is private, and private-repository Pages availability depends on the GitHub plan. Enable **Settings → Pages → Build and deployment → Source: GitHub Actions** if Pages is not already configured.
+
 ## Preview a video before publishing
 1. Open **Actions** and choose **Daily LinkedIn Career Video**.
 2. Select **Run workflow**. Manual runs are preview-only.
