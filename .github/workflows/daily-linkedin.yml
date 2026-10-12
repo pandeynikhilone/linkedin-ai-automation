@@ -75,22 +75,44 @@ jobs:
           test -s content.json
           test -s linkedin_video.mp4
           python -m json.tool content.json > /dev/null
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,pix_fmt -show_entries format=duration,format_name -of json linkedin_video.mp4 > video_metadata.json
           python - <<'PY'
           import json
           from pathlib import Path
+
+          metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
+          streams = metadata.get("streams", [])
+          video = next((stream for stream in streams if stream.get("codec_type") == "video"), None)
+          duration = float(metadata.get("format", {}).get("duration", 0))
+          format_names = metadata.get("format", {}).get("format_name", "").split(",")
           video_size = Path("linkedin_video.mp4").stat().st_size
+
+          if not video or video.get("codec_name") != "h264":
+              raise SystemExit("Video must use the H.264 codec.")
+          if video.get("width") != 1080 or video.get("height") != 1350:
+              raise SystemExit("Video dimensions must remain 1080 x 1350 (4:5 portrait).")
+          if video.get("r_frame_rate") != "24/1" or video.get("pix_fmt") != "yuv420p":
+              raise SystemExit("Video must remain 24 fps with yuv420p pixel format.")
+          if "mp4" not in format_names or any(stream.get("codec_type") == "audio" for stream in streams):
+              raise SystemExit("Video must remain a silent MP4.")
+          if not 15.5 <= duration <= 16.2:
+              raise SystemExit(f"Video duration must remain approximately 15.9 seconds; got {duration:.2f}s.")
           if not 50_000_000 <= video_size <= 70_000_000:
-              raise SystemExit(f"Video size must be 50-70 MB for the configured 30 Mbps, ~16-second clip; got {video_size:,} bytes.")
+              raise SystemExit(f"Video size must remain 50-70 MB for the configured 30 Mbps target; got {video_size:,} bytes.")
+
           data = json.loads(Path("content.json").read_text(encoding="utf-8"))
           if not data.get("topic") or not data.get("post") or not data.get("video_title"):
               raise SystemExit("Topic, post, and video title are required.")
-          if len(data["slides"]) != 5:
+          if not isinstance(data.get("slides"), list) or len(data["slides"]) != 5:
               raise SystemExit("Exactly five slides are required.")
           if len(data["post"].split()) > 110:
               raise SystemExit("Post body exceeds 110 words.")
-          print("Validated concise post and five-slide video content.")
+
+          print(
+              f"Validated LinkedIn post and five slides. Video: 1080x1350 H.264 MP4, "
+              f"24 fps, {duration:.2f}s, {video_size:,} bytes, silent."
+          )
           PY
-          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -show_entries format=duration,format_name -of json linkedin_video.mp4
 
       - name: Save preview artifact
         if: github.event_name == 'workflow_dispatch'
