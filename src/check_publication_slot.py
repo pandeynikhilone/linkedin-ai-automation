@@ -38,15 +38,51 @@ def main() -> int:
         print("PREVIEW: Manual workflow run is preview-only, so the publication ledger will not block it.")
         write_output("should_run", "true")
         return 0
-    if intent not in {"scheduled", "request", "correction"}:
+    if intent not in {"scheduled", "request", "correction", "extra"}:
         raise RuntimeError(f"Unsupported PUBLISH_INTENT: {intent!r}")
 
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
-    if intent in {"request", "correction"} and not request_id.isdigit():
+    if intent in {"request", "correction", "extra"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for one-off publication requests.")
 
     today = datetime.now(TIME_ZONE).date().isoformat()
     dates = load_dates()
+
+    if intent == "extra":
+        extra_key = f"{today}-extra-{request_id}"
+        day_prefix = f"{today}-"
+        day_records = [
+            (key, record) for key, record in dates.items()
+            if key == today or key.startswith(day_prefix)
+        ]
+        baseline_published = any(
+            record.get("status") == "published" and "-extra-" not in key
+            for key, record in day_records if isinstance(record, dict)
+        )
+        if not baseline_published:
+            raise RuntimeError("An extra post requires at least one confirmed publication today.")
+        uncertain = [
+            key for key, record in day_records
+            if isinstance(record, dict) and record.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger contains an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before publishing an extra post."
+            )
+        if any(
+            key.startswith(f"{today}-extra-")
+            and key != extra_key
+            and isinstance(record, dict)
+            and record.get("status") in {"published", "publishing", "needs_review"}
+            for key, record in day_records
+        ):
+            raise RuntimeError("An extra LinkedIn post was already attempted today.")
+        if extra_key in dates:
+            raise RuntimeError(f"Extra-post ledger entry {extra_key} already exists; refusing to retry.")
+        print(f"READY: One explicitly requested extra post is available for today ({today}).")
+        write_output("should_run", "true")
+        return 0
 
     if intent == "correction":
         correction_key = f"{today}-correction-{request_id}"
