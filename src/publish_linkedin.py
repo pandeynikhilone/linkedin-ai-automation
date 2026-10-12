@@ -379,10 +379,13 @@ def main():
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
     publish_intent = os.getenv("PUBLISH_INTENT", "scheduled").strip().lower()
     is_correction = publish_intent == "correction"
+    is_extra = publish_intent == "extra"
+    if publish_intent in {"correction", "extra"} and not request_id.isdigit():
+        raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for correction or extra-post publication.")
     if request_id:
         if not request_id.isdigit():
             raise RuntimeError("PUBLISH_REQUEST_ID must be a numeric GitHub issue number.")
-        suffix = "correction" if is_correction else "request"
+        suffix = "correction" if is_correction else "extra" if is_extra else "request"
         date_key = f"{now.date().isoformat()}-{suffix}-{request_id}"
     else:
         if is_correction:
@@ -399,7 +402,40 @@ def main():
     # titled owner-triggered correction request is the sole exception, and is
     # limited to one correction attempt after a confirmed original post.
     daily_slot = ledger["dates"].get(daily_key)
-    if is_correction:
+    if is_extra:
+        expected_topic = "Why I created reusable chart utilities in common.ts"
+        if data.get("topic") != expected_topic:
+            raise RuntimeError(
+                f"Day 3 extra publication must use the exact planned topic: {expected_topic!r}."
+            )
+        day_records = [
+            (key, value) for key, value in ledger["dates"].items()
+            if key == daily_key or key.startswith(f"{daily_key}-")
+        ]
+        baseline_published = any(
+            value.get("status") == "published" and not key.startswith(f"{daily_key}-extra-")
+            for key, value in day_records if isinstance(value, dict)
+        )
+        if not baseline_published:
+            raise RuntimeError("An extra post requires a previously confirmed publication today.")
+        uncertain = [
+            key for key, value in day_records
+            if isinstance(value, dict) and value.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger has an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before publishing an extra post."
+            )
+        prior_extras = [
+            key for key, value in ledger["dates"].items()
+            if key.startswith(f"{daily_key}-extra-") and key != date_key
+            and isinstance(value, dict)
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_extras:
+            raise RuntimeError("An extra LinkedIn post was already attempted today. Refusing another.")
+    elif is_correction:
         day_records = [
             (key, value) for key, value in ledger["dates"].items()
             if key == daily_key or key.startswith(f"{daily_key}-")
