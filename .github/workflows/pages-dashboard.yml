@@ -17,6 +17,9 @@ on:
       - "Republish Corrected LinkedIn Video Post"
       - "Publish Selected LinkedIn Plan Day"
     types: [completed]
+  schedule:
+    # Refresh at 00:05 IST so the manual publish control resets for the new India-local date.
+    - cron: "35 18 * * *"
   workflow_dispatch:
 
 permissions:
