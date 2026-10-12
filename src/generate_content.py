@@ -11,6 +11,7 @@ from google import genai
 from google.genai import types
 
 OUTPUT_FILE = Path("content.json")
+LEDGER_FILE = Path("published-ledger.json")
 PORTFOLIO_URL = "https://pandeynikhilone.github.io/"
 
 # Source-grounded plan based on the resume and public GitHub repositories.
@@ -255,6 +256,94 @@ TOPIC_PLAN = [
 
 PLAN_START_DATE = date(2026, 10, 11)
 
+
+def _published_record_timestamp(record, ledger_key):
+    """Return a comparable timestamp for ordering confirmed publications."""
+    timestamp_text = (
+        record.get("published_at")
+        or record.get("started_at")
+        or record.get("recorded_at")
+    )
+    try:
+        timestamp = datetime.fromisoformat(str(timestamp_text).replace("Z", "+00:00")) if timestamp_text else None
+    except (TypeError, ValueError):
+        timestamp = None
+
+    if timestamp is None:
+        try:
+            timestamp = datetime.fromisoformat(str(ledger_key)[:10])
+        except (TypeError, ValueError):
+            return float("-inf")
+
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+    return timestamp.timestamp()
+
+
+def next_topic_index_from_ledger(dates):
+    """Return the next plan index after the latest successfully published plan topic.
+
+    Failed or uncertain records are deliberately ignored, so retries keep the same topic.
+    Once Day 30 is published, the sequence wraps back to Day 1.
+    """
+    topic_indices = {
+        entry["topic"]: index
+        for index, entry in enumerate(TOPIC_PLAN)
+    }
+    latest_order = None
+    latest_topic_index = None
+
+    for ledger_key, record in dates.items():
+        if not isinstance(record, dict) or record.get("status") != "published":
+            continue
+
+        topic_index = topic_indices.get(record.get("topic"))
+        if topic_index is None:
+            continue
+
+        order = (_published_record_timestamp(record, ledger_key), str(ledger_key))
+        if latest_order is None or order > latest_order:
+            latest_order = order
+            latest_topic_index = topic_index
+
+    if latest_topic_index is None:
+        return None
+    return (latest_topic_index + 1) % len(TOPIC_PLAN)
+
+
+def select_topic_index(today, requested_day=""):
+    """Choose a forced manual day or the next unpublished day in sequence."""
+    if requested_day:
+        try:
+            topic_day = int(requested_day)
+        except ValueError as exc:
+            raise RuntimeError("PUBLISH_TOPIC_DAY must be an integer from 1 to 30.") from exc
+        if not 1 <= topic_day <= len(TOPIC_PLAN):
+            raise RuntimeError(f"PUBLISH_TOPIC_DAY must be between 1 and {len(TOPIC_PLAN)}.")
+        print(f"Using explicitly requested content-plan day {topic_day}.")
+        return topic_day - 1
+
+    if LEDGER_FILE.exists():
+        try:
+            ledger = json.loads(LEDGER_FILE.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError("Could not safely read published-ledger.json to select the next topic.") from exc
+        if not isinstance(ledger, dict) or not isinstance(ledger.get("dates"), dict):
+            raise RuntimeError("published-ledger.json has an unexpected structure; refusing to guess the next topic.")
+
+        next_index = next_topic_index_from_ledger(ledger["dates"])
+        if next_index is not None:
+            previous_index = (next_index - 1) % len(TOPIC_PLAN)
+            print(
+                f"Continuing with Day {next_index + 1}/{len(TOPIC_PLAN)} after the latest "
+                f"confirmed plan topic: {TOPIC_PLAN[previous_index]['topic']}."
+            )
+            return next_index
+
+    elapsed_days = max(0, (today - PLAN_START_DATE).days)
+    return elapsed_days % len(TOPIC_PLAN)
+
+
 SLIDE_VISUAL_TYPES = {
     "chart", "flow", "code", "product", "database",
     "form", "checklist", "git", "stack", "learning",
@@ -407,18 +496,7 @@ def main():
 
     today = datetime.now(ZoneInfo("Asia/Kolkata"))
     requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
-    if requested_day:
-        try:
-            topic_day = int(requested_day)
-        except ValueError as exc:
-            raise RuntimeError("PUBLISH_TOPIC_DAY must be an integer from 1 to 30.") from exc
-        if not 1 <= topic_day <= len(TOPIC_PLAN):
-            raise RuntimeError(f"PUBLISH_TOPIC_DAY must be between 1 and {len(TOPIC_PLAN)}.")
-        topic_index = topic_day - 1
-        print(f"Using explicitly requested content-plan day {topic_day}.")
-    else:
-        elapsed_days = max(0, (today.date() - PLAN_START_DATE).days)
-        topic_index = elapsed_days % len(TOPIC_PLAN)
+    topic_index = select_topic_index(today.date(), requested_day)
     selected_topic = TOPIC_PLAN[topic_index]
     topic = selected_topic["topic"]
     source_facts = "\n".join(f"- {fact}" for fact in selected_topic["facts"])
