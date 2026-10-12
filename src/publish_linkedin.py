@@ -113,7 +113,7 @@ def validate_video(video_path):
     probe = subprocess.run(
         [
             "ffprobe", "-v", "error",
-            "-show_entries", "stream=codec_name,codec_type,width,height",
+            "-show_entries", "stream=codec_name,codec_type,width,height,r_frame_rate,pix_fmt,profile,level,bit_rate",
             "-show_entries", "format=format_name,duration",
             "-of", "json", str(video_path),
         ],
@@ -122,17 +122,30 @@ def validate_video(video_path):
     if probe.returncode != 0:
         raise RuntimeError("ffprobe could not inspect the LinkedIn video.")
     metadata = json.loads(probe.stdout)
-    stream = next((s for s in metadata.get("streams", []) if s.get("codec_type") == "video"), None)
+    streams = metadata.get("streams", [])
+    stream = next((s for s in streams if s.get("codec_type") == "video"), None)
     duration = float(metadata.get("format", {}).get("duration", 0))
-    formats = str(metadata.get("format", {}).get("format_name", ""))
+    formats = str(metadata.get("format", {}).get("format_name", "")).split(",")
     if not stream or stream.get("codec_name") != "h264":
         raise RuntimeError("LinkedIn video must contain an H.264 video stream.")
     if stream.get("width") != 1080 or stream.get("height") != 1350:
         raise RuntimeError("LinkedIn video must use the 1080 x 1350 portrait template.")
-    if "mp4" not in formats and "mov" not in formats:
-        raise RuntimeError("LinkedIn video is not in an MP4-compatible container.")
-    if not 12 <= duration <= 20:
-        raise RuntimeError(f"LinkedIn video duration is outside the expected range: {duration:.2f}s.")
+    if "mp4" not in formats:
+        raise RuntimeError("LinkedIn video must use the MP4 container.")
+    if stream.get("r_frame_rate") != "24/1" or stream.get("pix_fmt") != "yuv420p":
+        raise RuntimeError("LinkedIn video must retain 24 fps and the yuv420p pixel format.")
+    if stream.get("profile") != "High" or stream.get("level") != 42:
+        raise RuntimeError("LinkedIn video must retain the H.264 High Profile, Level 4.2 encoding.")
+    try:
+        video_bitrate = int(stream.get("bit_rate") or 0)
+    except (TypeError, ValueError):
+        video_bitrate = 0
+    if not 25_000_000 <= video_bitrate <= 31_000_000:
+        raise RuntimeError(f"LinkedIn video bitrate must remain near 30 Mbps; got {video_bitrate:,} bps.")
+    if any(s.get("codec_type") == "audio" for s in streams):
+        raise RuntimeError("LinkedIn video must remain silent, without an audio track.")
+    if not 15.5 <= duration <= 16.2:
+        raise RuntimeError(f"LinkedIn video duration must remain near 15.9 seconds; got {duration:.2f}s.")
 
 
 def shutil_which(program):
