@@ -42,6 +42,15 @@
       "published_at": "2026-10-12T16:19:44+05:30",
       "post_id": "urn:li:ugcPost:7515363067635855361",
       "video_urn": "urn:li:video:D5610AQGqfmWhYTpBNQ"
+    },
+    "2026-10-12-extra-23": {
+      "status": "publishing",
+      "started_at": "2026-10-12T20:52:34+05:30",
+      "topic": "Why I created reusable chart utilities in common.ts",
+      "video_sha256": "2b75986449f55b432379bee627446664bf40b1c3ebfcca9aa2dce8aa77b72f8a",
+      "video_size_bytes": 59319738,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
