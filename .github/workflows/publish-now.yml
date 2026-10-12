@@ -100,3 +100,114 @@ jobs:
               issue_number: context.issue.number,
               state: "closed"
             });
+
+  day3-publication-preflight:
+    permissions:
+      contents: read
+      issues: read
+    if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Publish Day 3 LinkedIn post now' && contains(github.event.issue.body, 'PUBLISH_DAY3_NOW')
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.slot.outputs.should_run }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Check today's ledger before an explicitly requested extra post
+        id: slot
+        env:
+          PUBLISH_INTENT: extra
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+        run: python3 src/check_publication_slot.py
+
+  publish-day3-on-request:
+    permissions:
+      contents: write
+      issues: write
+    needs: day3-publication-preflight
+    if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Publish Day 3 LinkedIn post now' && contains(github.event.issue.body, 'PUBLISH_DAY3_NOW') && needs.day3-publication-preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install FFmpeg and fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Generate the explicitly requested Day 3 post and five slides
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
+          PUBLISH_TOPIC_DAY: "3"
+        run: python src/generate_content.py
+      - name: Render the matching five-slide animated video
+        run: python src/create_video.py
+      - name: Validate Day 3 content and video format
+        run: |
+          test -s content.json
+          test -s linkedin_video.mp4
+          python -m json.tool content.json > /dev/null
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,pix_fmt,profile,level,bit_rate -show_entries format=duration,format_name -of json linkedin_video.mp4 > video_metadata.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          if data.get("topic") != "Why I created reusable chart utilities in common.ts":
+              raise SystemExit(f"Wrong generated topic: {data.get('topic')!r}")
+          if not data.get("post") or not data.get("video_title") or not isinstance(data.get("slides"), list) or len(data["slides"]) != 5:
+              raise SystemExit("Day 3 post text, video title, and exactly five slides are required.")
+          if len(data["post"].split()) > 110:
+              raise SystemExit("Post body exceeds 110 words.")
+          metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
+          streams = metadata.get("streams", [])
+          video = next((s for s in streams if s.get("codec_type") == "video"), None)
+          duration = float(metadata.get("format", {}).get("duration", 0))
+          formats = metadata.get("format", {}).get("format_name", "").split(",")
+          size = Path("linkedin_video.mp4").stat().st_size
+          if not video or video.get("codec_name") != "h264" or video.get("width") != 1080 or video.get("height") != 1350:
+              raise SystemExit("Video must be 1080x1350 H.264.")
+          if video.get("r_frame_rate") != "24/1" or video.get("pix_fmt") != "yuv420p" or video.get("profile") != "High" or video.get("level") != 42:
+              raise SystemExit("Video encoding differs from the latest validated format.")
+          if "mp4" not in formats or any(s.get("codec_type") == "audio" for s in streams):
+              raise SystemExit("Video must remain a silent MP4.")
+          try:
+              bitrate = int(video.get("bit_rate") or 0)
+          except (TypeError, ValueError):
+              bitrate = 0
+          if not 25_000_000 <= bitrate <= 31_000_000 or not 50_000_000 <= size <= 70_000_000 or not 15.5 <= duration <= 16.2:
+              raise SystemExit(f"Video does not match the latest format: bitrate={bitrate}, size={size}, duration={duration:.2f}s.")
+          print(f"Day 3 validation passed. Video is {duration:.2f}s, {size:,} bytes, bitrate {bitrate:,} bps.")
+          PY
+      - name: Publish the explicitly requested Day 3 video post
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PUBLISH_TO_LINKEDIN: "true"
+          PUBLISH_INTENT: extra
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_TOPIC_DAY: "3"
+          LINKEDIN_VIDEO_API_VERSION: "202606"
+          LINKEDIN_POSTS_API_VERSION: "202609"
+        run: python src/publish_linkedin.py
+      - name: Close request after LinkedIn confirms publication
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "LinkedIn confirmed creation of the Day 3 video post. The extra-post request is complete."
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: "closed"
+            });
