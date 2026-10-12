@@ -27,14 +27,15 @@ The plan covers:
 
 ## Live dashboard
 
-A GitHub Pages dashboard lists all 30 plan topics with a projected/actual date, status, confirmed LinkedIn link, and a per-topic publish request. It refreshes its sanitized status feed every 30 seconds and redeploys after publication workflows or recognized request issues finish.
+The live [LinkedIn Content Control Room](https://pandeynikhilone.github.io/linkedin-ai-automation/) shows all 30 plan topics, projected/actual dates, publication statuses, and links to confirmed posts. It checks its sanitized data feed every 30 seconds and redeploys after recognized requests or publication workflows finish. A scheduled refresh at 00:05 IST resets the dashboard's manual-publish availability for the new India-local date.
 
-- Website URL (once Pages deployment is enabled): https://pandeynikhilone.github.io/linkedin-ai-automation/
+- Website: https://pandeynikhilone.github.io/linkedin-ai-automation/
 - Website source: [dashboard/index.html](dashboard/index.html)
-- The dashboard publishes only topic titles, status/date information, and confirmed LinkedIn post links. It does not expose supporting resume/source facts, post copy, the ledger file, or secrets.
-- Each Publish button opens a prefilled GitHub issue. Submit it while signed in as the repository owner; the request workflow validates the selected Day 1–30, keeps the existing video validation, and respects daily duplicate protection.
-- The source repository stays private. The Pages website may be visible publicly; the dashboard therefore exposes only topic titles, coarse statuses/dates, and confirmed post links. GitHub Pages for a private source repository requires GitHub Pro, Team, or Enterprise. See [GitHub Pages availability](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
-- One-time activation is required in [repository Pages settings](https://github.com/pandeynikhilone/linkedin-ai-automation/settings/pages): choose **Build and deployment → Source: GitHub Actions** and save. The Actions token available to this workflow cannot create the Pages site itself, so the workflow cannot complete this setup automatically. After Pages is enabled, rerun the latest failed **Publish LinkedIn Content Dashboard** workflow from the [Actions page](https://github.com/pandeynikhilone/linkedin-ai-automation/actions/workflows/pages-dashboard.yml).
+- Status feed builder: [scripts/build_dashboard_data.py](scripts/build_dashboard_data.py)
+- Only the **next topic in the publication sequence** can be manually requested. The request workflow independently checks this against the last confirmed publication in `published-ledger.json`.
+- The **Publish next post** button (or the enabled button on the next topic's row) opens a prefilled GitHub issue. As a static public website cannot safely hold a GitHub authorization token, click **Submit new issue** on GitHub to trigger the actual workflow. Only the repository owner’s issue can start publication.
+- After a successful manual post, the publication ledger advances to the next topic. The daily schedule stays fixed at **04:00 Asia/Kolkata** with its existing hourly recovery attempts through 14:00 IST. The manual post consumes the current local date's slot; it does not move tomorrow's 04:00 time.
+- The public status feed contains topic titles, dates, statuses, and confirmed LinkedIn post links only. **The repository itself is public**, so source files such as `content-plan.json` and `published-ledger.json` are also publicly readable. Never add tokens or other secrets to this repo.
 
 ## Preview a video before publishing
 1. Open **Actions** and choose **Daily LinkedIn Career Video**.
