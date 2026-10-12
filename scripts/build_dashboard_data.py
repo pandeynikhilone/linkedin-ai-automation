@@ -160,9 +160,11 @@ def main() -> None:
 
     if latest_confirmed is not None:
         latest_day = int(latest_confirmed["day"])
+        next_day_expected = (latest_day % topic_count) + 1
         sequence_start = latest_confirmed["stamp"].date()
     else:
         latest_day = 0
+        next_day_expected = int(plan_topics[0].get("day", 1))
         sequence_start = date.fromisoformat(str(plan.get("startDate", today.isoformat())))
 
     topics_out = []
@@ -214,7 +216,7 @@ def main() -> None:
             post_url = "https://www.linkedin.com/feed/update/" + post_id + "/"
 
         row_unresolved = status in {"publishing", "needs_review"}
-        can_publish = bool(slot_available and status == "planned" and not row_unresolved and not open_issue)
+        can_publish = bool(slot_available and status == "planned" and day == next_day_expected and not row_unresolved and not open_issue)
         if status == "queued":
             can_publish = False
         topics_out.append({
