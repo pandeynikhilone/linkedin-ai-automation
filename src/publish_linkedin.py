@@ -364,24 +364,57 @@ def main():
 
     now = datetime.now(TIME_ZONE)
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
+    publish_intent = os.getenv("PUBLISH_INTENT", "scheduled").strip().lower()
+    is_correction = publish_intent == "correction"
     if request_id:
         if not request_id.isdigit():
             raise RuntimeError("PUBLISH_REQUEST_ID must be a numeric GitHub issue number.")
-        date_key = f"{now.date().isoformat()}-request-{request_id}"
+        suffix = "correction" if is_correction else "request"
+        date_key = f"{now.date().isoformat()}-{suffix}-{request_id}"
     else:
+        if is_correction:
+            raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for correction publication.")
         date_key = now.date().isoformat()
 
     ledger = load_ledger()
     existing = ledger["dates"].get(date_key)
     daily_key = now.date().isoformat()
     request_prefix = f"{daily_key}-request-"
+    correction_prefix = f"{daily_key}-correction-"
 
-    # Treat the India-local calendar date as the duplicate-protection boundary,
-    # regardless of whether the earlier publication came from a scheduled run
-    # or a one-off request. This prevents a scheduled run from publishing again
-    # later on a day when a one-off post has already been confirmed.
+    # Ordinary runs may publish only once per India-local date. A specifically
+    # titled owner-triggered correction request is the sole exception, and is
+    # limited to one correction attempt after a confirmed original post.
     daily_slot = ledger["dates"].get(daily_key)
-    if request_id:
+    if is_correction:
+        day_records = [
+            (key, value) for key, value in ledger["dates"].items()
+            if key == daily_key or key.startswith(f"{daily_key}-")
+        ]
+        baseline_published = any(
+            value.get("status") == "published" and not key.startswith(correction_prefix)
+            for key, value in day_records if isinstance(value, dict)
+        )
+        if not baseline_published:
+            raise RuntimeError("A corrected post requires today's original post to be confirmed published.")
+        uncertain = [
+            key for key, value in day_records
+            if isinstance(value, dict) and value.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger has an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before correcting."
+            )
+        prior_corrections = [
+            key for key, value in ledger["dates"].items()
+            if key.startswith(correction_prefix) and key != date_key
+            and isinstance(value, dict)
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_corrections:
+            raise RuntimeError("A corrected video was already attempted today. Refusing another correction post.")
+    elif request_id:
         if isinstance(daily_slot, dict) and daily_slot.get("status") in {
             "published", "publishing", "needs_review"
         }:
