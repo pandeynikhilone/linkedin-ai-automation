@@ -128,7 +128,7 @@ jobs:
           # GitHub Actions cron is UTC: 22:30 UTC maps to 04:00 IST on the next local date.
           if 'cron: "30 22-23,0-8 * * *"' not in daily or "22:30 UTC = 04:00 IST" not in daily or "08:30 UTC = 14:00 IST" not in daily:
               raise SystemExit("Expected daily 04:00 Asia/Kolkata publishing with recovery runs through 14:00 IST.")
-          if "04:00 Asia/Kolkata" not in plan_doc.get("schedule", "") or "04:00 India time" not in readme:
+          if "04:00 Asia/Kolkata" not in plan_doc.get("schedule", "") or "4:00 AM India time" not in readme:
               raise SystemExit("The README and content plan must document the current 04:00 IST schedule.")
           renderer = Path("src/create_video.py").read_text(encoding="utf-8")
           for setting in ['WIDTH = 1080', 'HEIGHT = 1350', 'FPS = 24', 'TARGET_BITRATE = "30M"', 'TARGET_MIN_BYTES = 50_000_000', 'TARGET_MAX_BYTES = 70_000_000']:
