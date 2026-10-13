@@ -1,0 +1,287 @@
+name: Republish Reformatted Day 5 LinkedIn Post
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: linkedin-publishing
+  cancel-in-progress: false
+
+jobs:
+  reformat-preflight:
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Republish reformatted Day 5 LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_REFORMATTED_DAY=5')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      should_run: ${{ steps.slot.outputs.should_run }}
+      topic_day: ${{ steps.request.outputs.topic_day }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate request and today's confirmed Day 5 publication
+        id: request
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          title = os.getenv("ISSUE_TITLE", "")
+          body = os.getenv("ISSUE_BODY", "")
+          if title != "Republish reformatted Day 5 LinkedIn post now":
+              raise SystemExit("Unexpected reformat request title.")
+          if not re.search(r"^PUBLISH_REFORMATTED_DAY=5$", body, re.MULTILINE):
+              raise SystemExit("The request must include PUBLISH_REFORMATTED_DAY=5.")
+
+          plan = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          ledger = json.loads(Path("published-ledger.json").read_text(encoding="utf-8"))
+          topic = "Debugging TypeScript and chart rendering issues"
+          planned_topic = next(
+              (row.get("topic") for row in plan.get("topics", []) if int(row.get("day", 0)) == 5),
+              None,
+          )
+          dates = ledger.get("dates", {})
+          if planned_topic != topic or not isinstance(dates, dict):
+              raise SystemExit("Day 5 plan or publication ledger is invalid.")
+
+          timezone = ZoneInfo("Asia/Kolkata")
+          today = datetime.now(timezone).date().isoformat()
+          today_originals = []
+          latest = None
+          for key, record in dates.items():
+              if not isinstance(record, dict) or record.get("status") != "published":
+                  continue
+              stamp_text = record.get("published_at") or record.get("started_at") or record.get("recorded_at") or str(key)[:10]
+              try:
+                  stamp = datetime.fromisoformat(str(stamp_text).replace("Z", "+00:00"))
+              except (TypeError, ValueError):
+                  continue
+              if stamp.tzinfo is None:
+                  stamp = stamp.replace(tzinfo=timezone)
+              local_day = stamp.astimezone(timezone).date().isoformat()
+              if local_day == today and record.get("topic") == topic and "-reformat-" not in key:
+                  today_originals.append(key)
+
+              plan_day = next(
+                  (int(row.get("day", index + 1)) for index, row in enumerate(plan.get("topics", []))
+                   if row.get("topic") == record.get("topic")),
+                  None,
+              )
+              if plan_day is not None:
+                  order = (stamp.timestamp(), str(key))
+                  if latest is None or order > latest[0]:
+                      latest = (order, plan_day)
+
+          if not today_originals:
+              raise SystemExit("A confirmed Day 5 publication for today is required before reformatting.")
+          if latest is None or latest[1] != 5:
+              raise SystemExit("Only the most recently published plan topic may be reformatted; Day 5 is not latest.")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("topic_day=5\n")
+          print("Reformat preflight passed for the confirmed Day 5 post. Scheduled time is unchanged.")
+          PY
+
+      - name: Check the one-reformat limit and current ledger state
+        id: slot
+        env:
+          PUBLISH_INTENT: reformat
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+        run: python3 src/check_publication_slot.py
+
+  publish-reformatted:
+    needs: reformat-preflight
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Republish reformatted Day 5 LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_REFORMATTED_DAY=5') &&
+      needs.reformat-preflight.result == 'success' &&
+      needs.reformat-preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install FFmpeg and fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Generate the standardized Day 5 caption and slide copy
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
+          PUBLISH_TOPIC_DAY: "5"
+          PUBLISH_FIXED_DAY5_TEMPLATE: "true"
+        run: python src/generate_content.py
+
+      - name: Render the standard animated portrait video
+        run: python src/create_video.py
+
+      - name: Validate caption, slide copy, and MP4 format
+        run: |
+          test -s content.json
+          test -s linkedin_video.mp4
+          python -m json.tool content.json > /dev/null
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,pix_fmt,profile,level,bit_rate -show_entries format=duration,format_name -of json linkedin_video.mp4 > video_metadata.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          expected = "Debugging TypeScript and chart rendering issues"
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          if data.get("topic") != expected:
+              raise SystemExit("The reformatted post is not the Day 5 topic.")
+          post = str(data.get("post") or "").strip()
+          paragraphs = [part for part in post.split("\n\n") if part.strip()]
+          words = len(post.split())
+          if not 70 <= words <= 95 or len(paragraphs) != 3 or "#" in post:
+              raise SystemExit(f"Caption must be 70-95 words in three plain paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
+          if len(data.get("hashtags", [])) < 3 or len(data.get("hashtags", [])) > 4:
+              raise SystemExit("Caption must have three or four hashtags, appended separately by the publisher.")
+          slides = data.get("slides")
+          if not isinstance(slides, list) or len(slides) != 5:
+              raise SystemExit("Exactly five slides are required.")
+          for i, slide in enumerate(slides, 1):
+              title_words = len(str(slide.get("title", "")).split())
+              body_words = len(str(slide.get("body", "")).split())
+              if not 3 <= title_words <= 7 or not 5 <= body_words <= 18:
+                  raise SystemExit(f"Slide {i} copy is outside the standard template limits.")
+
+          metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
+          streams = metadata.get("streams", [])
+          video = next((item for item in streams if item.get("codec_type") == "video"), None)
+          duration = float(metadata.get("format", {}).get("duration", 0))
+          formats = str(metadata.get("format", {}).get("format_name", "")).split(",")
+          size = Path("linkedin_video.mp4").stat().st_size
+          bitrate = int(video.get("bit_rate") or 0) if video else 0
+          if not video or video.get("codec_name") != "h264" or video.get("width") != 1080 or video.get("height") != 1350:
+              raise SystemExit("Video must use H.264 at 1080x1350 portrait.")
+          if video.get("r_frame_rate") != "24/1" or video.get("pix_fmt") != "yuv420p" or video.get("profile") != "High" or video.get("level") != 42:
+              raise SystemExit("Video must remain High Profile Level 4.2, 24 fps, yuv420p.")
+          if "mp4" not in formats or any(item.get("codec_type") == "audio" for item in streams):
+              raise SystemExit("Video must be silent MP4.")
+          if not 15.5 <= duration <= 16.2 or not 50_000_000 <= size <= 70_000_000 or not 25_000_000 <= bitrate <= 31_000_000:
+              raise SystemExit(f"Video format mismatch: duration={duration:.2f}s, size={size:,}, bitrate={bitrate}.")
+          print(f"Validated standardized Day 5: {words} caption words, five slides, {duration:.2f}s MP4, {size:,} bytes.")
+          PY
+
+      - name: Publish reformatted video with caption
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PUBLISH_TO_LINKEDIN: "true"
+          PUBLISH_INTENT: reformat
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_TOPIC_DAY: "5"
+          LINKEDIN_VIDEO_API_VERSION: "202606"
+          LINKEDIN_POSTS_API_VERSION: "202609"
+        run: python src/publish_linkedin.py
+
+      - name: Mark request published and close it
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue.body || "").replace("REQUEST_STATUS: OPEN", "REQUEST_STATUS: PUBLISHED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "LinkedIn confirmed creation of the reformatted Day 5 video post. The reformat publication is saved in the ledger; tomorrow's scheduled topic sequence remains intact. Run: https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/actions/runs/" + context.runId
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body,
+              state: "closed"
+            });
+
+  close-skipped:
+    needs: [reformat-preflight, publish-reformatted]
+    if: >-
+      always() &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Republish reformatted Day 5 LinkedIn post now' &&
+      needs.reformat-preflight.result == 'success' &&
+      needs.reformat-preflight.outputs.should_run == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Explain safe skip
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue.body || "").replace("REQUEST_STATUS: OPEN", "REQUEST_STATUS: SKIPPED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "No replacement was published because today's reformat attempt is already recorded or the ledger needs manual review."
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body,
+              state: "closed"
+            });
+
+  close-failed:
+    needs: [reformat-preflight, publish-reformatted]
+    if: >-
+      always() &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Republish reformatted Day 5 LinkedIn post now' &&
+      (needs.reformat-preflight.result == 'failure' || needs.publish-reformatted.result == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Record failed request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue.body || "").replace("REQUEST_STATUS: OPEN", "REQUEST_STATUS: FAILED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "The reformat did not complete. Inspect this Actions run and the publication ledger before retrying. Run: https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/actions/runs/" + context.runId
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body,
+              state: "closed"
+            });
