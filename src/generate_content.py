@@ -567,6 +567,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     print(source_facts)
 
     fixed_day4_correction = os.getenv("PUBLISH_FIXED_DAY4_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
+    fixed_day5_standard = os.getenv("PUBLISH_FIXED_DAY5_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
     if fixed_day4_correction:
         if topic != "Loading chart data asynchronously with useEffect":
             raise RuntimeError("The fixed correction template is only available for Day 4.")
@@ -611,6 +612,50 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             ],
         }
         print("Using the standardized, source-grounded Day 4 correction copy and slides.")
+    elif fixed_day5_standard:
+        if topic != "Debugging TypeScript and chart rendering issues":
+            raise RuntimeError("The fixed standard template is only available for Day 5.")
+        data = {
+            "topic": topic,
+            "post": (
+                "Debugging chart rendering issues means checking the data shape as well as the TypeScript code. "
+                "A chart may not display as expected when incoming data has the wrong shape.\n\n"
+                "During my Techqueto internship, I worked on TypeScript, data-shape, and rendering issues across multiple chart types. "
+                "This made it important to trace both the values being passed and the code responsible for displaying them.\n\n"
+                "My takeaway is to check types, data shape, and rendering in a clear order before changing the UI. "
+                "A systematic approach keeps frontend debugging focused on the actual problem."
+            ),
+            "hashtags": ["TypeScript", "ReactJS", "GoogleCharts", "FrontendDevelopment"],
+            "video_title": "Debugging TypeScript and Chart Rendering",
+            "slides": [
+                {
+                    "title": "Debugging Chart Rendering Issues",
+                    "body": "Start by checking how the chart appears before changing the UI.",
+                    "visual_type": "chart",
+                },
+                {
+                    "title": "Review TypeScript Data Types",
+                    "body": "Check the types used for chart data and configuration.",
+                    "visual_type": "code",
+                },
+                {
+                    "title": "Verify The Data Shape",
+                    "body": "Confirm values match the structure expected by the chart.",
+                    "visual_type": "flow",
+                },
+                {
+                    "title": "Apply It To Chart Work",
+                    "body": "These checks relate to debugging multiple chart types at Techqueto.",
+                    "visual_type": "chart",
+                },
+                {
+                    "title": "Debug One Layer At A Time",
+                    "body": "Check types, data shape, and rendering in a clear order.",
+                    "visual_type": "learning",
+                },
+            ],
+        }
+        print("Using the standardized, source-grounded Day 5 copy and slides.")
     else:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
