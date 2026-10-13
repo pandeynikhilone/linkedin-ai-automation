@@ -381,12 +381,13 @@ def main():
     is_correction = publish_intent == "correction"
     is_extra = publish_intent == "extra"
     is_reformat = publish_intent == "reformat"
-    if publish_intent in {"correction", "extra", "reformat"} and not request_id.isdigit():
-        raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for correction, extra, or reformat publication.")
+    is_plan_extra = publish_intent == "plan_extra"
+    if publish_intent in {"correction", "extra", "reformat", "plan_extra"} and not request_id.isdigit():
+        raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for correction, extra, reformat, or planned-extra publication.")
     if request_id:
         if not request_id.isdigit():
             raise RuntimeError("PUBLISH_REQUEST_ID must be a numeric GitHub issue number.")
-        suffix = "correction" if is_correction else "extra" if is_extra else "reformat" if is_reformat else "request"
+        suffix = "correction" if is_correction else "extra" if is_extra else "reformat" if is_reformat else "plan-extra" if is_plan_extra else "request"
         date_key = f"{now.date().isoformat()}-{suffix}-{request_id}"
     else:
         if is_correction:
@@ -403,7 +404,41 @@ def main():
     # titled owner-triggered correction request is the sole exception, and is
     # limited to one correction attempt after a confirmed original post.
     daily_slot = ledger["dates"].get(daily_key)
-    if is_reformat:
+    if is_plan_extra:
+        requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
+        expected_topic = {"6": "Making chart components easier to extend"}.get(requested_day)
+        if expected_topic is None or data.get("topic") != expected_topic:
+            raise RuntimeError("Planned-extra publication is restricted to the verified Day 6 topic.")
+        day_records = [
+            (key, value) for key, value in ledger["dates"].items()
+            if key == daily_key or key.startswith(f"{daily_key}-")
+        ]
+        baseline_published = any(
+            isinstance(value, dict) and value.get("status") == "published"
+            and "-plan-extra-" not in key and value.get("topic") != expected_topic
+            for key, value in day_records
+        )
+        if not baseline_published:
+            raise RuntimeError("A Day 6 extra post requires a confirmed publication earlier today.")
+        uncertain = [
+            key for key, value in day_records
+            if isinstance(value, dict) and value.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger has an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before proceeding."
+            )
+        prior_day6 = [
+            key for key, value in ledger["dates"].items()
+            if (key == daily_key or key.startswith(f"{daily_key}-"))
+            and isinstance(value, dict)
+            and value.get("topic") == expected_topic
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_day6:
+            raise RuntimeError("Day 6 already has a published or uncertain publication record today.")
+    elif is_reformat:
         requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
         expected_topic = {
             "5": "Debugging TypeScript and chart rendering issues",
