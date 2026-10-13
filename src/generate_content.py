@@ -618,44 +618,44 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         data = {
             "topic": topic,
             "post": (
-                "Debugging chart rendering issues means checking the data shape as well as the TypeScript code. "
-                "A chart may not display as expected when incoming data has the wrong shape.\n\n"
-                "During my Techqueto internship, I worked on TypeScript, data-shape, and rendering issues across multiple chart types. "
-                "This made it important to trace both the values being passed and the code responsible for displaying them.\n\n"
-                "My takeaway is to check types, data shape, and rendering in a clear order before changing the UI. "
-                "A systematic approach keeps frontend debugging focused on the actual problem."
+                "Debugging chart issues requires more than looking at the final visual. "
+                "TypeScript errors and unexpected data shapes can affect what a chart receives and displays.\n\n"
+                "During my Techqueto internship, I worked on TypeScript, data-shape, and chart-rendering issues across multiple chart types. "
+                "Checking the code, incoming values, and displayed result helps keep the investigation focused.\n\n"
+                "My takeaway is to verify the types, data structure, and rendered output before changing the component. "
+                "Looking at each layer makes it easier to identify where a mismatch may begin."
             ),
             "hashtags": ["TypeScript", "ReactJS", "GoogleCharts", "FrontendDevelopment"],
-            "video_title": "Debugging TypeScript and Chart Rendering",
+            "video_title": "Debugging Chart Issues Step by Step",
             "slides": [
                 {
-                    "title": "Debugging Chart Rendering Issues",
-                    "body": "Start by checking how the chart appears before changing the UI.",
-                    "visual_type": "chart",
-                },
-                {
-                    "title": "Review TypeScript Data Types",
-                    "body": "Check the types used for chart data and configuration.",
-                    "visual_type": "code",
-                },
-                {
-                    "title": "Verify The Data Shape",
-                    "body": "Confirm values match the structure expected by the chart.",
+                    "title": "Start With The Actual Issue",
+                    "body": "Chart display problems can involve TypeScript, data shape, or rendering.",
                     "visual_type": "flow",
                 },
                 {
-                    "title": "Apply It To Chart Work",
-                    "body": "These checks relate to debugging multiple chart types at Techqueto.",
+                    "title": "Check The Expected Types",
+                    "body": "TypeScript helps identify whether values fit the expectations of the chart code.",
+                    "visual_type": "code",
+                },
+                {
+                    "title": "Inspect The Incoming Data",
+                    "body": "Unexpected data shapes can change what the chart component receives.",
                     "visual_type": "chart",
                 },
                 {
-                    "title": "Debug One Layer At A Time",
-                    "body": "Check types, data shape, and rendering in a clear order.",
+                    "title": "Compare Data And Rendering",
+                    "body": "Look at the supplied structure alongside the chart output.",
+                    "visual_type": "flow",
+                },
+                {
+                    "title": "A Clearer Debugging Routine",
+                    "body": "Check types, data shape, and rendering before assuming one cause.",
                     "visual_type": "learning",
                 },
             ],
         }
-        print("Using the standardized, source-grounded Day 5 copy and slides.")
+        print("Using the reformatted, source-grounded Day 5 caption and standard five-slide template.")
     else:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
