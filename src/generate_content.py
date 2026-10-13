@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import re
 import sys
 import time
 from datetime import date, datetime
@@ -417,6 +418,18 @@ def clean_text(value):
     return str(value).replace("\u2014", ",").replace("\u2013", "-").strip()
 
 
+def normalize_post_text(value):
+    """Standardize all captions as three plain-text paragraphs."""
+    text = clean_text(value)
+    blocks = re.split(r"\n\s*\n", text)
+    paragraphs = []
+    for block in blocks:
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        if lines:
+            paragraphs.append(" ".join(lines))
+    return "\n\n".join(paragraphs)
+
+
 def clean_hashtags(values):
     result = []
     seen = set()
@@ -491,10 +504,6 @@ def source_grounded_fallback(topic):
 
 
 def main():
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY is missing. Add it to GitHub Actions secrets.")
-
     today = datetime.now(ZoneInfo("Asia/Kolkata"))
     requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
     topic_index = select_topic_index(today.date(), requested_day)
@@ -521,25 +530,27 @@ Verified source facts:
 Topic angle: {post_angle}
 
 LinkedIn text requirements:
-- Aim for 70 to 95 words. Hard maximum: 110 words.
-- Write like an MCA student or early-career developer describing real work in a direct, natural voice.
-- Start with a clear, specific opening line. Use short paragraphs separated by blank lines. At most three short bullet points if useful.
-- Finish with a concise takeaway. Avoid generic motivation, sales language, excessive excitement, engagement bait, and stock phrases.
+- Write 70 to 95 words, using exactly three plain-text paragraphs separated by one blank line.
+- Paragraph 1: a specific, natural opening about the technical task. Do not use a standalone title or heading.
+- Paragraph 2: explain the verified work in a direct first-person voice, without adding unsupported details.
+- Paragraph 3: finish with one concise, practical takeaway grounded in the topic.
+- Keep each paragraph to one or two sentences. Use no bullets, numbered lists, emojis, markdown, or inline hashtags.
+- Use simple, readable sentences and the same caption structure for every post, so the series remains consistent.
+- Avoid generic motivation, sales language, excessive excitement, engagement bait, and stock phrases.
 - Do not invent personal stories, feelings, incidents, fixes, outcomes, users, metrics, dates, features, technical decisions, or achievements.
 - Use first person only for contributions explicitly attributed to Nikhil. Credit collaborators accurately.
 - Do not describe Truloop's receipt validation as guaranteed proof of purchase.
 - Do not use long dash punctuation. Use ordinary punctuation and short sentences.
-- Return 3 or 4 relevant hashtags separately from the post body.
+- Return 3 or 4 relevant hashtags separately from the post body. The publisher appends these on their own line after the caption.
 - The post body is the LinkedIn caption accompanying the video, not text to place in a video footer.
 - Make the caption clearly explain the specific work shown in today's video and why the implementation detail matters.
-- Use 2 or 3 short paragraphs with blank lines. Keep the first line specific, not generic.
 - The caption must make sense when read without watching the video. Do not leave it as just a title or a teaser.
-- Keep the hashtags separate so the publisher can append them after the main body.
 
 Video requirements:
 - Give a short, accurate video title.
-- Return exactly five slides, each with a short title, a body of 5 to 18 words, and one visual_type.
-- Slide titles should generally be 3 to 7 words and readable on a phone.
+- Return exactly five slides in the same sequence on every post: task/context, implementation, key detail, project application, practical takeaway.
+- Each slide must have a short title of 3 to 7 words, body copy of 5 to 18 words, and one visual_type.
+- Keep one concise sentence in each slide body; do not add headings, footnotes, captions, or footer text.
 - visual_type must be one of: chart, flow, code, product, database, form, checklist, git, stack, learning.
 - Use a simple sequence: introduce the real problem or task, explain the implementation, show a key detail, add a practical implication, end with a grounded takeaway.
 - Use only the verified facts above. Do not invent UI, product features, data, metrics, or outcomes.
@@ -555,25 +566,74 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     print("Verified source facts:")
     print(source_facts)
 
-    client = genai.Client(
-        api_key=api_key,
-        http_options=types.HttpOptions(timeout=60_000),
-    )
-    model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
-    try:
-        with client:
-            response = generate_with_retry(client, model, prompt)
-        if not response.text:
-            raise RuntimeError("Gemini returned an empty response.")
-        data = json.loads(response.text)
-    except Exception as exc:
-        if topic != "Replacing hardcoded chart values with JSON-driven data":
-            raise
-        print(
-            "WARNING: Gemini generation failed for today's Day 2 topic "
-            f"({type(exc).__name__}: {exc}). Using a verified, source-grounded fallback."
+    fixed_day4_correction = os.getenv("PUBLISH_FIXED_DAY4_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
+    if fixed_day4_correction:
+        if topic != "Loading chart data asynchronously with useEffect":
+            raise RuntimeError("The fixed correction template is only available for Day 4.")
+        data = {
+            "topic": topic,
+            "post": (
+                "Loading chart data asynchronously is an important part of building data-driven React components.\n\n"
+                "During my Techqueto internship, I worked with asynchronous data loading using React's useEffect in chart-related work. "
+                "It reinforced the importance of organizing side effects within the component lifecycle instead of mixing data-loading logic "
+                "into the chart's display code.\n\n"
+                "My takeaway is simple: keeping data loading separate from rendering makes components easier to understand and maintain "
+                "as a project evolves."
+            ),
+            "hashtags": ["ReactJS", "TypeScript", "FrontendDevelopment", "WebDevelopment"],
+            "video_title": "Loading Chart Data with React useEffect",
+            "slides": [
+                {
+                    "title": "Loading data in React",
+                    "body": "Chart data may arrive after the component first renders.",
+                    "visual_type": "flow",
+                },
+                {
+                    "title": "Organize side effects",
+                    "body": "React useEffect helps organize side-effect logic around component lifecycle changes.",
+                    "visual_type": "code",
+                },
+                {
+                    "title": "Keep data flow clear",
+                    "body": "Separate asynchronous loading logic from the code that displays chart data.",
+                    "visual_type": "flow",
+                },
+                {
+                    "title": "Apply it to chart work",
+                    "body": "This was part of my React chart development work at Techqueto.",
+                    "visual_type": "chart",
+                },
+                {
+                    "title": "A maintainable component",
+                    "body": "Clear responsibilities make components easier to understand and maintain.",
+                    "visual_type": "learning",
+                },
+            ],
+        }
+        print("Using the standardized, source-grounded Day 4 correction copy and slides.")
+    else:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY is missing. Add it to GitHub Actions secrets.")
+        client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(timeout=60_000),
         )
-        data = source_grounded_fallback(topic)
+        model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+        try:
+            with client:
+                response = generate_with_retry(client, model, prompt)
+            if not response.text:
+                raise RuntimeError("Gemini returned an empty response.")
+            data = json.loads(response.text)
+        except Exception as exc:
+            if topic != "Replacing hardcoded chart values with JSON-driven data":
+                raise
+            print(
+                "WARNING: Gemini generation failed for today's Day 2 topic "
+                f"({type(exc).__name__}: {exc}). Using a verified, source-grounded fallback."
+            )
+            data = source_grounded_fallback(topic)
 
     required = {"topic", "post", "hashtags", "video_title", "slides"}
     if not isinstance(data, dict) or not required.issubset(data):
@@ -581,12 +641,20 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
 
     data["topic"] = topic
     data["source_facts"] = selected_topic["facts"]
-    data["post"] = clean_text(data["post"])
+    data["post"] = normalize_post_text(data["post"])
     data["video_title"] = clean_text(data["video_title"])[:180]
 
     word_count = len(data["post"].split())
-    if word_count < 45 or word_count > 110:
-        raise RuntimeError(f"Post body must contain 45 to 110 words, received {word_count}.")
+    if word_count < 70 or word_count > 95:
+        raise RuntimeError(f"Post body must contain 70 to 95 words, received {word_count}.")
+    paragraphs = [paragraph for paragraph in data["post"].split("\n\n") if paragraph.strip()]
+    if len(paragraphs) != 3:
+        raise RuntimeError(f"Post body must contain exactly three paragraphs, received {len(paragraphs)}.")
+    if "#" in data["post"] or any(
+        re.match(r"^\s*(?:#{1,6}\s|[-*•]\s|\d+[.)]\s)", paragraph)
+        for paragraph in paragraphs
+    ):
+        raise RuntimeError("Post body must be plain text without hashtags, headings, or list formatting.")
     if not data["video_title"]:
         data["video_title"] = topic[:180]
     if not isinstance(data["hashtags"], list):
@@ -608,11 +676,11 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         visual_type = clean_text(slide.get("visual_type", "")).casefold()
         if not title or not body:
             raise RuntimeError(f"Slide {number} is missing its title or body.")
-        if len(title.split()) > 9:
-            raise RuntimeError(f"Slide {number} title is too long for mobile viewing.")
+        if len(title.split()) < 3 or len(title.split()) > 7:
+            raise RuntimeError(f"Slide {number} title must contain 3 to 7 words for consistent mobile layout.")
         body_words = len(body.split())
-        if body_words < 4 or body_words > 20:
-            raise RuntimeError(f"Slide {number} body must contain 4 to 20 words.")
+        if body_words < 5 or body_words > 18:
+            raise RuntimeError(f"Slide {number} body must contain 5 to 18 words.")
         if visual_type not in SLIDE_VISUAL_TYPES:
             raise RuntimeError(f"Slide {number} uses unsupported visual_type: {visual_type}")
         cleaned_slides.append({"title": title, "body": body, "visual_type": visual_type})
