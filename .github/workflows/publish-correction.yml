@@ -46,8 +46,8 @@ jobs:
 
           title = os.getenv("ISSUE_TITLE", "")
           body = os.getenv("ISSUE_BODY", "")
-          title_match = re.fullmatch(r"Publish corrected Day (\\d{1,2}) LinkedIn post now", title)
-          marker_match = re.search(r"^PUBLISH_CORRECTION_DAY=(\\d{1,2})$", body, re.MULTILINE)
+          title_match = re.fullmatch(r"Publish corrected Day (\d{1,2}) LinkedIn post now", title)
+          marker_match = re.search(r"^PUBLISH_CORRECTION_DAY=(\d{1,2})$", body, re.MULTILINE)
           if not title_match or not marker_match:
               raise SystemExit("Use the exact correction title and PUBLISH_CORRECTION_DAY marker.")
           title_day = int(title_match.group(1))
@@ -98,7 +98,7 @@ jobs:
                   f"requested Day {title_day}."
               )
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"topic_day={title_day}\\n")
+              output.write(f"topic_day={title_day}\n")
           print(f"Correction preflight passed for today's confirmed Day {title_day} post.")
           PY
 
@@ -171,7 +171,7 @@ jobs:
           if not expected_topic or data.get("topic") != expected_topic:
               raise SystemExit(f"Topic mismatch for Day {day}: expected {expected_topic!r}.")
           post = str(data.get("post") or "").strip()
-          paragraphs = [part.strip() for part in post.split("\\n\\n") if part.strip()]
+          paragraphs = [part.strip() for part in post.split("\n\n") if part.strip()]
           words = len(post.split())
           if not 70 <= words <= 95 or len(paragraphs) != 3:
               raise SystemExit(f"Caption must be 70-95 words in exactly three paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
