@@ -403,10 +403,19 @@ def main():
     # limited to one correction attempt after a confirmed original post.
     daily_slot = ledger["dates"].get(daily_key)
     if is_extra:
-        expected_topic = "Why I created reusable chart utilities in common.ts"
+        requested_extra_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
+        extra_topics = {
+            "3": "Why I created reusable chart utilities in common.ts",
+            "5": "Debugging TypeScript and chart rendering issues",
+        }
+        expected_topic = extra_topics.get(requested_extra_day)
+        if expected_topic is None:
+            raise RuntimeError(
+                "Extra publication is allowed only for explicitly supported content-plan days (3 or 5)."
+            )
         if data.get("topic") != expected_topic:
             raise RuntimeError(
-                f"Day 3 extra publication must use the exact planned topic: {expected_topic!r}."
+                f"Day {requested_extra_day} extra publication must use the exact planned topic: {expected_topic!r}."
             )
         day_records = [
             (key, value) for key, value in ledger["dates"].items()
