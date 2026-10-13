@@ -16,6 +16,7 @@ on:
       - "Daily LinkedIn Career Video"
       - "Republish Corrected LinkedIn Video Post"
       - "Publish Selected LinkedIn Plan Day"
+      - "Publish Corrected LinkedIn Post"
     types: [completed]
   schedule:
     # Refresh at 00:05 IST so the manual publish control resets for the new India-local date.
