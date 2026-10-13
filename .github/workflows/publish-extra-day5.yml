@@ -1,0 +1,287 @@
+name: Publish Extra LinkedIn Plan Day
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: linkedin-extra-plan-publication
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish Day 5 LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_DAY5_NOW')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      should_run: ${{ steps.slot.outputs.should_run }}
+      topic_day: ${{ steps.request.outputs.topic_day }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate request and publication sequence
+        id: request
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          title = os.getenv("ISSUE_TITLE", "")
+          body = os.getenv("ISSUE_BODY", "")
+          if title != "Publish Day 5 LinkedIn post now" or not re.search(r"^PUBLISH_DAY5_NOW$", body, re.MULTILINE):
+              raise SystemExit("Use the exact Day 5 title and PUBLISH_DAY5_NOW marker.")
+
+          plan = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          ledger = json.loads(Path("published-ledger.json").read_text(encoding="utf-8"))
+          topics = plan.get("topics", [])
+          dates = ledger.get("dates", {})
+          if len(topics) != 30 or not isinstance(dates, dict):
+              raise SystemExit("The content plan or publication ledger is invalid.")
+
+          day_to_topic = {int(row["day"]): str(row["topic"]) for row in topics}
+          latest = None
+          timezone = ZoneInfo("Asia/Kolkata")
+          for key, record in dates.items():
+              if not isinstance(record, dict) or record.get("status") != "published":
+                  continue
+              day = next((n for n, topic in day_to_topic.items() if topic == record.get("topic")), None)
+              if day is None:
+                  continue
+              stamp_text = record.get("published_at") or record.get("started_at") or record.get("recorded_at") or str(key)[:10]
+              try:
+                  stamp = datetime.fromisoformat(str(stamp_text).replace("Z", "+00:00"))
+              except (TypeError, ValueError):
+                  stamp = datetime.fromisoformat(str(key)[:10])
+              if stamp.tzinfo is None:
+                  stamp = stamp.replace(tzinfo=timezone)
+              order = (stamp.timestamp(), str(key), day)
+              if latest is None or order > latest:
+                  latest = order
+
+          expected_day = (latest[2] % len(topics) + 1) if latest else int(topics[0].get("day", 1))
+          if expected_day != 5:
+              raise SystemExit(f"Day 5 is not the next plan topic; ledger expects Day {expected_day}.")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("topic_day=5\n")
+          print("Day 5 is the next plan topic. The extra-post request will not change the 04:00 IST schedule.")
+          PY
+
+      - name: Confirm a published post today and reserve one extra slot
+        id: slot
+        env:
+          PUBLISH_INTENT: extra
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+        run: python3 src/check_publication_slot.py
+
+  publish:
+    needs: preflight
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish Day 5 LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_DAY5_NOW') &&
+      needs.preflight.result == 'success' &&
+      needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install FFmpeg and fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Generate the standardized Day 5 caption and slides
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
+          PUBLISH_TOPIC_DAY: ${{ needs.preflight.outputs.topic_day }}
+          PUBLISH_FIXED_DAY5_TEMPLATE: "true"
+        run: python src/generate_content.py
+
+      - name: Render the standard animated portrait video
+        run: python src/create_video.py
+
+      - name: Validate caption, five slides, and MP4 format
+        env:
+          REQUESTED_TOPIC_DAY: ${{ needs.preflight.outputs.topic_day }}
+        run: |
+          test -s content.json
+          test -s linkedin_video.mp4
+          python -m json.tool content.json > /dev/null
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,pix_fmt,profile,level,bit_rate -show_entries format=duration,format_name -of json linkedin_video.mp4 > video_metadata.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          day = int(os.environ["REQUESTED_TOPIC_DAY"])
+          plan = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          expected = next((row["topic"] for row in plan["topics"] if int(row["day"]) == day), None)
+          if data.get("topic") != expected:
+              raise SystemExit(f"Topic mismatch: expected {expected!r}, got {data.get('topic')!r}.")
+          post = str(data.get("post") or "").strip()
+          paragraphs = [part.strip() for part in post.split("\n\n") if part.strip()]
+          word_count = len(post.split())
+          if not 70 <= word_count <= 95 or len(paragraphs) != 3:
+              raise SystemExit(f"Caption must be 70-95 words in exactly three paragraphs; got {word_count} words and {len(paragraphs)} paragraphs.")
+          if "#" in post or any(part.startswith(("#", "- ", "* ", "• ")) for part in paragraphs):
+              raise SystemExit("Caption must be plain paragraphs; hashtags are appended separately.")
+          if not isinstance(data.get("hashtags"), list) or not 3 <= len(data["hashtags"]) <= 4:
+              raise SystemExit("Provide three or four relevant hashtags.")
+          slides = data.get("slides")
+          if not isinstance(slides, list) or len(slides) != 5:
+              raise SystemExit("Exactly five slides are required.")
+          for index, slide in enumerate(slides, 1):
+              title_words = len(str(slide.get("title", "")).split())
+              body_words = len(str(slide.get("body", "")).split())
+              if not 3 <= title_words <= 7 or not 5 <= body_words <= 18:
+                  raise SystemExit(f"Slide {index} text is outside the standard title/body limits.")
+
+          metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
+          streams = metadata.get("streams", [])
+          video = next((item for item in streams if item.get("codec_type") == "video"), None)
+          duration = float(metadata.get("format", {}).get("duration", 0))
+          formats = str(metadata.get("format", {}).get("format_name", "")).split(",")
+          size = Path("linkedin_video.mp4").stat().st_size
+          try:
+              bitrate = int(video.get("bit_rate") or 0) if video else 0
+          except (TypeError, ValueError):
+              bitrate = 0
+          if not video or video.get("codec_name") != "h264" or video.get("width") != 1080 or video.get("height") != 1350:
+              raise SystemExit("Video must be H.264 at 1080x1350 portrait.")
+          if video.get("r_frame_rate") != "24/1" or video.get("pix_fmt") != "yuv420p" or video.get("profile") != "High" or video.get("level") != 42:
+              raise SystemExit("Video must use High Profile Level 4.2, 24 fps, and yuv420p.")
+          if "mp4" not in formats or any(item.get("codec_type") == "audio" for item in streams):
+              raise SystemExit("Video must be a silent MP4.")
+          if not 15.5 <= duration <= 16.2 or not 50_000_000 <= size <= 70_000_000 or not 25_000_000 <= bitrate <= 31_000_000:
+              raise SystemExit(f"Video falls outside the standard format: duration={duration:.2f}s, size={size:,}, bitrate={bitrate}.")
+          print(f"Validated Day {day}: {word_count}-word caption, five-slide MP4, {duration:.2f}s, {size:,} bytes.")
+          PY
+
+      - name: Publish Day 5 video post
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PUBLISH_TO_LINKEDIN: "true"
+          PUBLISH_INTENT: extra
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_TOPIC_DAY: ${{ needs.preflight.outputs.topic_day }}
+          LINKEDIN_VIDEO_API_VERSION: "202606"
+          LINKEDIN_POSTS_API_VERSION: "202609"
+        run: python src/publish_linkedin.py
+
+      - name: Mark request published and close it
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue.body || "").replace("REQUEST_STATUS: OPEN", "REQUEST_STATUS: PUBLISHED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "LinkedIn confirmed creation of the standardized Day 5 video post. The publication ledger has been updated. Run: https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/actions/runs/" + context.runId
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body,
+              state: "closed"
+            });
+
+  close-skipped:
+    needs: [preflight, publish]
+    if: >-
+      always() &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish Day 5 LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_DAY5_NOW') &&
+      needs.preflight.result == 'success' &&
+      needs.preflight.outputs.should_run == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Mark skipped request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue.body || "").replace("REQUEST_STATUS: OPEN", "REQUEST_STATUS: SKIPPED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "Day 5 was not generated or published because today's extra-post slot is already used or requires review. Check the ledger before another attempt."
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body,
+              state: "closed"
+            });
+
+  close-failed:
+    needs: [preflight, publish]
+    if: >-
+      always() &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish Day 5 LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_DAY5_NOW') &&
+      (needs.preflight.result == 'failure' || needs.publish.result == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Mark failed request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue.body || "").replace("REQUEST_STATUS: OPEN", "REQUEST_STATUS: FAILED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "Day 5 publishing failed or could not be verified. Inspect the run and publication ledger before retrying; do not repeat an uncertain upload. Run: https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/actions/runs/" + context.runId
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body,
+              state: "closed"
+            });
