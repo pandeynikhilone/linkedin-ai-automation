@@ -54,6 +54,15 @@
       "published_at": "2026-10-12T20:52:58+05:30",
       "post_id": "urn:li:ugcPost:7515431830649577472",
       "video_urn": "urn:li:video:D5610AQEE0CF6N7WkFw"
+    },
+    "2026-10-13-request-24": {
+      "status": "publishing",
+      "started_at": "2026-10-13T07:41:27+05:30",
+      "topic": "Loading chart data asynchronously with useEffect",
+      "video_sha256": "c277fda88f36cffdd83bab7e9a6de2dd8b1b046b9a8eb984cf0e460c36ebb539",
+      "video_size_bytes": 59319739,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
