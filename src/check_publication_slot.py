@@ -38,11 +38,11 @@ def main() -> int:
         print("PREVIEW: Manual workflow run is preview-only, so the publication ledger will not block it.")
         write_output("should_run", "true")
         return 0
-    if intent not in {"scheduled", "request", "correction", "extra"}:
+    if intent not in {"scheduled", "request", "correction", "extra", "reformat"}:
         raise RuntimeError(f"Unsupported PUBLISH_INTENT: {intent!r}")
 
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
-    if intent in {"request", "correction", "extra"} and not request_id.isdigit():
+    if intent in {"request", "correction", "extra", "reformat"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for one-off publication requests.")
 
     today = datetime.now(TIME_ZONE).date().isoformat()
@@ -116,6 +116,45 @@ def main() -> int:
         if correction_key in dates:
             raise RuntimeError(f"Correction ledger entry {correction_key} already exists; refusing to retry.")
         print(f"READY: Today's original post is confirmed. One corrected replacement post may be published ({today}).")
+        write_output("should_run", "true")
+        return 0
+
+    if intent == "reformat":
+        reformat_key = f"{today}-reformat-{request_id}"
+        expected_topic = "Debugging TypeScript and chart rendering issues"
+        day_prefix = f"{today}-"
+        day_records = [
+            (key, record) for key, record in dates.items()
+            if key == today or key.startswith(day_prefix)
+        ]
+        baseline_published = any(
+            isinstance(record, dict)
+            and record.get("status") == "published"
+            and record.get("topic") == expected_topic
+            and "-reformat-" not in key
+            for key, record in day_records
+        )
+        if not baseline_published:
+            raise RuntimeError("A Day 5 reformat requires today's confirmed original Day 5 publication.")
+        uncertain = [
+            key for key, record in day_records
+            if isinstance(record, dict) and record.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger contains an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before reformatting."
+            )
+        if any(
+            key.startswith(f"{today}-reformat-")
+            and isinstance(record, dict)
+            and record.get("status") in {"published", "publishing", "needs_review"}
+            for key, record in day_records
+        ):
+            raise RuntimeError("A reformatted LinkedIn post was already attempted today.")
+        if reformat_key in dates:
+            raise RuntimeError(f"Reformat ledger entry {reformat_key} already exists; refusing to retry.")
+        print(f"READY: Today's original Day 5 post is confirmed; one formatted replacement may be published ({today}).")
         write_output("should_run", "true")
         return 0
 
