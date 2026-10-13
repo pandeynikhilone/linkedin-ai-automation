@@ -6,7 +6,7 @@ A daily content workflow that uses Nikhil Pandey's resume and public GitHub proj
 - Scheduled to begin at 4:00 AM Asia/Kolkata every day. Hourly recovery attempts continue until 2:00 PM IST if no publication is recorded.
 - Uses the existing 30-day plan based on the Techqueto internship, Truloop, and the TechFest registration project.
 - Writes 70 to 95 words of copy, with a hard maximum of 110 words.
-- Formats the post with a clear opening, short paragraphs, optional short bullets, and 3 or 4 relevant hashtags.
+- Formats every caption consistently as exactly three plain-text paragraphs: a specific opening, the verified work, and a practical takeaway. Three or four relevant hashtags are appended separately on their own line; captions contain no headings, bullets, emojis, or inline hashtags.
 - Produces exactly five slides with short titles, concise explanatory text, and drawn graphics.
 - Renders a 1080 x 1350 portrait MP4 at 24 fps, with gentle movement and transitions.
 - Encodes at 30 Mbit/s constant bitrate, the upper bitrate in LinkedIn's published member-video guidance. For the ~15.9-second clip this produces about 60 MB; the renderer and publisher reject files outside 50-70 MB.
@@ -34,6 +34,7 @@ The live [LinkedIn Content Control Room](https://pandeynikhilone.github.io/linke
 - Status feed builder: [scripts/build_dashboard_data.py](scripts/build_dashboard_data.py)
 - Only the **next topic in the publication sequence** can be manually requested. The request workflow independently checks this against the last confirmed publication in `published-ledger.json`.
 - The **Publish next post** button (or the enabled button on the next topic's row) opens a prefilled GitHub issue. As a static public website cannot safely hold a GitHub authorization token, click **Submit new issue** on GitHub to trigger the actual workflow. Only the repository owner’s issue can start publication.
+- If a just-published post has a formatting problem, the owner-only correction workflow can publish one corrected replacement for the same topic on the same India-local date. It does not advance the plan beyond that topic or change the next 04:00 IST publishing slot.
 - After a successful manual post, the publication ledger advances to the next topic. The daily schedule stays fixed at **04:00 Asia/Kolkata** with its existing hourly recovery attempts through 14:00 IST. The manual post consumes the current local date's slot; it does not move tomorrow's 04:00 time.
 - The public status feed contains topic titles, dates, statuses, and confirmed LinkedIn post links only. **The repository itself is public**, so source files such as `content-plan.json` and `published-ledger.json` are also publicly readable. Never add tokens or other secrets to this repo.
 
