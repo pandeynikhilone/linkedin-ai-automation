@@ -78,6 +78,15 @@
       "published_at": "2026-10-13T07:52:42+05:30",
       "post_id": "urn:li:ugcPost:7515597853839421440",
       "video_urn": "urn:li:video:D5610AQGbRiSnvnMX1w"
+    },
+    "2026-10-13-extra-27": {
+      "status": "publishing",
+      "started_at": "2026-10-13T16:02:59+05:30",
+      "topic": "Debugging TypeScript and chart rendering issues",
+      "video_sha256": "8eedf8b6a25d7f7e6a79069957281fb222bb526f4d7e0c401910a2e17155c5a0",
+      "video_size_bytes": 59319739,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
