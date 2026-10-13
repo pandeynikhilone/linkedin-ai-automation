@@ -568,6 +568,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
 
     fixed_day4_correction = os.getenv("PUBLISH_FIXED_DAY4_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
     fixed_day5_standard = os.getenv("PUBLISH_FIXED_DAY5_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
+    fixed_day6_standard = os.getenv("PUBLISH_FIXED_DAY6_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
     if fixed_day4_correction:
         if topic != "Loading chart data asynchronously with useEffect":
             raise RuntimeError("The fixed correction template is only available for Day 4.")
@@ -656,6 +657,50 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             ],
         }
         print("Using the reformatted, source-grounded Day 5 caption and standard five-slide template.")
+    elif fixed_day6_standard:
+        if topic != "Making chart components easier to extend":
+            raise RuntimeError("The fixed standard template is only available for Day 6.")
+        data = {
+            "topic": topic,
+            "post": (
+                "Building chart components for different chart types means thinking about what should stay reusable and what may need to change. "
+                "It is also useful to consider how the code can grow as requirements evolve.\n\n"
+                "During my Techqueto internship, I worked with line, bar, area, and pie charts. "
+                "The chart work was designed to be backend-ready and easier to extend, rather than assuming every future requirement in advance.\n\n"
+                "My takeaway is to keep component responsibilities clear and make future changes easier to reason about. "
+                "A flexible structure gives the next improvement a clearer place to start."
+            ),
+            "hashtags": ["ReactJS", "TypeScript", "FrontendDevelopment", "GoogleCharts"],
+            "video_title": "Making Chart Components Easier to Extend",
+            "slides": [
+                {
+                    "title": "Plan For More Chart Types",
+                    "body": "Line, bar, area, and pie charts were part of the internship work.",
+                    "visual_type": "chart",
+                },
+                {
+                    "title": "Keep Shared Work Reusable",
+                    "body": "Clear component responsibilities help related chart types remain understandable.",
+                    "visual_type": "stack",
+                },
+                {
+                    "title": "Leave Room For Change",
+                    "body": "The chart work was intended to be easier to extend as requirements evolve.",
+                    "visual_type": "flow",
+                },
+                {
+                    "title": "Think Beyond Today’s Inputs",
+                    "body": "Backend-ready design considers how data may be supplied later.",
+                    "visual_type": "code",
+                },
+                {
+                    "title": "Make Future Changes Clearer",
+                    "body": "A flexible structure gives the next improvement a clearer starting point.",
+                    "visual_type": "learning",
+                },
+            ],
+        }
+        print("Using the standardized, source-grounded Day 6 caption and five-slide template.")
     else:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
