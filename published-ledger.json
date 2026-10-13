@@ -90,6 +90,15 @@
       "published_at": "2026-10-13T16:03:28+05:30",
       "post_id": "urn:li:ugcPost:7515721362838081536",
       "video_urn": "urn:li:video:D5610AQFfv44qrGTABQ"
+    },
+    "2026-10-13-reformat-28": {
+      "status": "publishing",
+      "started_at": "2026-10-13T16:25:09+05:30",
+      "topic": "Debugging TypeScript and chart rendering issues",
+      "video_sha256": "ad10174631d422a5a19992f05aa74d07fa9f50fa77e5b325b21867d9985f7ef6",
+      "video_size_bytes": 59319739,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
