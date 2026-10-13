@@ -104,13 +104,16 @@
       "video_urn": "urn:li:video:D5610AQFY9TzgO5vN2w"
     },
     "2026-10-13-plan-extra-30": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-13T18:43:17+05:30",
       "topic": "Making chart components easier to extend",
       "video_sha256": "ee2b150eb76152dc31735d9fa20ae418be243d655bb7159cf8935b036c01cf9b",
       "video_size_bytes": 59319747,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-13T18:43:43+05:30",
+      "post_id": "urn:li:ugcPost:7515761687648710656",
+      "video_urn": "urn:li:video:D5610AQFz9Q8YogSkKQ"
     }
   }
 }
