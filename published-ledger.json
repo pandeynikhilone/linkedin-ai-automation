@@ -116,13 +116,16 @@
       "video_urn": "urn:li:video:D5610AQFz9Q8YogSkKQ"
     },
     "2026-10-14": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-14T06:48:53+05:30",
       "topic": "The technologies I used during my frontend internship",
       "video_sha256": "952e466aa96971a1dda6e07e27837e4f6695ba26fbeda0bf5a33033cdd77d674",
       "video_size_bytes": 59319747,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-14T06:49:25+05:30",
+      "post_id": "urn:li:ugcPost:7515944319116115968",
+      "video_urn": "urn:li:video:D5610AQE6R2d25AOhWQ"
     }
   }
 }
