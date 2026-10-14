@@ -114,6 +114,15 @@
       "published_at": "2026-10-13T18:43:43+05:30",
       "post_id": "urn:li:ugcPost:7515761687648710656",
       "video_urn": "urn:li:video:D5610AQFz9Q8YogSkKQ"
+    },
+    "2026-10-14": {
+      "status": "publishing",
+      "started_at": "2026-10-14T06:48:53+05:30",
+      "topic": "The technologies I used during my frontend internship",
+      "video_sha256": "952e466aa96971a1dda6e07e27837e4f6695ba26fbeda0bf5a33033cdd77d674",
+      "video_size_bytes": 59319747,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
