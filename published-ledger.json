@@ -126,6 +126,15 @@
       "published_at": "2026-10-14T06:49:25+05:30",
       "post_id": "urn:li:ugcPost:7515944319116115968",
       "video_urn": "urn:li:video:D5610AQE6R2d25AOhWQ"
+    },
+    "2026-10-15": {
+      "status": "publishing",
+      "started_at": "2026-10-15T06:09:40+05:30",
+      "topic": "The problem Truloop is designed to address",
+      "video_sha256": "353a06243c8b9ccce51ae44b5b3e0325c8340c0ef4c749e3a68065119b023960",
+      "video_size_bytes": 59319754,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
