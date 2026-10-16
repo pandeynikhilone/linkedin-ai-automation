@@ -310,10 +310,6 @@ def draw_visual(draw, slide, box, slide_index, theme):
             centered_label(draw, labels[i % len(labels)], (bx + 14, top + 145, bx + card_w - 14, bottom - 40),
                            load_font(20, True), ink, max_lines=3)
 
-    elif kind == "chart":
-        # This branch is intentionally handled above; the following is kept unreachable for clarity.
-        pass
-
     else:
         # Learning and architecture use labelled milestones, not ornamental nodes.
         count = min(4, max(3, len(labels)))
@@ -513,7 +509,7 @@ def render_slide(slide, index, total, topic, output_path):
         box = (76, min(box_top, 780), WIDTH - 76, 1050)
         draw_layout_visual(image, draw, slide, box, index, theme)
         draw.line((76, 1145, WIDTH - 76, 1145), fill=(65, 72, 93), width=2)
-        draw.text((78, 1181), "TRULOOP  /  CONTINUING TO LEARN IN PUBLIC",
+        draw.text((78, 1181), "REAL PROJECTS  /  CONTINUING TO LEARN IN PUBLIC",
                   font=load_font(15, True), fill=theme["on_dark_muted"])
 
     else:
