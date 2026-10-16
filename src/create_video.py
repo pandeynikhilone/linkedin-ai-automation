@@ -7,11 +7,12 @@ import sys
 import tempfile
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTENT_FILE = ROOT / "content.json"
 OUTPUT_FILE = ROOT / "linkedin_video.mp4"
+WEBSITE_SCREENSHOT = ROOT / "generated_assets" / "truloop_homepage.png"
 WIDTH = 1080
 HEIGHT = 1350
 FPS = 24
@@ -23,20 +24,20 @@ TARGET_BITRATE = "30M"
 TARGET_MIN_BYTES = 50_000_000
 TARGET_MAX_BYTES = 70_000_000
 
-PAPER = (248, 247, 239)
-PAPER_DARK = (239, 240, 228)
-WHITE = (255, 254, 250)
-INK = (26, 39, 31)
-GREEN = (40, 91, 67)
-GREEN_DARK = (21, 58, 42)
-LIME = (211, 239, 124)
-MUTED = (88, 104, 92)
-LINE = (215, 221, 211)
-TEAL = (111, 166, 151)
-CLAY = (199, 119, 91)
-OCHRE = (220, 177, 92)
-LAVENDER = (231, 227, 247)
-PALE_BLUE = (221, 232, 241)
+PAPER = (249, 250, 253)
+PAPER_DARK = (238, 241, 249)
+WHITE = (255, 255, 255)
+INK = (17, 19, 29)
+GREEN = (105, 74, 230)
+GREEN_DARK = (13, 16, 26)
+LIME = (91, 151, 255)
+MUTED = (87, 96, 116)
+LINE = (220, 225, 236)
+TEAL = (53, 143, 236)
+CLAY = (157, 88, 235)
+OCHRE = (126, 103, 250)
+LAVENDER = (239, 235, 255)
+PALE_BLUE = (229, 240, 255)
 
 FONT_REGULAR_PATHS = [
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -110,7 +111,7 @@ def draw_visual(draw, kind, box, slide_index):
     x1, y1, x2, y2 = box
     width = x2 - x1
     height = y2 - y1
-    card_colors = [WHITE, (236, 242, 229), PALE_BLUE, (248, 235, 224), LAVENDER]
+    card_colors = [WHITE, LAVENDER, PALE_BLUE, (242, 238, 255), (244, 246, 251)]
     fill = card_colors[slide_index % len(card_colors)]
     draw.rounded_rectangle(box, radius=30, fill=fill, outline=LINE, width=2)
 
@@ -240,8 +241,28 @@ def draw_visual(draw, kind, box, slide_index):
                          outline=GREEN, width=3)
 
 
+def draw_website_visual(canvas, draw, box):
+    """Place a genuine deployed-site screenshot into a frame without regenerating its UI."""
+    x1, y1, x2, y2 = box
+    draw.rounded_rectangle(box, radius=30, fill=WHITE, outline=LINE, width=3)
+
+    if not WEBSITE_SCREENSHOT.is_file():
+        return False
+
+    with Image.open(WEBSITE_SCREENSHOT) as source:
+        screenshot = source.convert("RGB")
+        max_size = (max(1, x2 - x1 - 36), max(1, y2 - y1 - 36))
+        fitted = ImageOps.contain(screenshot, max_size, method=Image.Resampling.LANCZOS)
+        px = x1 + (x2 - x1 - fitted.width) // 2
+        py = y1 + (y2 - y1 - fitted.height) // 2
+        canvas.paste(fitted, (px, py))
+        draw.rounded_rectangle((px, py, px + fitted.width - 1, py + fitted.height - 1),
+                               radius=12, outline=INK, width=2)
+    return True
+
+
 def render_slide(slide, index, total, topic, output_path):
-    palette = [PAPER, (246, 246, 237), (241, 245, 236), (247, 241, 231), (242, 244, 237)]
+    palette = [PAPER, (246, 247, 252), (239, 244, 255), (246, 241, 255), (242, 244, 251)]
     background = palette[index % len(palette)]
     image = Image.new("RGB", (WIDTH, HEIGHT), background)
     draw = ImageDraw.Draw(image)
@@ -279,12 +300,14 @@ def render_slide(slide, index, total, topic, output_path):
     # Expand the illustration into the reclaimed space and leave only a visual progress bar.
     visual_top = max(body_bottom + 28, 650)
     visual_bottom = min(visual_top + 470, 1220)
-    draw_visual(
-        draw,
-        slide.get("visual_type", "learning"),
-        (68, visual_top, WIDTH - 68, visual_bottom),
-        index,
-    )
+    visual_box = (68, visual_top, WIDTH - 68, visual_bottom)
+    visual_type = slide.get("visual_type", "learning")
+    if visual_type == "website":
+        if not draw_website_visual(image, draw, visual_box):
+            print("WARNING: No genuine TruLoop screenshot was available; using a flow diagram instead.")
+            draw_visual(draw, "flow", visual_box, index)
+    else:
+        draw_visual(draw, visual_type, visual_box, index)
 
     progress_x1 = 78
     progress_x2 = WIDTH - 78
