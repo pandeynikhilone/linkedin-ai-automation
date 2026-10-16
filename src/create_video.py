@@ -78,6 +78,20 @@ THEMES = [
         "secondary": (45, 183, 205), "accent": (189, 231, 113), "line": (209, 216, 232),
         "dark": (16, 19, 29), "on_dark": (246, 248, 255), "on_dark_muted": (181, 190, 209),
     },
+    {
+        "name": "monochrome",
+        "background": (250, 250, 248), "panel": (233, 233, 229), "surface": (255, 255, 255),
+        "ink": (20, 20, 22), "muted": (90, 90, 94), "primary": (25, 25, 28),
+        "secondary": (115, 118, 125), "accent": (236, 100, 72), "line": (220, 220, 216),
+        "dark": (19, 20, 23), "on_dark": (252, 252, 250), "on_dark_muted": (192, 194, 198),
+    },
+    {
+        "name": "terminal green",
+        "background": (242, 248, 240), "panel": (220, 237, 218), "surface": (253, 255, 251),
+        "ink": (22, 45, 27), "muted": (80, 107, 83), "primary": (29, 97, 54),
+        "secondary": (43, 143, 93), "accent": (190, 227, 91), "line": (205, 225, 201),
+        "dark": (10, 31, 19), "on_dark": (245, 255, 241), "on_dark_muted": (177, 205, 175),
+    },
 ]
 
 FONT_REGULAR_PATHS = [
@@ -423,6 +437,14 @@ def render_slide(slide, index, total, topic, output_path):
     elif theme["name"] == "dark studio":
         draw.ellipse((WIDTH - 360, -170, WIDTH + 120, 320), fill=(32, 39, 59))
         draw.arc((WIDTH - 430, -240, WIDTH + 20, 390), 15, 205, fill=theme["primary"], width=3)
+    elif theme["name"] == "monochrome":
+        for dot_x in range(WIDTH - 230, WIDTH - 65, 24):
+            for dot_y in range(145, 300, 24):
+                draw.ellipse((dot_x, dot_y, dot_x + 3, dot_y + 3), fill=(218, 218, 214))
+    elif theme["name"] == "terminal green":
+        for dot_x in range(WIDTH - 250, WIDTH - 65, 22):
+            for dot_y in range(135, 300, 22):
+                draw.rounded_rectangle((dot_x, dot_y, dot_x + 5, dot_y + 5), radius=2, fill=(211, 230, 205))
 
     draw_brand_line(draw, index + 1, total, theme, light=(layout in {"hero", "closing"}))
 
