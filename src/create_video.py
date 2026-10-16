@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parent.parent
 CONTENT_FILE = ROOT / "content.json"
 OUTPUT_FILE = ROOT / "linkedin_video.mp4"
 WEBSITE_SCREENSHOT = ROOT / "generated_assets" / "truloop_homepage.png"
+PRODUCTS_SCREENSHOT = ROOT / "generated_assets" / "truloop_products.png"
+PRODUCT_DETAIL_SCREENSHOT = ROOT / "generated_assets" / "truloop_product_detail.png"
 WIDTH = 1080
 HEIGHT = 1350
 FPS = 24
@@ -241,15 +243,23 @@ def draw_visual(draw, kind, box, slide_index):
                          outline=GREEN, width=3)
 
 
-def draw_website_visual(canvas, draw, box):
-    """Place a genuine deployed-site screenshot into a frame without regenerating its UI."""
+def draw_website_visual(canvas, draw, box, slide):
+    """Place an unmodified screen capture from the deployed TruLoop site into a frame."""
     x1, y1, x2, y2 = box
     draw.rounded_rectangle(box, radius=30, fill=WHITE, outline=LINE, width=3)
 
-    if not WEBSITE_SCREENSHOT.is_file():
+    context = (str(slide.get("title", "")) + " " + str(slide.get("body", ""))).casefold()
+    if any(term in context for term in ("product detail", "specification", "product page", "detail page")):
+        candidates = [PRODUCT_DETAIL_SCREENSHOT, PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("catalog", "catalogue", "listing", "browse products", "product list")):
+        candidates = [PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
+    else:
+        candidates = [WEBSITE_SCREENSHOT, PRODUCTS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT]
+    screenshot_path = next((path for path in candidates if path.is_file()), None)
+    if screenshot_path is None:
         return False
 
-    with Image.open(WEBSITE_SCREENSHOT) as source:
+    with Image.open(screenshot_path) as source:
         screenshot = source.convert("RGB")
         max_size = (max(1, x2 - x1 - 36), max(1, y2 - y1 - 36))
         fitted = ImageOps.contain(screenshot, max_size, method=Image.Resampling.LANCZOS)
@@ -303,7 +313,7 @@ def render_slide(slide, index, total, topic, output_path):
     visual_box = (68, visual_top, WIDTH - 68, visual_bottom)
     visual_type = slide.get("visual_type", "learning")
     if visual_type == "website":
-        if not draw_website_visual(image, draw, visual_box):
+        if not draw_website_visual(image, draw, visual_box, slide):
             print("WARNING: No genuine TruLoop screenshot was available; using a flow diagram instead.")
             draw_visual(draw, "flow", visual_box, index)
     else:
