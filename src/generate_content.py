@@ -783,6 +783,14 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             raise RuntimeError(f"Slide {number} uses unsupported visual_type: {visual_type}")
         cleaned_slides.append({"title": title, "body": body, "visual_type": visual_type})
 
+    website_count = sum(1 for slide in cleaned_slides if slide["visual_type"] == "website")
+    if "truloop" in topic.casefold() and website_count != 1:
+        raise RuntimeError("TruLoop video must contain exactly one website slide using the genuine deployed screenshot.")
+    if "truloop" not in topic.casefold() and website_count:
+        raise RuntimeError("Website screenshot slides are only allowed for TruLoop topics.")
+    if any(mark in data["post"] for mark in ("\\u2014", "\\u2013")):
+        raise RuntimeError("Post body must not contain em dash or en dash punctuation.")
+
     data["slides"] = cleaned_slides
     OUTPUT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
