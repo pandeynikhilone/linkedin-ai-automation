@@ -139,10 +139,10 @@ a{color:inherit}.shell{max-width:1240px;margin:0 auto;padding:28px 22px 48px}.to
     document.getElementById("syncLabel").textContent = "Synced " + (fmtTime(latestData.generatedAt) || "just now") + " · refreshes every 30s";
     if(latestData.slotAvailable){
       document.getElementById("noticeTitle").textContent = "Ready for a controlled publish request";
-      document.getElementById("noticeText").textContent = "Publish opens a prefilled GitHub issue. Submit the issue while signed in as the repository owner to start the workflow. The automation verifies the day number, content, video format, credentials and daily duplicate protection. The page auto-refreshes as status data is redeployed.";
+      document.getElementById("noticeText").textContent = "Publish opens a prefilled GitHub issue. Submit it while signed in as the repository owner. The workflow validates the topic, caption, video, credentials, and duplicate protection. Automatic posts are scheduled for Tuesdays and Fridays at 09:00 IST. TruLoop videos use screenshots captured from the live site.";
     } else {
-      document.getElementById("noticeTitle").textContent = "Daily duplicate protection is active";
-      document.getElementById("noticeText").textContent = latestData.slotMessage || "A post, an uncertain attempt, or an open request has already claimed today’s Asia/Kolkata publishing slot. Publish buttons stay disabled until the next date.";
+      document.getElementById("noticeTitle").textContent = "Publication slot protection is active";
+      document.getElementById("noticeText").textContent = latestData.slotMessage || "A post, an uncertain attempt, or an open request has claimed today's Asia/Kolkata slot. Publish buttons stay disabled until the slot is clear.";
     }
   }
   async function refresh(){
