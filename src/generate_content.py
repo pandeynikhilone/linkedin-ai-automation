@@ -78,6 +78,14 @@ TOPIC_PLAN = [
         "angle": "Summarize the real scope of the internship, not a fictional day-in-the-life story."
     },
     {
+        "topic": "The problem Truloop is designed to address",
+        "facts": [
+            "Truloop README says sponsored posts and fake or incentivized reviews can make it difficult to find trustworthy product information.",
+            "The project aims to emphasize honest, unbiased, real-world product reviews."
+        ],
+        "angle": "Describe the product motivation as stated in the README. Do not claim Truloop has eliminated fake reviews or proven market impact."
+    },
+    {
         "topic": "Understanding what happens behind the TruLoop interface",
         "facts": [
             "The Next.js frontend lives in the frontend folder and the Express API lives in the backend folder.",
@@ -86,14 +94,6 @@ TOPIC_PLAN = [
             "After a review is created, backend/src/controllers/review.controller.js recalculates and saves the product averageRating and reviewCount."
         ],
         "angle": "Trace one request from the interface to an Express route, controller, and MongoDB operation, then back to the response. Describe the repository structure accurately and do not claim the whole request lifecycle was traced unless the code was actually inspected."
-    },
-    {
-        "topic": "What Truloop means by real usage experience",
-        "facts": [
-            "Truloop README says reviews should be based on real usage experience.",
-            "The README gives battery life and software stability as examples."
-        ],
-        "angle": "Explain the intended review focus. Do not invent reviews from actual named users."
     },
     {
         "topic": "Designing a product browsing and review flow",
