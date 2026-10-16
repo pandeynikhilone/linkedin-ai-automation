@@ -13,7 +13,7 @@ on:
     types: [opened, closed]
   workflow_run:
     workflows:
-      - "Daily LinkedIn Career Video"
+      - "LinkedIn Developer Story Video"
       - "Republish Corrected LinkedIn Video Post"
       - "Publish Selected LinkedIn Plan Day"
       - "Publish Corrected LinkedIn Post"

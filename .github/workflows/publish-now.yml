@@ -63,6 +63,32 @@ jobs:
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
         run: python src/generate_content.py
 
+      - name: Check whether a genuine website screenshot is needed
+        id: website_capture
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          with open("content.json", encoding="utf-8") as source:
+              data = json.load(source)
+          needed = any(
+              isinstance(slide, dict) and slide.get("visual_type") == "website"
+              for slide in data.get("slides", [])
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"needed={'true' if needed else 'false'}\n")
+          print("A genuine website capture is required." if needed else "No website screenshot needed.")
+          PY
+
+      - name: Install Chromium for genuine TruLoop site capture
+        if: steps.website_capture.outputs.needed == 'true'
+        run: python -m playwright install --with-deps chromium
+
+      - name: Capture the deployed TruLoop homepage for video visuals
+        if: steps.website_capture.outputs.needed == 'true'
+        run: python src/capture_truloop_site.py
+
       - name: Render five-slide animated video
         run: python src/create_video.py
 
@@ -146,6 +172,32 @@ jobs:
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
           PUBLISH_TOPIC_DAY: "3"
         run: python src/generate_content.py
+
+      - name: Check whether a genuine website screenshot is needed
+        id: website_capture
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          with open("content.json", encoding="utf-8") as source:
+              data = json.load(source)
+          needed = any(
+              isinstance(slide, dict) and slide.get("visual_type") == "website"
+              for slide in data.get("slides", [])
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"needed={'true' if needed else 'false'}\n")
+          print("A genuine website capture is required." if needed else "No website screenshot needed.")
+          PY
+
+      - name: Install Chromium for genuine TruLoop site capture
+        if: steps.website_capture.outputs.needed == 'true'
+        run: python -m playwright install --with-deps chromium
+
+      - name: Capture the deployed TruLoop homepage for video visuals
+        if: steps.website_capture.outputs.needed == 'true'
+        run: python src/capture_truloop_site.py
       - name: Render the matching five-slide animated video
         run: python src/create_video.py
       - name: Validate Day 3 content and video format

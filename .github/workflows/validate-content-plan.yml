@@ -8,6 +8,7 @@ on:
     paths:
       - "src/generate_content.py"
       - "src/create_video.py"
+      - "src/capture_truloop_site.py"
       - "src/publish_linkedin.py"
       - "src/test_linkedin_video_upload.py"
       - "src/create_illustration.py"
@@ -48,7 +49,7 @@ jobs:
 
       - name: Validate source and video-only publishing pipeline
         run: |
-          python -m py_compile src/generate_content.py src/create_video.py src/publish_linkedin.py src/test_linkedin_video_upload.py
+          python -m py_compile src/generate_content.py src/create_video.py src/capture_truloop_site.py src/publish_linkedin.py src/test_linkedin_video_upload.py
           python - <<'PY'
           import ast
           import json
@@ -82,6 +83,11 @@ jobs:
               raise SystemExit("Generator must return a video title and slides.")
           if '"illustration_brief"' in source or "GEMINI_IMAGE" in source:
               raise SystemExit("Separate illustration-generation code remains in the generator.")
+          capture = Path("src/capture_truloop_site.py").read_text(encoding="utf-8")
+          if '"website"' not in source or "WEBSITE_SCREENSHOT" not in renderer or "page.screenshot" not in capture:
+              raise SystemExit("TruLoop videos must embed a screenshot of the live site instead of regenerating the UI.")
+          if "Playwright" not in Path("requirements.txt").read_text(encoding="utf-8") and "playwright" not in Path("requirements.txt").read_text(encoding="utf-8"):
+              raise SystemExit("Playwright must be installed for deployed site capture.")
 
           renderer = Path("src/create_video.py").read_text(encoding="utf-8")
           publisher = Path("src/publish_linkedin.py").read_text(encoding="utf-8")
@@ -127,11 +133,11 @@ jobs:
           readme = Path("README.md").read_text(encoding="utf-8")
           if 'PUBLISH_TO_LINKEDIN: "true"' not in daily:
               raise SystemExit("Scheduled publishing is not enabled.")
-          # GitHub Actions cron is UTC: 22:30 UTC maps to 04:00 IST on the next local date.
-          if 'cron: "30 22-23,0-8 * * *"' not in daily or "22:30 UTC = 04:00 IST" not in daily or "08:30 UTC = 14:00 IST" not in daily:
-              raise SystemExit("Expected daily 04:00 Asia/Kolkata publishing with recovery runs through 14:00 IST.")
-          if "04:00 Asia/Kolkata" not in plan_doc.get("schedule", "") or "4:00 AM India time" not in readme:
-              raise SystemExit("The README and content plan must document the current 04:00 IST schedule.")
+          # GitHub Actions cron is UTC: 03:30 UTC maps to 09:00 IST on Tuesday and Friday.
+          if 'cron: "30 3-8 * * 2,5"' not in daily or "03:30 UTC = 09:00 IST" not in daily or "08:30 UTC = 14:00 IST" not in daily:
+              raise SystemExit("Expected Tuesday and Friday publishing at 09:00 IST with hourly recovery through 14:00 IST.")
+          if "Tuesday and Friday at 09:00 Asia/Kolkata" not in plan_doc.get("schedule", "") or "Tuesdays and Fridays at 09:00 Asia/Kolkata" not in readme:
+              raise SystemExit("The README and content plan must document the twice weekly 09:00 IST schedule.")
           if "next_topic_index_from_ledger" not in source or "published-ledger.json" not in source:
               raise SystemExit("Scheduled topic progression must use the publication ledger.")
           if "most recently confirmed published plan topic" not in plan_doc.get("rule", ""):
@@ -287,7 +293,19 @@ jobs:
               raise SystemExit("The daily publishing concurrency guard must remain enabled.")
           if "actions/deploy-pages@" not in deployer or "DASHBOARD_ISSUES_FILE" not in deployer:
               raise SystemExit("The dashboard deployment workflow must publish Pages with a sanitized status snapshot.")
-          if 'cron: "35 18 * * *"' not in deployer or 'cron: "30 22-23,0-8 * * *"' not in Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8"):
-              raise SystemExit("The dashboard must refresh after midnight IST without changing the daily publishing schedule.")
-          print("Dashboard validation passed: 30 topics, next-topic publish guard, owner-only request workflow, stable 04:00 IST schedule, and auto-refresh.")
+          if 'cron: "35 18 * * *"' not in deployer or 'cron: "30 3-8 * * 2,5"' not in Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8"):
+              raise SystemExit("The dashboard must refresh after midnight IST without changing the Tuesday and Friday publishing schedule.")
+          from datetime import date, datetime
+          from zoneinfo import ZoneInfo
+          from scripts.build_dashboard_data import scheduled_date_after, first_available_publish_date
+          tz = ZoneInfo("Asia/Kolkata")
+          if scheduled_date_after(date(2026, 10, 15), 1) != date(2026, 10, 16):
+              raise SystemExit("After a Thursday publication, the next scheduled slot must be Friday.")
+          if scheduled_date_after(date(2026, 10, 16), 1) != date(2026, 10, 20):
+              raise SystemExit("After a Friday publication, the next scheduled slot must be Tuesday.")
+          if first_available_publish_date(datetime(2026, 10, 16, 8, 45, tzinfo=tz), True, date(2026, 10, 15)) != date(2026, 10, 16):
+              raise SystemExit("A still available Friday slot before 14:00 IST must remain scheduled for today.")
+          if first_available_publish_date(datetime(2026, 10, 16, 15, 0, tzinfo=tz), True, date(2026, 10, 15)) != date(2026, 10, 20):
+              raise SystemExit("A missed Friday slot must roll forward to Tuesday instead of remaining in the past.")
+          print("Dashboard validation passed: 30 topics, next-topic publish guard, owner-only requests, Tuesday and Friday 09:00 IST schedule, authentic TruLoop screenshots, and auto-refresh.")
           PY

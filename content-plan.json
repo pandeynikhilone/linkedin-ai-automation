@@ -1,9 +1,9 @@
 {
-  "title": "Nikhil Pandey LinkedIn Content Series",
+  "title": "Nikhil Pandey Developer Learning Series",
   "startDate": "2026-10-11",
   "durationDays": 30,
-  "schedule": "One post per day beginning at 04:00 Asia/Kolkata via the Daily LinkedIn Career Video workflow. Hourly recovery attempts continue through 14:00 IST if no publication is recorded.",
-  "rule": "The initial topic was published on 2026-10-11. For each scheduled run, the generator selects the next topic after the most recently confirmed published plan topic in published-ledger.json, and wraps from Day 30 back to Day 1. Failed or uncertain attempts do not advance the sequence, so retries use the same topic. Day 2 and the explicitly requested Day 3 were both published on 2026-10-12, so the next scheduled post is Day 4 on 2026-10-13. Posts must not introduce unsupported personal stories, metrics, features, or results.",
+  "schedule": "Two posts per week on Tuesday and Friday at 09:00 Asia/Kolkata. Hourly recovery attempts continue through 14:00 IST if no publication is confirmed.",
+  "rule": "The series contains 30 source grounded topics. The already confirmed posts remain in sequence, and the next topic follows the most recently confirmed published plan topic in published-ledger.json. Scheduled posts run on Tuesday and Friday at 09:00 IST, with hourly recovery attempts through 14:00 IST. Failed or uncertain attempts do not advance the sequence. Posts should share one real implementation detail or learning, sound like a student explaining work, and avoid unsupported claims, emojis, and long dash punctuation.",
   "topics": [
     {
       "day": 1,
@@ -77,12 +77,14 @@
     },
     {
       "day": 9,
-      "topic": "What Truloop means by real usage experience",
+      "topic": "Understanding what happens behind the TruLoop interface",
       "sourceFacts": [
-        "Truloop README says reviews should be based on real usage experience.",
-        "The README gives battery life and software stability as examples."
+        "The Next.js frontend lives in the frontend folder and the Express API lives in the backend folder.",
+        "backend/src/app.js mounts separate /api/products and /api/reviews route modules.",
+        "The product and review route modules call controller functions that read and update MongoDB documents through Mongoose models.",
+        "After a review is created, backend/src/controllers/review.controller.js recalculates and saves the product averageRating and reviewCount."
       ],
-      "angle": "Explain the intended review focus. Do not invent reviews from actual named users."
+      "angle": "Trace one request from the interface to an Express route, controller, and MongoDB operation, then back to the response. Describe the repository structure accurately and do not claim the whole request lifecycle was traced unless the code was actually inspected."
     },
     {
       "day": 10,

@@ -86,12 +86,14 @@ TOPIC_PLAN = [
         "angle": "Describe the product motivation as stated in the README. Do not claim Truloop has eliminated fake reviews or proven market impact."
     },
     {
-        "topic": "What Truloop means by real usage experience",
+        "topic": "Understanding what happens behind the TruLoop interface",
         "facts": [
-            "Truloop README says reviews should be based on real usage experience.",
-            "The README gives battery life and software stability as examples."
+            "The Next.js frontend lives in the frontend folder and the Express API lives in the backend folder.",
+            "backend/src/app.js mounts separate /api/products and /api/reviews route modules.",
+            "The product and review route modules call controller functions that read and update MongoDB documents through Mongoose models.",
+            "After a review is created, backend/src/controllers/review.controller.js recalculates and saves the product averageRating and reviewCount."
         ],
-        "angle": "Explain the intended review focus. Do not invent reviews from actual named users."
+        "angle": "Trace one request from the interface to an Express route, controller, and MongoDB operation, then back to the response. Describe the repository structure accurately and do not claim the whole request lifecycle was traced unless the code was actually inspected."
     },
     {
         "topic": "Designing a product browsing and review flow",
@@ -348,8 +350,9 @@ def select_topic_index(today, requested_day=""):
 
 SLIDE_VISUAL_TYPES = {
     "chart", "flow", "code", "product", "database",
-    "form", "checklist", "git", "stack", "learning",
+    "form", "checklist", "git", "stack", "learning", "website",
 }
+SLIDE_LAYOUTS = {"hero", "split", "evidence", "process", "editorial", "detail", "closing"}
 
 SCHEMA = {
     "type": "OBJECT",
@@ -365,9 +368,17 @@ SCHEMA = {
                 "properties": {
                     "title": {"type": "STRING"},
                     "body": {"type": "STRING"},
-                    "visual_type": {"type": "STRING"},
+                    "visual_type": {
+                        "type": "STRING",
+                        "enum": ["chart", "flow", "code", "product", "database", "form", "checklist", "git", "stack", "learning", "website"],
+                    },
+                    "layout": {
+                        "type": "STRING",
+                        "enum": ["hero", "split", "evidence", "process", "editorial", "detail", "closing"],
+                    },
+                    "visual_labels": {"type": "ARRAY", "items": {"type": "STRING"}},
                 },
-                "required": ["title", "body", "visual_type"],
+                "required": ["title", "body", "visual_type", "layout", "visual_labels"],
             },
         },
     },
@@ -519,9 +530,15 @@ def main():
         else "Do not add a portfolio URL or self-promotional call to action today."
     )
 
+    website_visual_instruction = (
+        "For this TruLoop topic, make exactly one slide use visual_type 'website' to show the genuine deployed interface. Use flow, code, or database visuals for the remaining technical explanation."
+        if "truloop" in topic.casefold()
+        else "Do not use visual_type 'website' for this topic. Use a relevant diagram or code visual instead."
+    )
+
     prompt = f"""
-Create one LinkedIn post plus exactly five short animated-video slide scripts.
-Everything must be grounded in Nikhil Pandey's resume and public GitHub project details.
+Create one LinkedIn post and exactly five short animated-video slide scripts.
+Everything must be grounded in Nikhil Pandey's actual resume and public GitHub project details.
 
 Today's topic: {topic}
 Verified source facts:
@@ -529,33 +546,37 @@ Verified source facts:
 
 Topic angle: {post_angle}
 
+The purpose of this account is to build a credible early-career developer profile. The audience includes other students, developers, and potential internship or job contacts. Posts should document real work and learning, not pretend to be an industry expert.
+
 LinkedIn text requirements:
-- Write 70 to 95 words, using exactly three plain-text paragraphs separated by one blank line.
-- Paragraph 1: a specific, natural opening about the technical task. Do not use a standalone title or heading.
-- Paragraph 2: explain the verified work in a direct first-person voice, without adding unsupported details.
-- Paragraph 3: finish with one concise, practical takeaway grounded in the topic.
-- Keep each paragraph to one or two sentences. Use no bullets, numbered lists, emojis, markdown, or inline hashtags.
-- Use simple, readable sentences and the same caption structure for every post, so the series remains consistent.
-- Avoid generic motivation, sales language, excessive excitement, engagement bait, and stock phrases.
-- Do not invent personal stories, feelings, incidents, fixes, outcomes, users, metrics, dates, features, technical decisions, or achievements.
-- Use first person only for contributions explicitly attributed to Nikhil. Credit collaborators accurately.
-- Do not describe Truloop's receipt validation as guaranteed proof of purchase.
-- Do not use long dash punctuation. Use ordinary punctuation and short sentences.
-- Return 3 or 4 relevant hashtags separately from the post body. The publisher appends these on their own line after the caption.
-- The post body is the LinkedIn caption accompanying the video, not text to place in a video footer.
-- Make the caption clearly explain the specific work shown in today's video and why the implementation detail matters.
-- The caption must make sense when read without watching the video. Do not leave it as just a title or a teaser.
+- Write 70 to 95 words in exactly three plain-text paragraphs separated by one blank line.
+- Open with a specific observation, technical question, tradeoff, or problem tied to this topic. Do not use a standalone title.
+- In the middle paragraph, explain the real implementation or code detail, using first person only where Nikhil's own contribution is documented.
+- End with a practical lesson or something Nikhil is trying to understand more deeply. Do not force a call to action or a question into every post.
+- Sound like a thoughtful MCA student explaining something he genuinely built or is learning. Use natural, straightforward wording, not corporate marketing copy or generic motivational writing.
+- Vary the opening and sentence structure between topics. Avoid recurring formulas such as 'One thing I am learning', 'I have been working on', 'Excited to share', and 'Building this taught me' as automatic openers.
+- Use no emojis, headings, bullets, numbered lists, markdown, or inline hashtags in the caption.
+- Do not use em dashes or en dashes. Avoid unnecessary hyphenated phrases when a simpler wording works.
+- Do not invent personal stories, feelings, incidents, bugs, fixes, results, users, metrics, dates, features, technical decisions, or achievements.
+- Credit collaborators accurately. Do not describe TruLoop receipt text checks as proof that a purchase is genuine.
+- Return 3 or 4 relevant hashtags separately from the body. The publisher appends them on their own line.
+- The caption must stand on its own and explain why the specific technical detail matters. Do not write a teaser that depends on watching the video.
 
 Video requirements:
 - Give a short, accurate video title.
-- Return exactly five slides in the same sequence on every post: task/context, implementation, key detail, project application, practical takeaway.
-- Each slide must have a short title of 3 to 7 words, body copy of 5 to 18 words, and one visual_type.
-- Keep one concise sentence in each slide body; do not add headings, footnotes, captions, or footer text.
-- visual_type must be one of: chart, flow, code, product, database, form, checklist, git, stack, learning.
-- Use a simple sequence: introduce the real problem or task, explain the implementation, show a key detail, add a practical implication, end with a grounded takeaway.
-- Use only the verified facts above. Do not invent UI, product features, data, metrics, or outcomes.
-- Slides will be rendered directly into a 4:5 animated MP4 with typography, diagrams, and locally drawn graphics. Do not request external artwork or stock footage. Select only a visual_type.
-- Keep slide copy brief, high contrast, and mobile-readable.
+- Return exactly five slides: context, implementation, a key detail, how it applies in the project, and a practical takeaway.
+- Each slide needs a title of 3 to 7 words, body copy of 5 to 18 words, one visual_type, one layout, and 2 to 4 short visual_labels.
+- visual_type must be one of: chart, flow, code, product, database, form, checklist, git, stack, learning, website.
+- layout must be one of: hero, split, evidence, process, editorial, detail, closing.
+- Use five distinct layouts in the same video. The first must be hero and the last must be closing. Do not repeat one composition with only changed words or colours.
+- visual_labels should identify the actual concepts shown, such as "Browser", "Express route", "Controller", and "MongoDB". Every label must be grounded in the verified facts, with no invented numbers or outcomes.
+- Choose visuals according to the point being taught. Use a real request flow for architecture, meaningful data relationships for database topics, a genuine screenshot for the actual UI, and implementation evidence for code topics.
+- For TruLoop topics, use exactly one visual_type "website" slide to show the deployed site. Never redraw or fabricate its interface. The other slides should explain the relevant code or architecture instead of reusing website screenshots.
+- Vary both composition and visual treatment across different topics while maintaining a coherent developer series. Avoid repeatedly using the same generic illustration, card arrangement, device mockup, or decorative filler.
+- The "website" visual must use a screenshot captured from the live TruLoop website. If a genuine screenshot is unavailable, use a technical diagram instead.
+- Use only verified facts above. Do not invent UI, product features, data, metrics, reviews, or outcomes.
+- Slides are rendered into a 4:5 animated MP4 with typography, diagrams, and locally drawn graphics. Do not request external artwork or stock footage.
+- Keep text short, high contrast, and readable on a phone. Visual labels must explain the diagram, not merely decorate it.
 
 Portfolio CTA instruction: {portfolio_cta_instruction}
 
@@ -758,14 +779,20 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         raise RuntimeError("Exactly five video slides are required.")
 
     cleaned_slides = []
+    used_layouts = set()
     for number, slide in enumerate(slides, start=1):
         if not isinstance(slide, dict):
             raise RuntimeError(f"Slide {number} is not a valid object.")
         title = clean_text(slide.get("title", ""))
         body = clean_text(slide.get("body", ""))
         visual_type = clean_text(slide.get("visual_type", "")).casefold()
+        layout = clean_text(slide.get("layout", "")).casefold()
+        raw_labels = slide.get("visual_labels", [])
+        if not isinstance(raw_labels, list):
+            raw_labels = []
+        visual_labels = [clean_text(item)[:28] for item in raw_labels if clean_text(item)]
         if not title or not body:
-            raise RuntimeError(f"Slide {number} is missing its title or body.")
+            raise RuntimeError(f"Slide {number} is missing a title or body.")
         if len(title.split()) < 3 or len(title.split()) > 7:
             raise RuntimeError(f"Slide {number} title must contain 3 to 7 words for consistent mobile layout.")
         body_words = len(body.split())
@@ -773,7 +800,61 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             raise RuntimeError(f"Slide {number} body must contain 5 to 18 words.")
         if visual_type not in SLIDE_VISUAL_TYPES:
             raise RuntimeError(f"Slide {number} uses unsupported visual_type: {visual_type}")
-        cleaned_slides.append({"title": title, "body": body, "visual_type": visual_type})
+
+        # Upgrade older fixed templates and ensure every frame has its own composition.
+        if number == 1:
+            layout = "hero"
+        elif number == len(slides):
+            layout = "closing"
+        elif visual_type == "website":
+            layout = "evidence"
+        if layout not in SLIDE_LAYOUTS or layout in used_layouts:
+            available = [
+                name for name in ["split", "evidence", "process", "editorial", "detail"]
+                if name not in used_layouts
+            ]
+            if not available:
+                raise RuntimeError("Could not assign a distinct layout to every slide.")
+            layout = available[0]
+        used_layouts.add(layout)
+
+        if not visual_labels:
+            fallback_labels = {
+                "chart": ["Line", "Bar", "Area", "Pie"],
+                "flow": ["Input", "Process", "Response"],
+                "code": [title, "Implementation detail", "Expected response"],
+                "product": ["Product", "Specifications", "Reviews"],
+                "database": ["Product", "Review", "User"],
+                "form": ["Required fields", "Validation", "Submit"],
+                "checklist": ["Check input", "Apply rule", "Return result"],
+                "git": ["Change", "Review", "Improve"],
+                "stack": ["Frontend", "Backend", "Database"],
+                "learning": ["Understand", "Apply", "Test"],
+                "website": ["Live TruLoop website"],
+            }
+            visual_labels = fallback_labels.get(visual_type, ["Input", "Process", "Output"])
+        cleaned_slides.append({
+            "title": title,
+            "body": body,
+            "visual_type": visual_type,
+            "layout": layout,
+            "visual_labels": visual_labels[:4],
+        })
+
+    if cleaned_slides[0]["layout"] != "hero" or cleaned_slides[-1]["layout"] != "closing":
+        raise RuntimeError("The video must begin with a hero composition and finish with a closing composition.")
+    if len({slide["layout"] for slide in cleaned_slides}) != len(cleaned_slides):
+        raise RuntimeError("Each slide must use a distinct composition.")
+
+    website_count = sum(1 for slide in cleaned_slides if slide["visual_type"] == "website")
+    if "truloop" in topic.casefold() and website_count != 1:
+        raise RuntimeError("TruLoop video must contain exactly one website slide using the genuine deployed screenshot.")
+    if "truloop" not in topic.casefold() and website_count:
+        raise RuntimeError("Website screenshot slides are only allowed for TruLoop topics.")
+    if any(mark in data["post"] for mark in chr(0x2014) + chr(0x2013)):
+        raise RuntimeError("Post body must not contain em dash or en dash punctuation.")
+    if any(0x1F1E6 <= ord(char) <= 0x1F1FF or 0x1F300 <= ord(char) <= 0x1FAFF or 0x2600 <= ord(char) <= 0x27BF for char in data["post"]):
+        raise RuntimeError("Post body must not contain emojis.")
 
     data["slides"] = cleaned_slides
     OUTPUT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")

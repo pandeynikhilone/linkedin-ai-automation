@@ -1,3 +1,4 @@
 google-genai
 Pillow
 requests
+playwright>=1.50,<2
