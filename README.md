@@ -12,7 +12,7 @@ A goal focused content workflow that turns verified project work and learning in
 - Encodes at 30 Mbit/s constant bitrate, the upper bitrate in LinkedIn's published member-video guidance. For the ~15.9-second clip this produces about 60 MB; the renderer and publisher reject files outside 50-70 MB.
 - Uploads the MP4 through LinkedIn's Videos API, waits for processing to complete, then publishes the post text and video together through the Posts API.
 - Scheduled runs publish automatically without per-post approval when the required APIs, credentials, and GitHub runner are available.
-- Manually running the daily workflow creates a preview only. Use the separate manual publisher input when you intentionally want an immediate public post.
+- Manually running the scheduled workflow creates a preview only. Use the separate manual publisher input when you intentionally want an immediate public post.
 - A lightweight ledger preflight runs before FFmpeg, dependency installation, or Gemini. If today's India-local slot is already published, the generation/publishing job is skipped. Ambiguous `publishing` or `needs_review` entries stop safely for manual inspection.
 - Scheduled posts upload directly to LinkedIn without duplicating the MP4 as an Actions artifact. Manual preview runs retain the video artifact for one day.
 - If content generation, video rendering, upload, or LinkedIn processing fails, the workflow stops instead of publishing a text-only substitute.
@@ -22,7 +22,7 @@ Scheduled runs select the next topic after the most recently confirmed topic in 
 
 The plan covers:
 - Techqueto: React, TypeScript, Google Charts, JSON-driven configuration, reusable utilities in common.ts, asynchronous loading, and debugging.
-- Truloop: Next.js, reusable UI components, Express APIs, MongoDB, review validation, purchase-date checks, and documented receipt text validation logic.
+- TruLoop: Next.js, reusable UI components, Express APIs, MongoDB, review validation, purchase-date checks, and documented receipt text validation logic.
 - TechFest: registration, event selection, manual payment summary, admit card flow, documented frontend and backend responsibilities, and the resume's 8,000-plus registration figure.
 
 ## Live dashboard
@@ -35,7 +35,7 @@ The live [LinkedIn Content Control Room](https://pandeynikhilone.github.io/linke
 - Only the **next topic in the publication sequence** can be manually requested. The request workflow independently checks this against the last confirmed publication in `published-ledger.json`.
 - The **Publish next post** button (or the enabled button on the next topic's row) opens a prefilled GitHub issue. As a static public website cannot safely hold a GitHub authorization token, click **Submit new issue** on GitHub to trigger the actual workflow. Only the repository owner’s issue can start publication.
 - If a just-published post has a formatting problem, the owner-only correction workflow can publish one corrected replacement for the same topic on the same India-local date. It does not advance the plan beyond that topic or change the next Tuesday or Friday 09:00 IST scheduled slot.
-- After a successful manual post, the publication ledger advances to the next topic. The automatic schedule runs on **Tuesdays and Fridays at 09:00 Asia/Kolkata**, with hourly recovery attempts through 14:00 IST. The manual post consumes the current local date's slot; it does not move tomorrow's 04:00 time.
+- After a successful manual post, the publication ledger advances to the next topic. The automatic schedule runs on **Tuesdays and Fridays at 09:00 Asia/Kolkata**, with hourly recovery attempts through 14:00 IST. The manual post consumes the current local date's slot; it does not move the next scheduled Tuesday or Friday slot.
 - The public status feed contains topic titles, dates, statuses, and confirmed LinkedIn post links only. **The repository itself is public**, so source files such as `content-plan.json` and `published-ledger.json` are also publicly readable. Never add tokens or other secrets to this repo.
 
 ## Preview a video before publishing
@@ -58,7 +58,7 @@ The graphics are drawn locally by Python and Pillow, then animated and encoded b
 - The post uses the topic's verified supporting facts and aims to sound like an MCA student describing actual work in straightforward language.
 - Post copy is limited to 110 words.
 - Do not invent personal stories, achievements, metrics, technical features, or results.
-- TechFest contributions are attributed accurately. Truloop's receipt text checks are not described as proof of genuine purchase.
+- TechFest contributions are attributed accurately. TruLoop's receipt text checks are not described as proof of genuine purchase.
 - The publisher reserves each India-local date in `published-ledger.json` before upload, then records the confirmed result. Ambiguous failures are marked for review rather than blindly retried.
 
 ## API references
