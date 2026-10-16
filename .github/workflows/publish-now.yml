@@ -63,6 +63,12 @@ jobs:
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
         run: python src/generate_content.py
 
+      - name: Install Chromium for genuine TruLoop site capture
+        run: python -m playwright install --with-deps chromium
+
+      - name: Capture the deployed TruLoop homepage for video visuals
+        run: python src/capture_truloop_site.py
+
       - name: Render five-slide animated video
         run: python src/create_video.py
 
@@ -146,6 +152,12 @@ jobs:
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
           PUBLISH_TOPIC_DAY: "3"
         run: python src/generate_content.py
+
+      - name: Install Chromium for genuine TruLoop site capture
+        run: python -m playwright install --with-deps chromium
+
+      - name: Capture the deployed TruLoop homepage for video visuals
+        run: python src/capture_truloop_site.py
       - name: Render the matching five-slide animated video
         run: python src/create_video.py
       - name: Validate Day 3 content and video format
