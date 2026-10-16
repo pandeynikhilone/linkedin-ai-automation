@@ -165,6 +165,38 @@ jobs:
           print("Source, publishing schedule, and video-format checks passed.")
           PY
 
+      - name: Test deterministic TruLoop fallback content
+        run: |
+          python - <<'PY'
+          from src.generate_content import source_grounded_fallback
+
+          topic = "Understanding what happens behind the TruLoop interface"
+          content = source_grounded_fallback(topic)
+          post = content["post"]
+          words = len(post.split())
+          paragraphs = [part for part in post.split("\\n\\n") if part.strip()]
+          slides = content["slides"]
+
+          if not 70 <= words <= 95 or len(paragraphs) != 3:
+              raise SystemExit("TruLoop fallback caption must have 70-95 words in three paragraphs.")
+          if len(slides) != 5:
+              raise SystemExit("TruLoop fallback must contain exactly five slides.")
+          if sum(slide.get("visual_type") == "website" for slide in slides) != 1:
+              raise SystemExit("TruLoop fallback must include exactly one genuine website slide.")
+          if slides[0].get("layout") != "hero" or slides[-1].get("layout") != "closing":
+              raise SystemExit("TruLoop fallback must start with hero and end with closing.")
+          if len({slide.get("layout") for slide in slides}) != 5:
+              raise SystemExit("TruLoop fallback layouts must all be distinct.")
+          for index, slide in enumerate(slides, 1):
+              if not 3 <= len(slide.get("title", "").split()) <= 7:
+                  raise SystemExit(f"Fallback slide {index} title must contain 3-7 words.")
+              if not 5 <= len(slide.get("body", "").split()) <= 18:
+                  raise SystemExit(f"Fallback slide {index} body must contain 5-18 words.")
+              if not slide.get("visual_labels"):
+                  raise SystemExit(f"Fallback slide {index} needs meaningful visual labels.")
+          print("TruLoop fallback validation passed: 91-word caption, five distinct slides, and one real website visual.")
+          PY
+
       - name: Test ledger-driven topic progression
         run: |
           python - <<'PY'
