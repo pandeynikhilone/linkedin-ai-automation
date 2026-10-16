@@ -1,11 +1,10 @@
-name: Daily LinkedIn Career Video
+name: LinkedIn Developer Story Video
 
 on:
   schedule:
-    # Primary time: 4:00 AM India time (Asia/Kolkata). GitHub Actions schedule uses UTC.
-    # Hourly recovery runs continue through 2:00 PM IST if no publication is recorded.
-    # 22:30 UTC = 04:00 IST; final recovery run 08:30 UTC = 14:00 IST.
-    - cron: "30 22-23,0-8 * * *"
+    # Two focused posts each week: Tuesday and Friday at 09:00 IST.
+    # GitHub Actions cron uses UTC. 03:30 UTC = 09:00 IST; final recovery run 08:30 UTC = 14:00 IST.
+    - cron: "30 3-8 * * 2,5"
   workflow_dispatch:
 
 permissions:
@@ -66,6 +65,12 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
         run: python src/generate_content.py
+
+      - name: Install Chromium for genuine TruLoop site capture
+        run: python -m playwright install --with-deps chromium
+
+      - name: Capture the deployed TruLoop homepage for video visuals
+        run: python src/capture_truloop_site.py
 
       - name: Render animated slides to MP4
         run: python src/create_video.py
