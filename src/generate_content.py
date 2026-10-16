@@ -788,8 +788,10 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         raise RuntimeError("TruLoop video must contain exactly one website slide using the genuine deployed screenshot.")
     if "truloop" not in topic.casefold() and website_count:
         raise RuntimeError("Website screenshot slides are only allowed for TruLoop topics.")
-    if any(mark in data["post"] for mark in ("\\u2014", "\\u2013")):
+    if any(mark in data["post"] for mark in chr(0x2014) + chr(0x2013)):
         raise RuntimeError("Post body must not contain em dash or en dash punctuation.")
+    if any(0x1F1E6 <= ord(char) <= 0x1F1FF or 0x1F300 <= ord(char) <= 0x1FAFF or 0x2600 <= ord(char) <= 0x27BF for char in data["post"]):
+        raise RuntimeError("Post body must not contain emojis.")
 
     data["slides"] = cleaned_slides
     OUTPUT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
