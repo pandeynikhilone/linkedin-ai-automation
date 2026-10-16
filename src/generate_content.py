@@ -467,7 +467,56 @@ def fallback_hashtags(topic):
 
 
 def source_grounded_fallback(topic):
-    """Small, verified backup for today's Day 2 post if Gemini is unavailable."""
+    """Verified deterministic content for selected topics if Gemini is unavailable."""
+    if topic == "Understanding what happens behind the TruLoop interface":
+        return {
+            "topic": topic,
+            "post": (
+                "One thing I wanted to understand in TruLoop is what happens after someone opens a product or submits a review.\n\n"
+                "The frontend uses Next.js and React, while Express exposes separate product and review routes. Controllers use Mongoose models to read or update MongoDB documents, and the review controller recalculates averageRating and reviewCount after a new review.\n\n"
+                "I am using this project to trace that request path end to end instead of treating the interface and database as separate pieces. Understanding the flow should help me debug and improve it more deliberately."
+            ),
+            "hashtags": ["NextJS", "FullStackDevelopment", "WebDevelopment", "MongoDB"],
+            "video_title": "What Happens Behind the TruLoop Interface",
+            "slides": [
+                {
+                    "title": "What Happens Behind TruLoop",
+                    "body": "The page is only the visible part of a full stack request.",
+                    "visual_type": "website",
+                    "layout": "hero",
+                    "visual_labels": ["Live TruLoop UI", "Frontend"],
+                },
+                {
+                    "title": "Follow The Request Path",
+                    "body": "The frontend sends a request to an Express product or review route.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Next.js frontend", "Express route", "Controller", "MongoDB"],
+                },
+                {
+                    "title": "Controllers Handle The Logic",
+                    "body": "Controllers call Mongoose models to read and update MongoDB documents.",
+                    "visual_type": "code",
+                    "layout": "detail",
+                    "visual_labels": ["Review controller", "Mongoose model", "Database operation"],
+                },
+                {
+                    "title": "Ratings Update After Reviews",
+                    "body": "After a review, the controller updates averageRating and reviewCount on the product.",
+                    "visual_type": "database",
+                    "layout": "editorial",
+                    "visual_labels": ["New review", "averageRating", "reviewCount"],
+                },
+                {
+                    "title": "Trace It Before Improving",
+                    "body": "Tracing each step gives me a clearer starting point when debugging changes.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Request", "Controller", "Database", "Response"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -512,7 +561,6 @@ def source_grounded_fallback(topic):
             },
         ],
     }
-
 
 def main():
     today = datetime.now(ZoneInfo("Asia/Kolkata"))
@@ -738,11 +786,15 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 raise RuntimeError("Gemini returned an empty response.")
             data = json.loads(response.text)
         except Exception as exc:
-            if topic != "Replacing hardcoded chart values with JSON-driven data":
+            fallback_topics = {
+                "Replacing hardcoded chart values with JSON-driven data",
+                "Understanding what happens behind the TruLoop interface",
+            }
+            if topic not in fallback_topics:
                 raise
             print(
-                "WARNING: Gemini generation failed for today's Day 2 topic "
-                f"({type(exc).__name__}: {exc}). Using a verified, source-grounded fallback."
+                f"WARNING: Gemini generation failed for {topic!r} "
+                f"({type(exc).__name__}: {exc}). Using verified, source-grounded fallback content."
             )
             data = source_grounded_fallback(topic)
 
