@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Capture real deployed TruLoop screens for video frames that need website footage."""
+"""Capture genuine screenshots from the deployed TruLoop application for video scenes."""
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
@@ -13,10 +14,16 @@ ROOT = Path(__file__).resolve().parent.parent
 CONTENT_FILE = ROOT / "content.json"
 ASSET_DIR = ROOT / "generated_assets"
 HOME_URL = "https://truloop.vercel.app/"
-PRODUCTS_URL = urljoin(HOME_URL, "products")
-HOME_SCREENSHOT = ASSET_DIR / "truloop_homepage.png"
-PRODUCTS_SCREENSHOT = ASSET_DIR / "truloop_products.png"
-DETAIL_SCREENSHOT = ASSET_DIR / "truloop_product_detail.png"
+
+SCREEN_ROUTES = {
+    "homepage": ("/", "truloop_homepage.png", True),
+    "products": ("/products", "truloop_products.png", False),
+    "submit_review": ("/submit-review", "truloop_submit_review.png", False),
+    "add_review": ("/add-review", "truloop_add_review.png", False),
+    "login": ("/auth/login", "truloop_login.png", False),
+    "register": ("/auth/register", "truloop_register.png", False),
+    "profile": ("/profile", "truloop_profile.png", False),
+}
 
 
 def settle_page(page) -> None:
@@ -76,20 +83,36 @@ def main() -> None:
                 color_scheme="light",
                 reduced_motion="reduce",
             )
-            capture(page, HOME_URL, HOME_SCREENSHOT, required=True)
 
-            if capture(page, PRODUCTS_URL, PRODUCTS_SCREENSHOT):
-                # Prefer a real detail page linked from the live catalogue.
-                try:
-                    product_link = page.locator('a[href*="/product-info/"]').first
-                    if product_link.count():
-                        href = product_link.get_attribute("href")
+            for _, (route, filename, required) in SCREEN_ROUTES.items():
+                capture(page, urljoin(HOME_URL, route), ASSET_DIR / filename, required=required)
+
+            # Capture a real catalogue-linked detail page and its review section, if present.
+            products_url = urljoin(HOME_URL, "/products")
+            try:
+                response = page.goto(products_url, wait_until="domcontentloaded", timeout=60_000)
+                if response is not None and response.status < 400:
+                    settle_page(page)
+                    link = page.locator('a[href*="/product-info/"]').first
+                    if link.count():
+                        href = link.get_attribute("href")
                         if href:
-                            capture(page, urljoin(HOME_URL, href), DETAIL_SCREENSHOT)
-                except Exception as exc:
-                    print(f"Optional product detail capture skipped: {exc}")
+                            target = urljoin(HOME_URL, href)
+                            path = urlparse(target).path
+                            match = re.search(r"/product-info/([^/?#]+)", path)
+                            if match:
+                                detail_url = urljoin(HOME_URL, f"/product-info/{match.group(1)}")
+                                capture(page, detail_url, ASSET_DIR / "truloop_product_detail.png")
+                                capture(page, detail_url.rstrip("/") + "/reviews",
+                                        ASSET_DIR / "truloop_product_reviews.png")
+            except Exception as exc:
+                print(f"Optional product detail and review capture skipped: {exc}")
         finally:
             browser.close()
+
+    if not (ASSET_DIR / "truloop_homepage.png").is_file():
+        raise SystemExit("The real TruLoop homepage screenshot is required but was not captured.")
+    print("TruLoop screenshot capture finished. Only screens that loaded successfully are retained.")
 
 
 if __name__ == "__main__":
