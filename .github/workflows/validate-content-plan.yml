@@ -3,6 +3,8 @@ name: Validate LinkedIn Content Plan
 # Keep video-only publishing, date safety, and workflow permissions checked together.
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   push:
     branches: [main]
     paths:
@@ -83,11 +85,19 @@ jobs:
               raise SystemExit("Generator must return a video title and slides.")
           if '"illustration_brief"' in source or "GEMINI_IMAGE" in source:
               raise SystemExit("Separate illustration-generation code remains in the generator.")
+          renderer = Path("src/create_video.py").read_text(encoding="utf-8")
           capture = Path("src/capture_truloop_site.py").read_text(encoding="utf-8")
           if '"website"' not in source or "WEBSITE_SCREENSHOT" not in renderer or "page.screenshot" not in capture:
               raise SystemExit("TruLoop videos must embed a screenshot of the live site instead of regenerating the UI.")
-          if "Playwright" not in Path("requirements.txt").read_text(encoding="utf-8") and "playwright" not in Path("requirements.txt").read_text(encoding="utf-8"):
+          if "playwright" not in Path("requirements.txt").read_text(encoding="utf-8").lower():
               raise SystemExit("Playwright must be installed for deployed site capture.")
+          for screen_asset in ("truloop_homepage.png", "truloop_products.png", "truloop_product_detail.png", "truloop_product_reviews.png", "truloop_submit_review.png"):
+              if screen_asset not in capture:
+                  raise SystemExit(f"Missing capture route for {screen_asset}.")
+          if "context = (str(topic)" not in renderer:
+              raise SystemExit("Live screenshot selection must depend on the topic and slide text.")
+          if renderer.count('"name": "') < 6:
+              raise SystemExit("The renderer must rotate across at least six visual style families.")
 
           renderer = Path("src/create_video.py").read_text(encoding="utf-8")
           publisher = Path("src/publish_linkedin.py").read_text(encoding="utf-8")

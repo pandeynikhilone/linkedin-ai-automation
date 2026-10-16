@@ -818,21 +818,27 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 layout = available[0]
         used_layouts.add(layout)
 
+        fallback_labels = {
+            "chart": ["Line chart", "Bar chart", "Area chart", "Pie chart"],
+            "flow": ["Input", "Process", "Response"],
+            "code": [title, "Implementation detail", "Expected response"],
+            "product": ["Product", "Specifications", "Reviews"],
+            "database": ["Product", "Review", "User"],
+            "form": ["Required fields", "Validation", "Submit"],
+            "checklist": ["Check input", "Apply rule", "Return result"],
+            "git": ["Change", "Review", "Improve"],
+            "stack": ["Frontend", "Backend", "Database"],
+            "learning": ["Understand", "Apply", "Test"],
+            "website": ["Live TruLoop website", "Real interface", "Source screenshot"],
+        }
+        defaults = fallback_labels.get(visual_type, ["Input", "Process", "Response"])
         if not visual_labels:
-            fallback_labels = {
-                "chart": ["Line", "Bar", "Area", "Pie"],
-                "flow": ["Input", "Process", "Response"],
-                "code": [title, "Implementation detail", "Expected response"],
-                "product": ["Product", "Specifications", "Reviews"],
-                "database": ["Product", "Review", "User"],
-                "form": ["Required fields", "Validation", "Submit"],
-                "checklist": ["Check input", "Apply rule", "Return result"],
-                "git": ["Change", "Review", "Improve"],
-                "stack": ["Frontend", "Backend", "Database"],
-                "learning": ["Understand", "Apply", "Test"],
-                "website": ["Live TruLoop website"],
-            }
-            visual_labels = fallback_labels.get(visual_type, ["Input", "Process", "Output"])
+            visual_labels = defaults[:]
+        while len(visual_labels) < 3:
+            candidate = next((item for item in defaults if item.casefold() not in {label.casefold() for label in visual_labels}), None)
+            if candidate is None:
+                break
+            visual_labels.append(candidate)
         cleaned_slides.append({
             "title": title,
             "body": body,
