@@ -78,6 +78,20 @@ THEMES = [
         "secondary": (45, 183, 205), "accent": (189, 231, 113), "line": (209, 216, 232),
         "dark": (16, 19, 29), "on_dark": (246, 248, 255), "on_dark_muted": (181, 190, 209),
     },
+    {
+        "name": "monochrome",
+        "background": (250, 250, 248), "panel": (233, 233, 229), "surface": (255, 255, 255),
+        "ink": (20, 20, 22), "muted": (90, 90, 94), "primary": (25, 25, 28),
+        "secondary": (115, 118, 125), "accent": (236, 100, 72), "line": (220, 220, 216),
+        "dark": (19, 20, 23), "on_dark": (252, 252, 250), "on_dark_muted": (192, 194, 198),
+    },
+    {
+        "name": "terminal green",
+        "background": (242, 248, 240), "panel": (220, 237, 218), "surface": (253, 255, 251),
+        "ink": (22, 45, 27), "muted": (80, 107, 83), "primary": (29, 97, 54),
+        "secondary": (43, 143, 93), "accent": (190, 227, 91), "line": (205, 225, 201),
+        "dark": (10, 31, 19), "on_dark": (245, 255, 241), "on_dark_muted": (177, 205, 175),
+    },
 ]
 
 FONT_REGULAR_PATHS = [
@@ -423,6 +437,14 @@ def render_slide(slide, index, total, topic, output_path):
     elif theme["name"] == "dark studio":
         draw.ellipse((WIDTH - 360, -170, WIDTH + 120, 320), fill=(32, 39, 59))
         draw.arc((WIDTH - 430, -240, WIDTH + 20, 390), 15, 205, fill=theme["primary"], width=3)
+    elif theme["name"] == "monochrome":
+        for dot_x in range(WIDTH - 230, WIDTH - 65, 24):
+            for dot_y in range(145, 300, 24):
+                draw.ellipse((dot_x, dot_y, dot_x + 3, dot_y + 3), fill=(218, 218, 214))
+    elif theme["name"] == "terminal green":
+        for dot_x in range(WIDTH - 250, WIDTH - 65, 22):
+            for dot_y in range(135, 300, 22):
+                draw.rounded_rectangle((dot_x, dot_y, dot_x + 5, dot_y + 5), radius=2, fill=(211, 230, 205))
 
     draw_brand_line(draw, index + 1, total, theme, light=(layout in {"hero", "closing"}))
 
@@ -450,7 +472,7 @@ def render_slide(slide, index, total, topic, output_path):
         draw_wrapped(draw, body, (78, body_top), load_font(27), muted, 388, line_gap=9, max_lines=6)
         draw.rounded_rectangle((78, 1100, 420, 1112), radius=6, fill=theme["accent"])
         box = (548, 205, 1018, 1060)
-        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw_layout_visual(image, draw, slide, box, index, theme, topic)
         draw.text((78, 1160), "CONTEXT  /  WHY IT MATTERS", font=load_font(15, True), fill=muted)
 
     elif layout == "evidence":
@@ -462,7 +484,7 @@ def render_slide(slide, index, total, topic, output_path):
                                    WIDTH - 156, line_gap=8, max_lines=3)
         box_top = max(body_bottom + 20, 505)
         box = (64, box_top, WIDTH - 64, 1108)
-        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw_layout_visual(image, draw, slide, box, index, theme, topic)
         chips = slide.get("visual_labels", [])[:4]
         chip_x = 72
         for chip in chips:
@@ -482,7 +504,7 @@ def render_slide(slide, index, total, topic, output_path):
         draw_wrapped(draw, body, (78, body_top), load_font(27), muted,
                      WIDTH - 156, line_gap=8, max_lines=3)
         box = (54, 455, WIDTH - 54, 1034)
-        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw_layout_visual(image, draw, slide, box, index, theme, topic)
         draw.line((76, 1115, WIDTH - 76, 1115), fill=theme["line"], width=2)
         draw.text((76, 1150), "REQUEST", font=load_font(16, True), fill=theme["primary"])
         draw.text((WIDTH // 2 - 45, 1150), "PROCESS", font=load_font(16, True), fill=theme["secondary"])
@@ -495,7 +517,7 @@ def render_slide(slide, index, total, topic, output_path):
         draw_wrapped(draw, title, (332, 150), load_font(55, True), light_ink, 670, line_gap=6, max_lines=4)
         draw_wrapped(draw, body, (338, 415), load_font(27), muted, 640, line_gap=8, max_lines=5)
         box = (330, 700, 1015, 1100)
-        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw_layout_visual(image, draw, slide, box, index, theme, topic)
         draw.text((338, 1172), "OBSERVE  /  EXPLAIN  /  IMPROVE", font=load_font(15, True), fill=theme["primary"])
 
     elif layout == "detail":
@@ -508,7 +530,7 @@ def render_slide(slide, index, total, topic, output_path):
         draw_wrapped(draw, body, (80, max(330, title_bottom + 20)), load_font(27), muted,
                      WIDTH - 160, line_gap=8, max_lines=3)
         box = (70, 500, WIDTH - 70, 1100)
-        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw_layout_visual(image, draw, slide, box, index, theme, topic)
         draw.text((78, 1170), "DETAILS MATTER MORE THAN DECORATION", font=load_font(15, True), fill=theme["primary"])
 
     elif layout == "closing":
@@ -524,7 +546,7 @@ def render_slide(slide, index, total, topic, output_path):
         # The last scene favours the lesson, so the visual is a compact set of labelled steps.
         box_top = max(body_bottom + 28, 700)
         box = (76, min(box_top, 780), WIDTH - 76, 1050)
-        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw_layout_visual(image, draw, slide, box, index, theme, topic)
         draw.line((76, 1145, WIDTH - 76, 1145), fill=(65, 72, 93), width=2)
         draw.text((78, 1181), "REAL PROJECTS  /  CONTINUING TO LEARN IN PUBLIC",
                   font=load_font(15, True), fill=theme["on_dark_muted"])
@@ -533,7 +555,7 @@ def render_slide(slide, index, total, topic, output_path):
         # Unknown layouts are rendered as an editorial note, never as a duplicate default slide.
         draw_wrapped(draw, title, (78, 180), load_font(60, True), light_ink, WIDTH - 156, max_lines=3)
         draw_wrapped(draw, body, (82, 360), load_font(29), muted, WIDTH - 164, max_lines=4)
-        draw_layout_visual(image, draw, slide, (70, 620, WIDTH - 70, 1120), index, theme)
+        draw_layout_visual(image, draw, slide, (70, 620, WIDTH - 70, 1120), index, theme, topic)
 
     image.save(output_path, format="PNG", optimize=True)
 
