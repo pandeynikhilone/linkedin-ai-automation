@@ -26,6 +26,7 @@ HEIGHT = 1350
 FPS = 24
 SLIDE_SECONDS = 3.4
 TRANSITION_SECONDS = 0.28
+DEFAULT_SLIDE_LAYOUTS = ["hero", "split", "evidence", "process", "closing"]
 # LinkedIn's published member video guidance lists 30 Mbps as the upper
 # bitrate. For this ~15.9 s clip, CBR at 30 Mbps produces about 60 MB.
 TARGET_BITRATE = "30M"
