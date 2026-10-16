@@ -15,6 +15,12 @@ OUTPUT_FILE = ROOT / "linkedin_video.mp4"
 WEBSITE_SCREENSHOT = ROOT / "generated_assets" / "truloop_homepage.png"
 PRODUCTS_SCREENSHOT = ROOT / "generated_assets" / "truloop_products.png"
 PRODUCT_DETAIL_SCREENSHOT = ROOT / "generated_assets" / "truloop_product_detail.png"
+PRODUCT_REVIEWS_SCREENSHOT = ROOT / "generated_assets" / "truloop_product_reviews.png"
+SUBMIT_REVIEW_SCREENSHOT = ROOT / "generated_assets" / "truloop_submit_review.png"
+ADD_REVIEW_SCREENSHOT = ROOT / "generated_assets" / "truloop_add_review.png"
+LOGIN_SCREENSHOT = ROOT / "generated_assets" / "truloop_login.png"
+REGISTER_SCREENSHOT = ROOT / "generated_assets" / "truloop_register.png"
+PROFILE_SCREENSHOT = ROOT / "generated_assets" / "truloop_profile.png"
 WIDTH = 1080
 HEIGHT = 1350
 FPS = 24
@@ -40,6 +46,39 @@ CLAY = (157, 88, 235)
 OCHRE = (126, 103, 250)
 LAVENDER = (239, 235, 255)
 PALE_BLUE = (229, 240, 255)
+
+# The topic selects a visual family. The story keeps a consistent signature, but
+# each topic gets a different art direction rather than reusing the same skin.
+THEMES = [
+    {
+        "name": "violet editorial",
+        "background": (249, 250, 253), "panel": (239, 235, 255), "surface": (255, 255, 255),
+        "ink": (17, 19, 29), "muted": (87, 96, 116), "primary": (105, 74, 230),
+        "secondary": (53, 143, 236), "accent": (91, 151, 255), "line": (220, 225, 236),
+        "dark": (13, 16, 26), "on_dark": (249, 250, 253), "on_dark_muted": (196, 202, 217),
+    },
+    {
+        "name": "blueprint",
+        "background": (242, 249, 255), "panel": (222, 239, 252), "surface": (255, 255, 255),
+        "ink": (15, 37, 62), "muted": (67, 93, 117), "primary": (0, 104, 173),
+        "secondary": (0, 155, 190), "accent": (244, 171, 66), "line": (198, 220, 237),
+        "dark": (10, 31, 53), "on_dark": (246, 251, 255), "on_dark_muted": (176, 203, 222),
+    },
+    {
+        "name": "warm notebook",
+        "background": (252, 247, 237), "panel": (245, 231, 208), "surface": (255, 253, 248),
+        "ink": (44, 34, 27), "muted": (111, 91, 76), "primary": (168, 75, 46),
+        "secondary": (52, 111, 97), "accent": (213, 145, 68), "line": (225, 211, 188),
+        "dark": (44, 34, 27), "on_dark": (255, 250, 241), "on_dark_muted": (219, 201, 182),
+    },
+    {
+        "name": "dark studio",
+        "background": (240, 243, 249), "panel": (225, 230, 241), "surface": (255, 255, 255),
+        "ink": (22, 26, 40), "muted": (83, 92, 113), "primary": (133, 103, 250),
+        "secondary": (45, 183, 205), "accent": (189, 231, 113), "line": (209, 216, 232),
+        "dark": (16, 19, 29), "on_dark": (246, 248, 255), "on_dark_muted": (181, 190, 209),
+    },
+]
 
 FONT_REGULAR_PATHS = [
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -109,152 +148,212 @@ def draw_database(draw, box):
         draw.arc((x1, top, x2, top + 48), 180, 360, fill=INK, width=3)
 
 
-def draw_visual(draw, kind, box, slide_index):
+def centered_label(draw, text, box, font, fill, max_lines=2):
+    x1, y1, x2, y2 = box
+    lines = wrap_text(draw, text, font, max(20, x2 - x1 - 20))[:max_lines]
+    line_heights = []
+    for line in lines:
+        bounds = draw.textbbox((0, 0), line, font=font)
+        line_heights.append(max(1, bounds[3] - bounds[1]))
+    total_height = sum(line_heights) + 4 * max(0, len(lines) - 1)
+    y = y1 + max(0, (y2 - y1 - total_height) // 2)
+    for line, height in zip(lines, line_heights):
+        bounds = draw.textbbox((0, 0), line, font=font)
+        x = x1 + max(0, (x2 - x1 - (bounds[2] - bounds[0])) // 2)
+        draw.text((x, y), line, font=font, fill=fill)
+        y += height + 4
+
+
+def draw_visual(draw, slide, box, slide_index, theme):
+    """Draw a topic labelled diagram. Avoid unlabelled filler art and invented metrics."""
+    kind = slide.get("visual_type", "flow")
+    labels = [str(value).strip() for value in slide.get("visual_labels", []) if str(value).strip()]
+    labels = labels[:4] or ["Input", "Process", "Output"]
+    layout = slide.get("layout", "evidence")
     x1, y1, x2, y2 = box
     width = x2 - x1
     height = y2 - y1
-    card_colors = [WHITE, LAVENDER, PALE_BLUE, (242, 238, 255), (244, 246, 251)]
-    fill = card_colors[slide_index % len(card_colors)]
-    draw.rounded_rectangle(box, radius=30, fill=fill, outline=LINE, width=2)
+    ink, muted = theme["ink"], theme["muted"]
+    primary, secondary, accent = theme["primary"], theme["secondary"], theme["accent"]
+    line, panel, surface = theme["line"], theme["panel"], theme["surface"]
 
-    cx = (x1 + x2) // 2
-    cy = (y1 + y2) // 2
-    left = x1 + 80
-    right = x2 - 80
-    top = y1 + 52
-    bottom = y2 - 52
+    # Evidence and hero layouts get a clean source frame. Process layouts remain open.
+    if layout != "process":
+        draw.rounded_rectangle(box, radius=28, fill=surface, outline=line, width=2)
+        inset = 24
+    else:
+        inset = 6
+    left, right = x1 + inset, x2 - inset
+    top, bottom = y1 + inset, y2 - inset
+    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
     if kind == "chart":
-        base_y = bottom - 8
-        draw.line((left, top + 20, left, base_y), fill=INK, width=5)
-        draw.line((left, base_y, right, base_y), fill=INK, width=5)
-        bars = [0.36, 0.62, 0.48, 0.82, 0.69]
-        bar_w = max(44, width // 15)
-        gap = (right - left - len(bars) * bar_w) // (len(bars) + 1)
-        for i, value in enumerate(bars):
-            bx = left + gap + i * (bar_w + gap)
-            by = base_y - int((base_y - top) * value)
-            color = [TEAL, GREEN, OCHRE, CLAY, GREEN][i]
-            draw.rounded_rectangle((bx, by, bx + bar_w, base_y), radius=10, fill=color)
-        points = [(left + gap, base_y - int((base_y-top)*0.3)),
-                  (left + gap*2 + bar_w, base_y - int((base_y-top)*0.72)),
-                  (left + gap*3 + bar_w*2, base_y - int((base_y-top)*0.53)),
-                  (left + gap*4 + bar_w*3, base_y - int((base_y-top)*0.88))]
-        draw.line(points, fill=GREEN_DARK, width=5)
-        for point in points:
-            px, py = point
-            draw.ellipse((px-8, py-8, px+8, py+8), fill=LIME, outline=GREEN_DARK, width=3)
+        # A chart vocabulary explainer, not invented business data.
+        count = min(4, max(3, len(labels)))
+        gap = 14
+        card_w = (right - left - gap * (count - 1)) // count
+        card_top = top + 22
+        card_bottom = bottom - 32
+        for index in range(count):
+            bx = left + index * (card_w + gap)
+            draw.rounded_rectangle((bx, card_top, bx + card_w, card_bottom), radius=18, fill=panel)
+            base_y = card_bottom - 82
+            chart_x = bx + 24
+            chart_right = bx + card_w - 24
+            chart_top = card_top + 28
+            draw.line((chart_x, chart_top, chart_x, base_y), fill=muted, width=3)
+            draw.line((chart_x, base_y, chart_right, base_y), fill=muted, width=3)
+            bar_w = max(12, min(26, (chart_right - chart_x) // 5))
+            heights = [48, 72, 56, 86]
+            for b_index, h in enumerate(heights[:3]):
+                bx2 = chart_x + 18 + b_index * (bar_w + 9)
+                if bx2 + bar_w < chart_right:
+                    draw.rounded_rectangle((bx2, base_y - h, bx2 + bar_w, base_y), radius=5,
+                                           fill=[primary, secondary, accent][b_index])
+            centered_label(draw, labels[index % len(labels)], (bx + 8, card_bottom - 72, bx + card_w - 8, card_bottom - 12),
+                           load_font(17, True), ink, max_lines=2)
 
     elif kind == "flow":
-        node_w = (right - left - 48) // 3
-        node_y = cy - 46
-        colors = [LAVENDER, (215, 239, 191), PALE_BLUE]
-        for i, label_color in enumerate(colors):
-            x = left + i * (node_w + 24)
-            draw.rounded_rectangle((x, node_y, x + node_w, node_y + 92), radius=20, fill=label_color, outline=GREEN, width=3)
-            draw.ellipse((x + 18, node_y + 20, x + 42, node_y + 44), fill=GREEN if i != 1 else CLAY)
-            draw.line((x + 20, node_y + 62, x + node_w - 18, node_y + 62), fill=MUTED, width=4)
-            if i < 2:
-                draw_arrow(draw, (x + node_w + 4, cy), (x + node_w + 20, cy), GREEN, width=4)
+        count = min(4, max(3, len(labels)))
+        gap = 26
+        node_w = (right - left - gap * (count - 1)) // count
+        node_y = cy - 72
+        node_h = 144
+        colors = [panel, surface, panel, surface]
+        for i in range(count):
+            nx = left + i * (node_w + gap)
+            draw.rounded_rectangle((nx, node_y, nx + node_w, node_y + node_h), radius=22,
+                                   fill=colors[i % len(colors)], outline=line, width=2)
+            draw.ellipse((nx + 16, node_y + 16, nx + 48, node_y + 48),
+                         fill=[primary, secondary, accent][i % 3])
+            draw.text((nx + 18, node_y + 18), str(i + 1), font=load_font(17, True), fill=surface)
+            centered_label(draw, labels[i % len(labels)], (nx + 8, node_y + 52, nx + node_w - 8, node_y + node_h - 8),
+                           load_font(20, True), ink, max_lines=3)
+            if i < count - 1:
+                draw_arrow(draw, (nx + node_w + 3, cy), (nx + node_w + gap - 5, cy), primary, width=4)
 
     elif kind == "code":
-        editor = (left, top, right, bottom)
-        draw.rounded_rectangle(editor, radius=18, fill=GREEN_DARK)
-        for i, color in enumerate([CLAY, OCHRE, TEAL]):
-            draw.ellipse((left + 22 + i * 28, top + 20, left + 36 + i * 28, top + 34), fill=color)
-        line_y = top + 70
-        line_colors = [LIME, (224, 231, 218), TEAL, (224, 231, 218), OCHRE, (224, 231, 218)]
-        widths = [int(width*0.48), int(width*0.68), int(width*0.36), int(width*0.77), int(width*0.55), int(width*0.42)]
-        for i, line_width in enumerate(widths):
-            draw.rounded_rectangle((left + 28, line_y + i * 27, left + 28 + line_width, line_y + i * 27 + 9), radius=4, fill=line_colors[i])
-
-    elif kind == "product":
-        card_w = 330
-        px = cx - card_w // 2
-        py = cy - 120
-        draw.rounded_rectangle((px, py, px + card_w, py + 230), radius=24, fill=WHITE, outline=GREEN, width=3)
-        draw.rounded_rectangle((px + 32, py + 24, px + 122, py + 106), radius=18, fill=PALE_BLUE)
-        draw.ellipse((px + 62, py + 44, px + 94, py + 76), fill=TEAL)
-        for i in range(5):
-            sx = px + 34 + i * 45
-            draw.polygon([(sx, py+138),(sx+10,py+158),(sx+32,py+160),(sx+16,py+173),(sx+20,py+195),(sx,py+183),(sx-20,py+195),(sx-16,py+173),(sx-32,py+160),(sx-10,py+158)], fill=OCHRE)
+        # Labelled implementation areas instead of fake code or decorative syntax bars.
+        draw.rounded_rectangle((left + 12, top + 10, right - 12, bottom - 10), radius=24, fill=theme["dark"])
+        for i, color in enumerate([primary, secondary, accent]):
+            draw.ellipse((left + 34 + i * 28, top + 30, left + 48 + i * 28, top + 44), fill=color)
+        header = labels[0] if labels else slide.get("title", "Implementation detail")
+        draw.text((left + 34, top + 70), header[:42], font=load_font(24, True), fill=theme["on_dark"])
+        draw.line((left + 34, top + 116, right - 34, top + 116), fill=(70, 78, 100), width=2)
+        content_labels = labels[1:] or ["Input handling", "Core logic", "Response"]
+        row_h = max(56, min(88, (bottom - top - 160) // max(1, len(content_labels))))
+        for i, label in enumerate(content_labels):
+            yy = top + 143 + i * row_h
+            draw.rounded_rectangle((left + 34, yy, left + 74, yy + 36), radius=10,
+                                   fill=[primary, secondary, accent][i % 3])
+            draw.text((left + 46, yy + 7), f"{i + 1}", font=load_font(17, True), fill=surface)
+            draw.text((left + 94, yy + 3), label[:44], font=load_font(22, True), fill=theme["on_dark"])
+            draw.line((left + 94, yy + 39, right - 34, yy + 39), fill=(53, 61, 82), width=2)
 
     elif kind == "database":
-        draw_database(draw, (cx - 130, cy - 120, cx + 130, cy + 130))
-        for y in [cy - 55, cy + 20]:
-            draw.line((cx + 170, y, cx + 260, y), fill=TEAL, width=6)
-            draw.ellipse((cx + 252, y - 10, cx + 272, y + 10), fill=CLAY)
+        cylinder_x = left + max(110, width // 5)
+        cylinder_y = cy
+        rx, ry = 90, 30
+        for i, color in enumerate([primary, secondary, accent]):
+            yy = cylinder_y - 92 + i * 60
+            draw.rectangle((cylinder_x - rx, yy + ry, cylinder_x + rx, yy + 60), fill=color)
+            draw.ellipse((cylinder_x - rx, yy, cylinder_x + rx, yy + 2 * ry), fill=color, outline=ink, width=2)
+            draw.arc((cylinder_x - rx, yy + 28, cylinder_x + rx, yy + 2 * ry + 34), 0, 180, fill=ink, width=2)
+        text_x = left + width * 0.43
+        label_h = max(54, min(76, (height - 36) // max(1, len(labels))))
+        for i, label in enumerate(labels):
+            yy = top + 22 + i * (label_h + 14)
+            draw.rounded_rectangle((text_x, yy, right - 20, yy + label_h), radius=16, fill=panel, outline=line, width=1)
+            draw.text((text_x + 20, yy + 12), label[:32], font=load_font(21, True), fill=ink)
 
-    elif kind == "form" or kind == "checklist":
-        sheet = (cx - 235, cy - 145, cx + 235, cy + 145)
-        draw.rounded_rectangle(sheet, radius=22, fill=WHITE, outline=GREEN, width=3)
-        for i in range(4):
-            yy = cy - 93 + i * 58
+    elif kind in {"form", "checklist"}:
+        row_h = max(54, min(86, (height - 58) // max(1, len(labels))))
+        total_h = row_h * len(labels) + 14 * (len(labels) - 1)
+        row_top = cy - total_h // 2
+        for i, label in enumerate(labels):
+            yy = row_top + i * (row_h + 14)
+            draw.rounded_rectangle((left + 18, yy, right - 18, yy + row_h), radius=16, fill=panel if i % 2 == 0 else surface, outline=line, width=1)
+            mx, my = left + 48, yy + row_h // 2
             if kind == "checklist":
-                draw.rounded_rectangle((cx - 184, yy - 8, cx - 146, yy + 30), radius=8, fill=LIME, outline=GREEN, width=2)
-                draw.line((cx - 174, yy + 10, cx - 162, yy + 20), fill=GREEN, width=4)
-                draw.line((cx - 162, yy + 20, cx - 148, yy + 1), fill=GREEN, width=4)
-                line_left = cx - 120
+                draw.rounded_rectangle((mx - 14, my - 14, mx + 14, my + 14), radius=6, outline=secondary, width=3)
+                draw.line((mx - 7, my, mx - 1, my + 7, mx + 11, my - 9), fill=secondary, width=3)
             else:
-                draw.rounded_rectangle((cx - 184, yy - 8, cx - 132, yy + 26), radius=8, fill=PALE_BLUE, outline=TEAL, width=2)
-                line_left = cx - 105
-            draw.rounded_rectangle((line_left, yy + 2, cx + 176, yy + 13), radius=5, fill=LINE)
+                draw.ellipse((mx - 11, my - 11, mx + 11, my + 11), fill=primary)
+            draw.text((left + 78, yy + max(8, (row_h - 28) // 2)), label[:48], font=load_font(22, True), fill=ink)
 
     elif kind == "git":
-        p1 = (cx - 180, cy - 45)
-        p2 = (cx, cy + 68)
-        p3 = (cx + 180, cy - 50)
-        draw.line([p1, p2, p3], fill=GREEN, width=7)
-        draw.line((p1[0], p1[1], p1[0], p1[1]-72), fill=TEAL, width=6)
-        draw.line((p3[0], p3[1], p3[0], p3[1]-72), fill=CLAY, width=6)
-        for point, color in [(p1, TEAL), (p2, GREEN), (p3, CLAY), ((p1[0],p1[1]-72),LIME),((p3[0],p3[1]-72),OCHRE)]:
+        points = [(left + 95, cy - 90), (cx - 20, cy + 10), (right - 95, cy - 100), (right - 95, cy + 105)]
+        draw.line((points[0], points[1], points[2]), fill=primary, width=7)
+        draw.line((points[1], points[3]), fill=secondary, width=7)
+        for i, point in enumerate(points):
             px, py = point
-            draw.ellipse((px-19,py-19,px+19,py+19), fill=color, outline=INK, width=3)
+            draw.ellipse((px - 24, py - 24, px + 24, py + 24), fill=[primary, secondary, accent, primary][i], outline=surface, width=3)
+            label = labels[i % len(labels)]
+            centered_label(draw, label, (px - 105, py + 34, px + 105, py + 94), load_font(17, True), ink, max_lines=2)
 
     elif kind == "stack":
-        layer_w = 410
-        layer_h = 48
-        x = cx - layer_w // 2
-        for i, color in enumerate([LAVENDER, (215,239,191), PALE_BLUE, (248,235,224)]):
-            yy = cy - 118 + i * 57
-            draw.rounded_rectangle((x + i * 8, yy, x + layer_w - i * 8, yy + layer_h), radius=14, fill=color, outline=GREEN, width=2)
+        layer_h = max(52, min(76, (height - 45) // max(1, len(labels))))
+        total_h = len(labels) * layer_h + (len(labels) - 1) * 12
+        layer_top = cy - total_h // 2
+        for i, label in enumerate(labels):
+            inset_x = i * 18
+            yy = layer_top + i * (layer_h + 12)
+            draw.rounded_rectangle((left + 70 + inset_x, yy, right - 70 - inset_x, yy + layer_h), radius=16,
+                                   fill=[panel, surface][i % 2], outline=[primary, secondary, accent][i % 3], width=3)
+            centered_label(draw, label, (left + 90 + inset_x, yy + 4, right - 90 - inset_x, yy + layer_h - 4),
+                           load_font(22, True), ink, max_lines=2)
 
-    elif kind == "learning":
-        draw.ellipse((cx - 112, cy - 112, cx + 112, cy + 112), fill=(255, 243, 193), outline=OCHRE, width=4)
-        draw.ellipse((cx - 42, cy - 42, cx + 42, cy + 42), fill=LIME, outline=GREEN, width=4)
-        for angle in range(0, 360, 45):
-            rad = math.radians(angle)
-            start = (cx + int(math.cos(rad) * 145), cy + int(math.sin(rad) * 145))
-            end = (cx + int(math.cos(rad) * 200), cy + int(math.sin(rad) * 200))
-            draw.line((start, end), fill=CLAY if angle % 90 == 0 else GREEN, width=5)
+    elif kind == "product":
+        count = min(3, max(2, len(labels)))
+        gap = 18
+        card_w = (right - left - gap * (count - 1)) // count
+        for i in range(count):
+            bx = left + i * (card_w + gap)
+            draw.rounded_rectangle((bx, top + 26, bx + card_w, bottom - 26), radius=24,
+                                   fill=surface, outline=line, width=2)
+            draw.ellipse((bx + card_w // 2 - 36, top + 58, bx + card_w // 2 + 36, top + 130),
+                         fill=[panel, theme["background"]][i % 2], outline=[primary, secondary, accent][i % 3], width=3)
+            centered_label(draw, labels[i % len(labels)], (bx + 14, top + 145, bx + card_w - 14, bottom - 40),
+                           load_font(20, True), ink, max_lines=3)
 
     else:
-        # Generic connected-node drawing for topics that do not need a specialized motif.
-        points = [
-            (cx - 205, cy + 35), (cx - 92, cy - 85), (cx + 46, cy + 55),
-            (cx + 205, cy - 72), (cx + 240, cy + 100)
-        ]
-        for a, b in zip(points, points[1:]):
-            draw.line([a, b], fill=TEAL, width=5)
-        for index, (px, py) in enumerate(points):
-            radius = 29 if index == 2 else 23
-            draw.ellipse((px-radius, py-radius, px+radius, py+radius),
-                         fill=[LIME, LAVENDER, CLAY, PALE_BLUE, OCHRE][index],
-                         outline=GREEN, width=3)
+        # Learning and architecture use labelled milestones, not ornamental nodes.
+        count = min(4, max(3, len(labels)))
+        gap = 18
+        card_w = (right - left - gap * (count - 1)) // count
+        for i in range(count):
+            bx = left + i * (card_w + gap)
+            draw.rounded_rectangle((bx, top + 34, bx + card_w, bottom - 34), radius=22,
+                                   fill=panel if i % 2 == 0 else surface, outline=line, width=2)
+            draw.ellipse((bx + 20, top + 58, bx + 60, top + 98), fill=[primary, secondary, accent][i % 3])
+            draw.text((bx + 32, top + 66), str(i + 1), font=load_font(18, True), fill=surface)
+            centered_label(draw, labels[i % len(labels)], (bx + 10, top + 120, bx + card_w - 10, bottom - 44),
+                           load_font(19, True), ink, max_lines=3)
 
 
-def draw_website_visual(canvas, draw, box, slide):
-    """Place an unmodified screen capture from the deployed TruLoop site into a frame."""
+def draw_website_visual(canvas, draw, box, slide, theme, topic):
+    """Use the most relevant genuine screen from the deployed site, never a recreated UI."""
     x1, y1, x2, y2 = box
-    draw.rounded_rectangle(box, radius=30, fill=WHITE, outline=LINE, width=3)
+    draw.rounded_rectangle(box, radius=24, fill=theme["surface"], outline=theme["line"], width=2)
 
-    context = (str(slide.get("title", "")) + " " + str(slide.get("body", ""))).casefold()
-    if any(term in context for term in ("product detail", "specification", "product page", "detail page")):
-        candidates = [PRODUCT_DETAIL_SCREENSHOT, PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
-    elif any(term in context for term in ("catalog", "catalogue", "listing", "browse products", "product list")):
-        candidates = [PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
-    else:
+    context = (str(topic) + " " + str(slide.get("title", "")) + " " + str(slide.get("body", ""))).casefold()
+    if any(term in context for term in ("submit review", "review submission", "review form", "proof validation", "receipt", "purchase date", "required fields")):
+        candidates = [SUBMIT_REVIEW_SCREENSHOT, ADD_REVIEW_SCREENSHOT, PRODUCT_REVIEWS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("product review", "review flow", "rating", "reviews", "average rating", "review data")):
+        candidates = [PRODUCT_REVIEWS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT, SUBMIT_REVIEW_SCREENSHOT, PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("catalog", "catalogue", "listing", "browse products", "product list", "product browsing")):
+        candidates = [PRODUCTS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("product detail", "specification", "product page", "detail page", "product information")):
+        candidates = [PRODUCT_DETAIL_SCREENSHOT, PRODUCT_REVIEWS_SCREENSHOT, PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("login", "register", "authentication", "profile", "jwt", "bcrypt")):
+        candidates = [LOGIN_SCREENSHOT, REGISTER_SCREENSHOT, PROFILE_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("frontend", "navigation", "component", "interface", "homepage", "behind the ui")):
         candidates = [WEBSITE_SCREENSHOT, PRODUCTS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT]
+    else:
+        # Stable topic-based rotation avoids repeatedly selecting the homepage by default.
+        alternatives = [WEBSITE_SCREENSHOT, PRODUCTS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT, PRODUCT_REVIEWS_SCREENSHOT]
+        seed = sum((position + 1) * ord(char) for position, char in enumerate(str(topic)))
+        candidates = alternatives[seed % len(alternatives):] + alternatives[:seed % len(alternatives)]
     screenshot_path = next((path for path in candidates if path.is_file()), None)
     if screenshot_path is None:
         return False
@@ -267,68 +366,176 @@ def draw_website_visual(canvas, draw, box, slide):
         py = y1 + (y2 - y1 - fitted.height) // 2
         canvas.paste(fitted, (px, py))
         draw.rounded_rectangle((px, py, px + fitted.width - 1, py + fitted.height - 1),
-                               radius=12, outline=INK, width=2)
+                               radius=10, outline=theme["ink"], width=2)
     return True
 
 
+def theme_for_topic(topic):
+    """Stable theme rotation so adjacent topics are not dressed identically."""
+    seed = sum((index + 1) * ord(char) for index, char in enumerate(str(topic)))
+    return THEMES[seed % len(THEMES)]
+
+
+def draw_brand_line(draw, slide_number, total, theme, light=False):
+    foreground = theme["on_dark"] if light else theme["muted"]
+    accent = theme["accent"]
+    draw.ellipse((74, 60, 98, 84), fill=accent)
+    draw.text((112, 56), "NIKHIL PANDEY  /  BUILD NOTES", font=load_font(18, True), fill=foreground)
+    pill = (WIDTH - 150, 48, WIDTH - 72, 94)
+    draw.rounded_rectangle(pill, radius=22, fill=theme["primary"])
+    centered_label(draw, f"{slide_number:02d} / {total:02d}", pill, load_font(17, True), theme["surface"], max_lines=1)
+
+
+def draw_layout_visual(image, draw, slide, box, index, theme, topic):
+    kind = slide.get("visual_type", "flow")
+    if kind == "website":
+        if draw_website_visual(image, draw, box, slide, theme, topic):
+            return
+        print("WARNING: No genuine TruLoop screenshot was available; using a labelled architecture diagram.")
+        fallback = dict(slide)
+        fallback["visual_type"] = "flow"
+        draw_visual(draw, fallback, box, index, theme)
+        return
+    draw_visual(draw, slide, box, index, theme)
+
+
 def render_slide(slide, index, total, topic, output_path):
-    palette = [PAPER, (246, 247, 252), (239, 244, 255), (246, 241, 255), (242, 244, 251)]
-    background = palette[index % len(palette)]
-    image = Image.new("RGB", (WIDTH, HEIGHT), background)
+    """Compose each slide with a different layout and rotate the art direction by topic."""
+    theme = theme_for_topic(topic)
+    layout = slide.get("layout", DEFAULT_SLIDE_LAYOUTS[min(index, len(DEFAULT_SLIDE_LAYOUTS) - 1)])
+    dark_bg = theme["dark"]
+    light_ink = theme["ink"]
+    muted = theme["muted"]
+    title = clean_title(slide.get("title", ""))
+    body = str(slide.get("body", "")).strip()
+    image = Image.new("RGB", (WIDTH, HEIGHT), theme["background"])
     draw = ImageDraw.Draw(image)
 
-    # Subtle paper grain built from deterministic dots, not a photo or external image.
-    seed = sum(ord(char) for char in topic) + index * 97
-    for dot_index in range(300):
-        x = (seed * 17 + dot_index * 193) % WIDTH
-        y = (seed * 31 + dot_index * 139) % HEIGHT
-        tone = (239, 239, 226) if dot_index % 2 else (252, 251, 244)
-        draw.point((x, y), fill=tone)
+    # Subtle background detail changes by art direction but never competes with the text.
+    if theme["name"] == "blueprint":
+        for x in range(36, WIDTH, 56):
+            draw.line((x, 0, x, HEIGHT), fill=(232, 241, 249), width=1)
+        for y in range(20, HEIGHT, 56):
+            draw.line((0, y, WIDTH, y), fill=(232, 241, 249), width=1)
+    elif theme["name"] == "warm notebook":
+        for y in range(120, HEIGHT, 72):
+            draw.line((56, y, WIDTH - 56, y), fill=(246, 238, 223), width=1)
+    elif theme["name"] == "dark studio":
+        draw.ellipse((WIDTH - 360, -170, WIDTH + 120, 320), fill=(32, 39, 59))
+        draw.arc((WIDTH - 430, -240, WIDTH + 20, 390), 15, 205, fill=theme["primary"], width=3)
 
-    draw.rounded_rectangle((58, 54, WIDTH - 58, 120), radius=28, fill=GREEN_DARK)
-    draw.ellipse((83, 72, 111, 100), fill=LIME)
-    draw.text((130, 70), "NIKHIL PANDEY  /  BUILD NOTES", font=load_font(22, True), fill=WHITE)
-    draw.text((WIDTH - 154, 75), f"{index + 1:02d} / {total:02d}", font=load_font(19, True), fill=LIME)
+    draw_brand_line(draw, index + 1, total, theme, light=(layout in {"hero", "closing"}))
 
-    draw.text((78, 164), "CAREER NOTES  •  PROJECT WORK", font=load_font(18, True), fill=GREEN)
-    draw.rounded_rectangle((78, 203, 170, 212), radius=4, fill=LIME)
+    if layout == "hero":
+        image.paste(dark_bg, (0, 0, WIDTH, HEIGHT))
+        draw = ImageDraw.Draw(image)
+        draw_brand_line(draw, index + 1, total, theme, light=True)
+        draw.text((76, 150), "PROJECT NOTE  /  WHAT I AM LEARNING", font=load_font(17, True), fill=theme["accent"])
+        title_bottom = draw_wrapped(draw, title, (72, 204), load_font(76, True),
+                                    theme["on_dark"], WIDTH - 144, line_gap=2, max_lines=2)
+        body_top = max(376, title_bottom + 16)
+        body_bottom = draw_wrapped(draw, body, (78, body_top), load_font(29),
+                                   theme["on_dark_muted"], WIDTH - 156, line_gap=8, max_lines=3)
+        visual_top = min(max(body_bottom + 26, 570), 670)
+        box = (64, visual_top, WIDTH - 64, 1206)
+        draw_layout_visual(image, draw, slide, box, index, theme, topic)
+        draw.text((76, 1260), "BUILD  /  TRACE  /  TEST  /  LEARN", font=load_font(16, True), fill=theme["on_dark_muted"])
 
-    title = clean_title(slide.get("title", ""))
-    title_font = load_font(58, True)
-    title_bottom = draw_wrapped(
-        draw, title, (78, 244), title_font, INK, WIDTH - 156, line_gap=10, max_lines=3
-    )
+    elif layout == "split":
+        draw.line((520, 150, 520, 1120), fill=theme["line"], width=3)
+        draw.text((76, 151), "THE IDEA", font=load_font(17, True), fill=theme["primary"])
+        title_bottom = draw_wrapped(draw, title, (72, 196), load_font(55, True),
+                                    light_ink, 398, line_gap=7, max_lines=4)
+        body_top = max(470, title_bottom + 24)
+        draw_wrapped(draw, body, (78, body_top), load_font(27), muted, 388, line_gap=9, max_lines=6)
+        draw.rounded_rectangle((78, 1100, 420, 1112), radius=6, fill=theme["accent"])
+        box = (548, 205, 1018, 1060)
+        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw.text((78, 1160), "CONTEXT  /  WHY IT MATTERS", font=load_font(15, True), fill=muted)
 
-    body_font = load_font(31)
-    body_top = max(title_bottom + 22, 430)
-    body_bottom = draw_wrapped(
-        draw, slide.get("body", ""), (80, body_top), body_font, MUTED,
-        WIDTH - 160, line_gap=12, max_lines=3
-    )
+    elif layout == "evidence":
+        draw.text((74, 143), "REAL PROJECT  /  EVIDENCE", font=load_font(17, True), fill=theme["primary"])
+        title_bottom = draw_wrapped(draw, title, (72, 188), load_font(58, True),
+                                    light_ink, WIDTH - 144, line_gap=5, max_lines=2)
+        body_top = max(332, title_bottom + 18)
+        body_bottom = draw_wrapped(draw, body, (78, body_top), load_font(27), muted,
+                                   WIDTH - 156, line_gap=8, max_lines=3)
+        box_top = max(body_bottom + 20, 505)
+        box = (64, box_top, WIDTH - 64, 1108)
+        draw_layout_visual(image, draw, slide, box, index, theme)
+        chips = slide.get("visual_labels", [])[:4]
+        chip_x = 72
+        for chip in chips:
+            w = min(245, max(120, draw.textbbox((0, 0), chip, font=load_font(16, True))[2] + 34))
+            if chip_x + w > WIDTH - 64:
+                break
+            draw.rounded_rectangle((chip_x, 1152, chip_x + w, 1196), radius=18, fill=theme["panel"])
+            centered_label(draw, chip, (chip_x + 4, 1154, chip_x + w - 4, 1194), load_font(16, True), theme["primary"], max_lines=1)
+            chip_x += w + 12
+        draw.text((74, 1260), "A CLOSER LOOK AT THE IMPLEMENTATION", font=load_font(15, True), fill=muted)
 
-    # Keep copy inside the main slide content, not in a separate text footer.
-    # Expand the illustration into the reclaimed space and leave only a visual progress bar.
-    visual_top = max(body_bottom + 28, 650)
-    visual_bottom = min(visual_top + 470, 1220)
-    visual_box = (68, visual_top, WIDTH - 68, visual_bottom)
-    visual_type = slide.get("visual_type", "learning")
-    if visual_type == "website":
-        if not draw_website_visual(image, draw, visual_box, slide):
-            print("WARNING: No genuine TruLoop screenshot was available; using a flow diagram instead.")
-            draw_visual(draw, "flow", visual_box, index)
+    elif layout == "process":
+        draw.text((74, 140), "FOLLOW THE FLOW", font=load_font(17, True), fill=theme["primary"])
+        title_bottom = draw_wrapped(draw, title, (72, 184), load_font(58, True),
+                                    light_ink, WIDTH - 144, line_gap=6, max_lines=2)
+        body_top = max(330, title_bottom + 18)
+        draw_wrapped(draw, body, (78, body_top), load_font(27), muted,
+                     WIDTH - 156, line_gap=8, max_lines=3)
+        box = (54, 455, WIDTH - 54, 1034)
+        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw.line((76, 1115, WIDTH - 76, 1115), fill=theme["line"], width=2)
+        draw.text((76, 1150), "REQUEST", font=load_font(16, True), fill=theme["primary"])
+        draw.text((WIDTH // 2 - 45, 1150), "PROCESS", font=load_font(16, True), fill=theme["secondary"])
+        draw.text((WIDTH - 188, 1150), "RESPONSE", font=load_font(16, True), fill=theme["primary"])
+
+    elif layout == "editorial":
+        draw.rectangle((0, 0, 290, HEIGHT), fill=dark_bg)
+        draw.text((54, 170), f"{index + 1:02d}", font=load_font(86, True), fill=theme["accent"])
+        draw_wrapped(draw, "FIELD NOTES", (56, 282), load_font(18, True), theme["on_dark"], 190, line_gap=5, max_lines=2)
+        draw_wrapped(draw, title, (332, 150), load_font(55, True), light_ink, 670, line_gap=6, max_lines=4)
+        draw_wrapped(draw, body, (338, 415), load_font(27), muted, 640, line_gap=8, max_lines=5)
+        box = (330, 700, 1015, 1100)
+        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw.text((338, 1172), "OBSERVE  /  EXPLAIN  /  IMPROVE", font=load_font(15, True), fill=theme["primary"])
+
+    elif layout == "detail":
+        image.paste(theme["panel"], (0, 0, WIDTH, HEIGHT))
+        draw = ImageDraw.Draw(image)
+        draw_brand_line(draw, index + 1, total, theme, light=False)
+        draw.text((78, 150), "IMPLEMENTATION DETAIL", font=load_font(17, True), fill=theme["primary"])
+        title_bottom = draw_wrapped(draw, title, (74, 196), load_font(59, True),
+                                    light_ink, WIDTH - 148, line_gap=6, max_lines=2)
+        draw_wrapped(draw, body, (80, max(330, title_bottom + 20)), load_font(27), muted,
+                     WIDTH - 160, line_gap=8, max_lines=3)
+        box = (70, 500, WIDTH - 70, 1100)
+        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw.text((78, 1170), "DETAILS MATTER MORE THAN DECORATION", font=load_font(15, True), fill=theme["primary"])
+
+    elif layout == "closing":
+        image.paste(dark_bg, (0, 0, WIDTH, HEIGHT))
+        draw = ImageDraw.Draw(image)
+        draw_brand_line(draw, index + 1, total, theme, light=True)
+        draw.text((76, 154), "THE TAKEAWAY", font=load_font(17, True), fill=theme["accent"])
+        title_bottom = draw_wrapped(draw, title, (72, 205), load_font(68, True),
+                                    theme["on_dark"], WIDTH - 144, line_gap=4, max_lines=3)
+        body_top = max(425, title_bottom + 22)
+        body_bottom = draw_wrapped(draw, body, (78, body_top), load_font(29),
+                                   theme["on_dark_muted"], WIDTH - 156, line_gap=8, max_lines=3)
+        # The last scene favours the lesson, so the visual is a compact set of labelled steps.
+        box_top = max(body_bottom + 28, 700)
+        box = (76, min(box_top, 780), WIDTH - 76, 1050)
+        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw.line((76, 1145, WIDTH - 76, 1145), fill=(65, 72, 93), width=2)
+        draw.text((78, 1181), "REAL PROJECTS  /  CONTINUING TO LEARN IN PUBLIC",
+                  font=load_font(15, True), fill=theme["on_dark_muted"])
+
     else:
-        draw_visual(draw, visual_type, visual_box, index)
+        # Unknown layouts are rendered as an editorial note, never as a duplicate default slide.
+        draw_wrapped(draw, title, (78, 180), load_font(60, True), light_ink, WIDTH - 156, max_lines=3)
+        draw_wrapped(draw, body, (82, 360), load_font(29), muted, WIDTH - 164, max_lines=4)
+        draw_layout_visual(image, draw, slide, (70, 620, WIDTH - 70, 1120), index, theme)
 
-    progress_x1 = 78
-    progress_x2 = WIDTH - 78
-    progress_y = HEIGHT - 48
-    draw.rounded_rectangle((progress_x1, progress_y, progress_x2, progress_y + 7),
-                           radius=4, fill=LINE)
-    fill_end = progress_x1 + int((progress_x2 - progress_x1) * ((index + 1) / total))
-    draw.rounded_rectangle((progress_x1, progress_y, fill_end, progress_y + 7),
-                           radius=4, fill=GREEN)
     image.save(output_path, format="PNG", optimize=True)
-
 
 def clean_title(text):
     return str(text).replace("\u2014", ",").replace("\u2013", "-").strip()

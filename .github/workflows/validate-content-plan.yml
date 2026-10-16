@@ -93,6 +93,12 @@ jobs:
           publisher = Path("src/publish_linkedin.py").read_text(encoding="utf-8")
           if "linkedin_video.mp4" not in renderer or "ffmpeg" not in renderer:
               raise SystemExit("Animated MP4 rendering code is missing.")
+          if "THEMES = [" not in renderer or "def theme_for_topic" not in renderer:
+              raise SystemExit("Topic based visual art direction is missing from the renderer.")
+          if not all(f'layout == "{name}"' in renderer for name in ("hero", "split", "evidence", "process", "editorial", "detail", "closing")):
+              raise SystemExit("The renderer must support multiple distinct slide compositions.")
+          if "visual_labels" not in renderer or "visual_labels" not in source:
+              raise SystemExit("Slides must use context specific labels rather than decorative filler.")
           if "upload_video(" not in publisher or "urn:li:video:" not in publisher:
               raise SystemExit("LinkedIn video upload code is missing.")
           if "linkedin_image.jpg" in publisher or "upload_image(" in publisher or "IMAGES_URL" in publisher:

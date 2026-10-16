@@ -806,16 +806,16 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             layout = "hero"
         elif number == len(slides):
             layout = "closing"
-        elif visual_type == "website":
-            layout = "evidence"
-        if layout not in SLIDE_LAYOUTS or layout in used_layouts:
-            available = [
-                name for name in ["split", "evidence", "process", "editorial", "detail"]
-                if name not in used_layouts
-            ]
-            if not available:
-                raise RuntimeError("Could not assign a distinct layout to every slide.")
-            layout = available[0]
+        else:
+            middle_layouts = {"split", "evidence", "process", "editorial", "detail"}
+            if visual_type == "website":
+                layout = "evidence"
+            if layout not in middle_layouts or layout in used_layouts:
+                available = [name for name in ["split", "evidence", "process", "editorial", "detail"]
+                             if name not in used_layouts]
+                if not available:
+                    raise RuntimeError("Could not assign a distinct layout to every slide.")
+                layout = available[0]
         used_layouts.add(layout)
 
         if not visual_labels:
