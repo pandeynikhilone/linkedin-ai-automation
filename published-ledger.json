@@ -140,13 +140,16 @@
       "video_urn": "urn:li:video:D5610AQExCnabLm_QwA"
     },
     "2026-10-16-request-37": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-16T09:37:26+05:30",
       "topic": "Understanding what happens behind the TruLoop interface",
       "video_sha256": "e8837a2fac5d1dfbeb0fb9517a56e617b0b680855e8e897d7854fe4c3ace7f33",
       "video_size_bytes": 59319746,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-16T09:37:47+05:30",
+      "post_id": "urn:li:ugcPost:7516711464603156481",
+      "video_urn": "urn:li:video:D5610AQFAJX562g8kWw"
     }
   }
 }
