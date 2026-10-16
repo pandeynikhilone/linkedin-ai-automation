@@ -352,6 +352,7 @@ SLIDE_VISUAL_TYPES = {
     "chart", "flow", "code", "product", "database",
     "form", "checklist", "git", "stack", "learning", "website",
 }
+SLIDE_LAYOUTS = {"hero", "split", "evidence", "process", "editorial", "detail", "closing"}
 
 SCHEMA = {
     "type": "OBJECT",
@@ -367,9 +368,17 @@ SCHEMA = {
                 "properties": {
                     "title": {"type": "STRING"},
                     "body": {"type": "STRING"},
-                    "visual_type": {"type": "STRING"},
+                    "visual_type": {
+                        "type": "STRING",
+                        "enum": ["chart", "flow", "code", "product", "database", "form", "checklist", "git", "stack", "learning", "website"],
+                    },
+                    "layout": {
+                        "type": "STRING",
+                        "enum": ["hero", "split", "evidence", "process", "editorial", "detail", "closing"],
+                    },
+                    "visual_labels": {"type": "ARRAY", "items": {"type": "STRING"}},
                 },
-                "required": ["title", "body", "visual_type"],
+                "required": ["title", "body", "visual_type", "layout", "visual_labels"],
             },
         },
     },
@@ -556,14 +565,18 @@ LinkedIn text requirements:
 Video requirements:
 - Give a short, accurate video title.
 - Return exactly five slides: context, implementation, a key detail, how it applies in the project, and a practical takeaway.
-- Each slide needs a title of 3 to 7 words, body copy of 5 to 18 words, and one visual_type.
-- Keep each slide body to one concise sentence, without footnotes or extra footer text.
+- Each slide needs a title of 3 to 7 words, body copy of 5 to 18 words, one visual_type, one layout, and 2 to 4 short visual_labels.
 - visual_type must be one of: chart, flow, code, product, database, form, checklist, git, stack, learning, website.
-- {website_visual_instruction}
-- The 'website' visual must use a screenshot captured from the live TruLoop website. Never draw or generate a replacement UI. If a genuine screenshot is unavailable, the renderer must use a technical diagram instead.
-- Use only the verified facts above. Do not invent interface details, product data, user reviews, features, metrics, or outcomes.
-- Rendered slides are 4:5 MP4 frames made with local graphics. Use diagrams for technical concepts and a genuine website screenshot only when the topic is about TruLoop.
-- Keep text short, high contrast, and readable on a phone.
+- layout must be one of: hero, split, evidence, process, editorial, detail, closing.
+- Use five distinct layouts in the same video. The first must be hero and the last must be closing. Do not repeat one composition with only changed words or colours.
+- visual_labels should identify the actual concepts shown, such as "Browser", "Express route", "Controller", and "MongoDB". Every label must be grounded in the verified facts, with no invented numbers or outcomes.
+- Choose visuals according to the point being taught. Use a real request flow for architecture, meaningful data relationships for database topics, a genuine screenshot for the actual UI, and implementation evidence for code topics.
+- For TruLoop topics, use exactly one visual_type "website" slide to show the deployed site. Never redraw or fabricate its interface. The other slides should explain the relevant code or architecture instead of reusing website screenshots.
+- Vary both composition and visual treatment across different topics while maintaining a coherent developer series. Avoid repeatedly using the same generic illustration, card arrangement, device mockup, or decorative filler.
+- The "website" visual must use a screenshot captured from the live TruLoop website. If a genuine screenshot is unavailable, use a technical diagram instead.
+- Use only verified facts above. Do not invent UI, product features, data, metrics, reviews, or outcomes.
+- Slides are rendered into a 4:5 animated MP4 with typography, diagrams, and locally drawn graphics. Do not request external artwork or stock footage.
+- Keep text short, high contrast, and readable on a phone. Visual labels must explain the diagram, not merely decorate it.
 
 Portfolio CTA instruction: {portfolio_cta_instruction}
 
@@ -766,14 +779,20 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         raise RuntimeError("Exactly five video slides are required.")
 
     cleaned_slides = []
+    used_layouts = set()
     for number, slide in enumerate(slides, start=1):
         if not isinstance(slide, dict):
             raise RuntimeError(f"Slide {number} is not a valid object.")
         title = clean_text(slide.get("title", ""))
         body = clean_text(slide.get("body", ""))
         visual_type = clean_text(slide.get("visual_type", "")).casefold()
+        layout = clean_text(slide.get("layout", "")).casefold()
+        raw_labels = slide.get("visual_labels", [])
+        if not isinstance(raw_labels, list):
+            raw_labels = []
+        visual_labels = [clean_text(item)[:28] for item in raw_labels if clean_text(item)]
         if not title or not body:
-            raise RuntimeError(f"Slide {number} is missing its title or body.")
+            raise RuntimeError(f"Slide {number} is missing a title or body.")
         if len(title.split()) < 3 or len(title.split()) > 7:
             raise RuntimeError(f"Slide {number} title must contain 3 to 7 words for consistent mobile layout.")
         body_words = len(body.split())
@@ -781,7 +800,51 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             raise RuntimeError(f"Slide {number} body must contain 5 to 18 words.")
         if visual_type not in SLIDE_VISUAL_TYPES:
             raise RuntimeError(f"Slide {number} uses unsupported visual_type: {visual_type}")
-        cleaned_slides.append({"title": title, "body": body, "visual_type": visual_type})
+
+        # Upgrade older fixed templates and ensure every frame has its own composition.
+        if number == 1:
+            layout = "hero"
+        elif number == len(slides):
+            layout = "closing"
+        elif visual_type == "website":
+            layout = "evidence"
+        if layout not in SLIDE_LAYOUTS or layout in used_layouts:
+            available = [
+                name for name in ["split", "evidence", "process", "editorial", "detail"]
+                if name not in used_layouts
+            ]
+            if not available:
+                raise RuntimeError("Could not assign a distinct layout to every slide.")
+            layout = available[0]
+        used_layouts.add(layout)
+
+        if not visual_labels:
+            fallback_labels = {
+                "chart": ["Line", "Bar", "Area", "Pie"],
+                "flow": ["Input", "Process", "Response"],
+                "code": [title, "Implementation detail", "Expected response"],
+                "product": ["Product", "Specifications", "Reviews"],
+                "database": ["Product", "Review", "User"],
+                "form": ["Required fields", "Validation", "Submit"],
+                "checklist": ["Check input", "Apply rule", "Return result"],
+                "git": ["Change", "Review", "Improve"],
+                "stack": ["Frontend", "Backend", "Database"],
+                "learning": ["Understand", "Apply", "Test"],
+                "website": ["Live TruLoop website"],
+            }
+            visual_labels = fallback_labels.get(visual_type, ["Input", "Process", "Output"])
+        cleaned_slides.append({
+            "title": title,
+            "body": body,
+            "visual_type": visual_type,
+            "layout": layout,
+            "visual_labels": visual_labels[:4],
+        })
+
+    if cleaned_slides[0]["layout"] != "hero" or cleaned_slides[-1]["layout"] != "closing":
+        raise RuntimeError("The video must begin with a hero composition and finish with a closing composition.")
+    if len({slide["layout"] for slide in cleaned_slides}) != len(cleaned_slides):
+        raise RuntimeError("Each slide must use a distinct composition.")
 
     website_count = sum(1 for slide in cleaned_slides if slide["visual_type"] == "website")
     if "truloop" in topic.casefold() and website_count != 1:
