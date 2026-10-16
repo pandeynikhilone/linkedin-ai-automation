@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -66,6 +66,22 @@ def scheduled_date_after(after_date: date, slots: int) -> date:
     for _ in range(max(0, slots)):
         cursor = next_publish_date(cursor)
     return cursor
+
+
+def first_available_publish_date(now: datetime, slot_available: bool, last_published_date: date | None = None) -> date:
+    """Project the first remaining Tuesday/Friday slot without returning a missed slot in the past."""
+    local_now = now.astimezone(TZ) if now.tzinfo else now.replace(tzinfo=TZ)
+    today = local_now.date()
+    before_recovery_cutoff = local_now.time().replace(tzinfo=None) <= time(14, 0)
+
+    if slot_available and today.weekday() in PUBLISH_WEEKDAYS and before_recovery_cutoff:
+        candidate = today
+    else:
+        candidate = next_publish_date(today)
+
+    if last_published_date is not None and candidate <= last_published_date:
+        candidate = next_publish_date(last_published_date)
+    return candidate
 
 
 def scheduled_date_on_or_after(start_date: date, slot_number: int) -> date:
@@ -181,6 +197,9 @@ def main() -> None:
     else:
         slot_message = "No publication or open request is recorded for today. One owner-triggered post can be requested."
 
+    last_published_date = latest_confirmed["stamp"].date() if latest_confirmed is not None else None
+    first_scheduled_date = first_available_publish_date(now, slot_available, last_published_date)
+
     actual_dates: dict[int, date] = {}
     for day in range(1, topic_count + 1):
         published = [item for item in ledger_by_day.get(day, []) if item["status"] == "published"]
@@ -236,10 +255,9 @@ def main() -> None:
             distance = (day - latest_day) % topic_count
             if distance == 0:
                 distance = topic_count
-            planned_date = scheduled_date_after(sequence_start, distance)
+            planned_date = scheduled_date_after(first_scheduled_date, distance - 1)
         else:
-            plan_start = date.fromisoformat(str(plan.get("startDate", today.isoformat())))
-            planned_date = scheduled_date_on_or_after(plan_start, day)
+            planned_date = scheduled_date_after(first_scheduled_date, day - 1)
 
         post_id = post_record["postId"] if post_record else ""
         post_url = ""
@@ -268,11 +286,11 @@ def main() -> None:
         next_day = (int(latest_confirmed["day"]) % topic_count) + 1
         next_item = next((item for item in plan_topics if int(item.get("day", 0)) == next_day), plan_topics[next_day - 1])
         next_topic = {"day": next_day, "topic": str(next_item["topic"]),
-                      "plannedDate": scheduled_date_after(latest_confirmed["stamp"].date(), 1).isoformat()}
+                      "plannedDate": first_scheduled_date.isoformat()}
     else:
         next_item = plan_topics[0]
         next_topic = {"day": int(next_item.get("day", 1)), "topic": str(next_item["topic"]),
-                      "plannedDate": scheduled_date_on_or_after(date.fromisoformat(str(plan.get("startDate", today.isoformat()))), 1).isoformat()}
+                      "plannedDate": first_scheduled_date.isoformat()}
 
     queued_count = sum(1 for issue in issues if issue["state"] == "open")
     status_counts = {name: sum(1 for row in topics_out if row["status"] == name)
