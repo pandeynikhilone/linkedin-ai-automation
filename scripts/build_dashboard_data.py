@@ -48,6 +48,36 @@ def load_json(path: Path, default: object) -> object:
         return default
 
 
+PUBLISH_WEEKDAYS = {1, 4}  # Tuesday and Friday; Python Monday=0.
+
+
+def next_publish_date(after_date: date) -> date:
+    """Return the next Tuesday or Friday strictly after after_date."""
+    cursor = after_date
+    while True:
+        cursor += timedelta(days=1)
+        if cursor.weekday() in PUBLISH_WEEKDAYS:
+            return cursor
+
+
+def scheduled_date_after(after_date: date, slots: int) -> date:
+    """Advance a number of Tuesday/Friday publication slots from a date."""
+    cursor = after_date
+    for _ in range(max(0, slots)):
+        cursor = next_publish_date(cursor)
+    return cursor
+
+
+def scheduled_date_on_or_after(start_date: date, slot_number: int) -> date:
+    """Return the one-based publication slot at or after a starting date."""
+    cursor = start_date
+    while cursor.weekday() not in PUBLISH_WEEKDAYS:
+        cursor += timedelta(days=1)
+    for _ in range(max(0, slot_number - 1)):
+        cursor = next_publish_date(cursor)
+    return cursor
+
+
 def read_issues() -> list[dict]:
     path = os.getenv("DASHBOARD_ISSUES_FILE", "").strip()
     if not path:
@@ -206,9 +236,10 @@ def main() -> None:
             distance = (day - latest_day) % topic_count
             if distance == 0:
                 distance = topic_count
-            planned_date = sequence_start + timedelta(days=distance)
+            planned_date = scheduled_date_after(sequence_start, distance)
         else:
-            planned_date = date.fromisoformat(str(plan.get("startDate", today.isoformat()))) + timedelta(days=day - 1)
+            plan_start = date.fromisoformat(str(plan.get("startDate", today.isoformat())))
+            planned_date = scheduled_date_on_or_after(plan_start, day)
 
         post_id = post_record["postId"] if post_record else ""
         post_url = ""
@@ -237,11 +268,11 @@ def main() -> None:
         next_day = (int(latest_confirmed["day"]) % topic_count) + 1
         next_item = next((item for item in plan_topics if int(item.get("day", 0)) == next_day), plan_topics[next_day - 1])
         next_topic = {"day": next_day, "topic": str(next_item["topic"]),
-                      "plannedDate": (latest_confirmed["stamp"].date() + timedelta(days=1)).isoformat()}
+                      "plannedDate": scheduled_date_after(latest_confirmed["stamp"].date(), 1).isoformat()}
     else:
         next_item = plan_topics[0]
         next_topic = {"day": int(next_item.get("day", 1)), "topic": str(next_item["topic"]),
-                      "plannedDate": str(plan.get("startDate", today.isoformat()))}
+                      "plannedDate": scheduled_date_on_or_after(date.fromisoformat(str(plan.get("startDate", today.isoformat()))), 1).isoformat()}
 
     queued_count = sum(1 for issue in issues if issue["state"] == "open")
     status_counts = {name: sum(1 for row in topics_out if row["status"] == name)
