@@ -83,6 +83,11 @@ jobs:
               raise SystemExit("Generator must return a video title and slides.")
           if '"illustration_brief"' in source or "GEMINI_IMAGE" in source:
               raise SystemExit("Separate illustration-generation code remains in the generator.")
+          capture = Path("src/capture_truloop_site.py").read_text(encoding="utf-8")
+          if '"website"' not in source or "WEBSITE_SCREENSHOT" not in renderer or "page.screenshot" not in capture:
+              raise SystemExit("TruLoop videos must embed a screenshot of the live site instead of regenerating the UI.")
+          if "Playwright" not in Path("requirements.txt").read_text(encoding="utf-8") and "playwright" not in Path("requirements.txt").read_text(encoding="utf-8"):
+              raise SystemExit("Playwright must be installed for deployed site capture.")
 
           renderer = Path("src/create_video.py").read_text(encoding="utf-8")
           publisher = Path("src/publish_linkedin.py").read_text(encoding="utf-8")
