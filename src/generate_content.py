@@ -78,12 +78,14 @@ TOPIC_PLAN = [
         "angle": "Summarize the real scope of the internship, not a fictional day-in-the-life story."
     },
     {
-        "topic": "The problem Truloop is designed to address",
+        "topic": "Understanding what happens behind the TruLoop interface",
         "facts": [
-            "Truloop README says sponsored posts and fake or incentivized reviews can make it difficult to find trustworthy product information.",
-            "The project aims to emphasize honest, unbiased, real-world product reviews."
+            "The Next.js frontend lives in the frontend folder and the Express API lives in the backend folder.",
+            "backend/src/app.js mounts separate /api/products and /api/reviews route modules.",
+            "The product and review route modules call controller functions that read and update MongoDB documents through Mongoose models.",
+            "After a review is created, backend/src/controllers/review.controller.js recalculates and saves the product averageRating and reviewCount."
         ],
-        "angle": "Describe the product motivation as stated in the README. Do not claim Truloop has eliminated fake reviews or proven market impact."
+        "angle": "Trace one request from the interface to an Express route, controller, and MongoDB operation, then back to the response. Describe the repository structure accurately and do not claim the whole request lifecycle was traced unless the code was actually inspected."
     },
     {
         "topic": "What Truloop means by real usage experience",
@@ -348,7 +350,7 @@ def select_topic_index(today, requested_day=""):
 
 SLIDE_VISUAL_TYPES = {
     "chart", "flow", "code", "product", "database",
-    "form", "checklist", "git", "stack", "learning",
+    "form", "checklist", "git", "stack", "learning", "website",
 }
 
 SCHEMA = {
@@ -519,9 +521,15 @@ def main():
         else "Do not add a portfolio URL or self-promotional call to action today."
     )
 
+    website_visual_instruction = (
+        "For this TruLoop topic, make exactly one slide use visual_type 'website' to show the genuine deployed interface. Use flow, code, or database visuals for the remaining technical explanation."
+        if "truloop" in topic.casefold()
+        else "Do not use visual_type 'website' for this topic. Use a relevant diagram or code visual instead."
+    )
+
     prompt = f"""
-Create one LinkedIn post plus exactly five short animated-video slide scripts.
-Everything must be grounded in Nikhil Pandey's resume and public GitHub project details.
+Create one LinkedIn post and exactly five short animated-video slide scripts.
+Everything must be grounded in Nikhil Pandey's actual resume and public GitHub project details.
 
 Today's topic: {topic}
 Verified source facts:
@@ -529,33 +537,33 @@ Verified source facts:
 
 Topic angle: {post_angle}
 
+The purpose of this account is to build a credible early-career developer profile. The audience includes other students, developers, and potential internship or job contacts. Posts should document real work and learning, not pretend to be an industry expert.
+
 LinkedIn text requirements:
-- Write 70 to 95 words, using exactly three plain-text paragraphs separated by one blank line.
-- Paragraph 1: a specific, natural opening about the technical task. Do not use a standalone title or heading.
-- Paragraph 2: explain the verified work in a direct first-person voice, without adding unsupported details.
-- Paragraph 3: finish with one concise, practical takeaway grounded in the topic.
-- Keep each paragraph to one or two sentences. Use no bullets, numbered lists, emojis, markdown, or inline hashtags.
-- Use simple, readable sentences and the same caption structure for every post, so the series remains consistent.
-- Avoid generic motivation, sales language, excessive excitement, engagement bait, and stock phrases.
-- Do not invent personal stories, feelings, incidents, fixes, outcomes, users, metrics, dates, features, technical decisions, or achievements.
-- Use first person only for contributions explicitly attributed to Nikhil. Credit collaborators accurately.
-- Do not describe Truloop's receipt validation as guaranteed proof of purchase.
-- Do not use long dash punctuation. Use ordinary punctuation and short sentences.
-- Return 3 or 4 relevant hashtags separately from the post body. The publisher appends these on their own line after the caption.
-- The post body is the LinkedIn caption accompanying the video, not text to place in a video footer.
-- Make the caption clearly explain the specific work shown in today's video and why the implementation detail matters.
-- The caption must make sense when read without watching the video. Do not leave it as just a title or a teaser.
+- Write 70 to 95 words in exactly three plain-text paragraphs separated by one blank line.
+- Open with a specific observation, technical question, tradeoff, or problem tied to this topic. Do not use a standalone title.
+- In the middle paragraph, explain the real implementation or code detail, using first person only where Nikhil's own contribution is documented.
+- End with a practical lesson or something Nikhil is trying to understand more deeply. Do not force a call to action or a question into every post.
+- Sound like a thoughtful MCA student explaining something he genuinely built or is learning. Use natural, straightforward wording, not corporate marketing copy or generic motivational writing.
+- Vary the opening and sentence structure between topics. Avoid recurring formulas such as 'One thing I am learning', 'I have been working on', 'Excited to share', and 'Building this taught me' as automatic openers.
+- Use no emojis, headings, bullets, numbered lists, markdown, or inline hashtags in the caption.
+- Do not use em dashes or en dashes. Avoid unnecessary hyphenated phrases when a simpler wording works.
+- Do not invent personal stories, feelings, incidents, bugs, fixes, results, users, metrics, dates, features, technical decisions, or achievements.
+- Credit collaborators accurately. Do not describe TruLoop receipt text checks as proof that a purchase is genuine.
+- Return 3 or 4 relevant hashtags separately from the body. The publisher appends them on their own line.
+- The caption must stand on its own and explain why the specific technical detail matters. Do not write a teaser that depends on watching the video.
 
 Video requirements:
 - Give a short, accurate video title.
-- Return exactly five slides in the same sequence on every post: task/context, implementation, key detail, project application, practical takeaway.
-- Each slide must have a short title of 3 to 7 words, body copy of 5 to 18 words, and one visual_type.
-- Keep one concise sentence in each slide body; do not add headings, footnotes, captions, or footer text.
-- visual_type must be one of: chart, flow, code, product, database, form, checklist, git, stack, learning.
-- Use a simple sequence: introduce the real problem or task, explain the implementation, show a key detail, add a practical implication, end with a grounded takeaway.
-- Use only the verified facts above. Do not invent UI, product features, data, metrics, or outcomes.
-- Slides will be rendered directly into a 4:5 animated MP4 with typography, diagrams, and locally drawn graphics. Do not request external artwork or stock footage. Select only a visual_type.
-- Keep slide copy brief, high contrast, and mobile-readable.
+- Return exactly five slides: context, implementation, a key detail, how it applies in the project, and a practical takeaway.
+- Each slide needs a title of 3 to 7 words, body copy of 5 to 18 words, and one visual_type.
+- Keep each slide body to one concise sentence, without footnotes or extra footer text.
+- visual_type must be one of: chart, flow, code, product, database, form, checklist, git, stack, learning, website.
+- {website_visual_instruction}
+- The 'website' visual must use a screenshot captured from the live TruLoop website. Never draw or generate a replacement UI. If a genuine screenshot is unavailable, the renderer must use a technical diagram instead.
+- Use only the verified facts above. Do not invent interface details, product data, user reviews, features, metrics, or outcomes.
+- Rendered slides are 4:5 MP4 frames made with local graphics. Use diagrams for technical concepts and a genuine website screenshot only when the topic is about TruLoop.
+- Keep text short, high contrast, and readable on a phone.
 
 Portfolio CTA instruction: {portfolio_cta_instruction}
 
