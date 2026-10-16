@@ -15,6 +15,12 @@ OUTPUT_FILE = ROOT / "linkedin_video.mp4"
 WEBSITE_SCREENSHOT = ROOT / "generated_assets" / "truloop_homepage.png"
 PRODUCTS_SCREENSHOT = ROOT / "generated_assets" / "truloop_products.png"
 PRODUCT_DETAIL_SCREENSHOT = ROOT / "generated_assets" / "truloop_product_detail.png"
+PRODUCT_REVIEWS_SCREENSHOT = ROOT / "generated_assets" / "truloop_product_reviews.png"
+SUBMIT_REVIEW_SCREENSHOT = ROOT / "generated_assets" / "truloop_submit_review.png"
+ADD_REVIEW_SCREENSHOT = ROOT / "generated_assets" / "truloop_add_review.png"
+LOGIN_SCREENSHOT = ROOT / "generated_assets" / "truloop_login.png"
+REGISTER_SCREENSHOT = ROOT / "generated_assets" / "truloop_register.png"
+PROFILE_SCREENSHOT = ROOT / "generated_assets" / "truloop_profile.png"
 WIDTH = 1080
 HEIGHT = 1350
 FPS = 24
@@ -325,18 +331,29 @@ def draw_visual(draw, slide, box, slide_index, theme):
                            load_font(19, True), ink, max_lines=3)
 
 
-def draw_website_visual(canvas, draw, box, slide, theme):
-    """Place an unmodified screen capture from the deployed TruLoop site into a frame."""
+def draw_website_visual(canvas, draw, box, slide, theme, topic):
+    """Use the most relevant genuine screen from the deployed site, never a recreated UI."""
     x1, y1, x2, y2 = box
     draw.rounded_rectangle(box, radius=24, fill=theme["surface"], outline=theme["line"], width=2)
 
-    context = (str(slide.get("title", "")) + " " + str(slide.get("body", ""))).casefold()
-    if any(term in context for term in ("product detail", "specification", "product page", "detail page")):
-        candidates = [PRODUCT_DETAIL_SCREENSHOT, PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
-    elif any(term in context for term in ("catalog", "catalogue", "listing", "browse products", "product list")):
-        candidates = [PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
-    else:
+    context = (str(topic) + " " + str(slide.get("title", "")) + " " + str(slide.get("body", ""))).casefold()
+    if any(term in context for term in ("submit review", "review submission", "review form", "proof validation", "receipt", "purchase date", "required fields")):
+        candidates = [SUBMIT_REVIEW_SCREENSHOT, ADD_REVIEW_SCREENSHOT, PRODUCT_REVIEWS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("product review", "review flow", "rating", "reviews", "average rating", "review data")):
+        candidates = [PRODUCT_REVIEWS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT, SUBMIT_REVIEW_SCREENSHOT, PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("catalog", "catalogue", "listing", "browse products", "product list", "product browsing")):
+        candidates = [PRODUCTS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("product detail", "specification", "product page", "detail page", "product information")):
+        candidates = [PRODUCT_DETAIL_SCREENSHOT, PRODUCT_REVIEWS_SCREENSHOT, PRODUCTS_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("login", "register", "authentication", "profile", "jwt", "bcrypt")):
+        candidates = [LOGIN_SCREENSHOT, REGISTER_SCREENSHOT, PROFILE_SCREENSHOT, WEBSITE_SCREENSHOT]
+    elif any(term in context for term in ("frontend", "navigation", "component", "interface", "homepage", "behind the ui")):
         candidates = [WEBSITE_SCREENSHOT, PRODUCTS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT]
+    else:
+        # Stable topic-based rotation avoids repeatedly selecting the homepage by default.
+        alternatives = [WEBSITE_SCREENSHOT, PRODUCTS_SCREENSHOT, PRODUCT_DETAIL_SCREENSHOT, PRODUCT_REVIEWS_SCREENSHOT]
+        seed = sum((position + 1) * ord(char) for position, char in enumerate(str(topic)))
+        candidates = alternatives[seed % len(alternatives):] + alternatives[:seed % len(alternatives)]
     screenshot_path = next((path for path in candidates if path.is_file()), None)
     if screenshot_path is None:
         return False
@@ -369,10 +386,10 @@ def draw_brand_line(draw, slide_number, total, theme, light=False):
     centered_label(draw, f"{slide_number:02d} / {total:02d}", pill, load_font(17, True), theme["surface"], max_lines=1)
 
 
-def draw_layout_visual(image, draw, slide, box, index, theme):
+def draw_layout_visual(image, draw, slide, box, index, theme, topic):
     kind = slide.get("visual_type", "flow")
     if kind == "website":
-        if draw_website_visual(image, draw, box, slide, theme):
+        if draw_website_visual(image, draw, box, slide, theme, topic):
             return
         print("WARNING: No genuine TruLoop screenshot was available; using a labelled architecture diagram.")
         fallback = dict(slide)
@@ -421,7 +438,7 @@ def render_slide(slide, index, total, topic, output_path):
                                    theme["on_dark_muted"], WIDTH - 156, line_gap=8, max_lines=3)
         visual_top = min(max(body_bottom + 26, 570), 670)
         box = (64, visual_top, WIDTH - 64, 1206)
-        draw_layout_visual(image, draw, slide, box, index, theme)
+        draw_layout_visual(image, draw, slide, box, index, theme, topic)
         draw.text((76, 1260), "BUILD  /  TRACE  /  TEST  /  LEARN", font=load_font(16, True), fill=theme["on_dark_muted"])
 
     elif layout == "split":
