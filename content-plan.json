@@ -3,7 +3,7 @@
   "startDate": "2026-10-11",
   "durationDays": 30,
   "schedule": "Two posts per week on Tuesday and Friday at 09:00 Asia/Kolkata. Hourly recovery attempts continue through 14:00 IST if no publication is confirmed.",
-  "rule": "The series contains 30 source grounded topics. The already confirmed posts remain in sequence, and the next topic follows the latest confirmed entry in published-ledger.json. Scheduled posts run on Tuesday and Friday at 09:00 IST, with hourly recovery attempts through 14:00 IST. Failed or uncertain attempts do not advance the sequence. Posts should share one real implementation detail or learning, sound like a student explaining work, and avoid unsupported claims, emojis, and long dash punctuation.",
+  "rule": "The series contains 30 source grounded topics. The already confirmed posts remain in sequence, and the next topic follows the most recently confirmed published plan topic in published-ledger.json. Scheduled posts run on Tuesday and Friday at 09:00 IST, with hourly recovery attempts through 14:00 IST. Failed or uncertain attempts do not advance the sequence. Posts should share one real implementation detail or learning, sound like a student explaining work, and avoid unsupported claims, emojis, and long dash punctuation.",
   "topics": [
     {
       "day": 1,
