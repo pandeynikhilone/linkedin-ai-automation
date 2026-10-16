@@ -7,7 +7,7 @@ A goal focused content workflow that turns verified project work and learning in
 - Uses a 30-topic learning series across the Techqueto internship, TruLoop, and the TechFest registration project.
 - Writes 70 to 95 words of copy, with a hard maximum of 110 words.
 - Captions aim for 70 to 95 words in three short paragraphs, with a specific hook, a verified technical detail, and a personal learning takeaway. Openings vary by topic. Captions use no emojis, headings, bullets, or inline hashtags, and avoid long dash punctuation.
-- Produces exactly five slides with short titles, concise explanatory text, diagrams, and genuine screenshots of the deployed TruLoop homepage, product catalogue, and product detail pages where available. The renderer does not recreate website UI.
+- Produces five different slide compositions per video, with a topic-specific visual style chosen from six art directions. Each diagram uses labels tied to that post's technical topic instead of anonymous decorative shapes. TruLoop videos use relevant screenshots captured from the real homepage, catalogue, product detail, review, form, or account pages when available. The renderer never recreates the website UI.
 - Renders a 1080 x 1350 portrait MP4 at 24 fps, with gentle movement and transitions.
 - Encodes at 30 Mbit/s constant bitrate, the upper bitrate in LinkedIn's published member-video guidance. For the ~15.9-second clip this produces about 60 MB; the renderer and publisher reject files outside 50-70 MB.
 - Uploads the MP4 through LinkedIn's Videos API, waits for processing to complete, then publishes the post text and video together through the Posts API.
@@ -52,7 +52,7 @@ The live [LinkedIn Content Control Room](https://pandeynikhilone.github.io/linke
 Optional repository variable:
 - `GEMINI_MODEL`, to choose the text-generation model.
 
-The graphics are drawn locally by Python and Pillow, then animated and encoded by FFmpeg. For TruLoop posts, Playwright captures the actual deployed homepage and, when available, the product catalogue and a linked product detail page. Those screenshots are embedded as footage. Other visuals use diagrams rather than fabricated website mockups.
+The graphics are drawn locally by Python and Pillow, then animated and encoded by FFmpeg. Each video uses distinct hero, split, evidence, process, editorial, detail, or closing compositions instead of repeating one card template five times. The visual palette rotates by topic. For TruLoop posts, Playwright captures genuine pages from the deployed site and the renderer selects a screen that fits the topic, such as product browsing, product details, reviews, or review submission. Other scenes use labelled technical diagrams instead of fabricated website mockups.
 
 ## Accuracy and duplicate protection
 - The post uses the topic's verified supporting facts and aims to sound like an MCA student describing actual work in straightforward language.
