@@ -162,7 +162,7 @@ jobs:
               for slide in data.get("slides", [])
           )
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"needed={'true' if needed else 'false'}\\n")
+              output.write(f"needed={'true' if needed else 'false'}\n")
           print("A genuine website capture is required." if needed else "No website screenshot needed.")
           PY
 
