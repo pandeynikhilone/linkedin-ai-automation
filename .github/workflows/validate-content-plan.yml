@@ -290,5 +290,13 @@ jobs:
               raise SystemExit("The dashboard deployment workflow must publish Pages with a sanitized status snapshot.")
           if 'cron: "35 18 * * *"' not in deployer or 'cron: "30 3-8 * * 2,5"' not in Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8"):
               raise SystemExit("The dashboard must refresh after midnight IST without changing the Tuesday and Friday publishing schedule.")
-          print("Dashboard validation passed: 30 topics, next-topic publish guard, owner-only request workflow, stable Tuesday and Friday 09:00 IST schedule, authentic TruLoop screenshots, and auto-refresh.")
+          from datetime import date
+          from scripts.build_dashboard_data import scheduled_date_after, scheduled_date_on_or_after
+          if scheduled_date_after(date(2026, 10, 15), 1) != date(2026, 10, 16):
+              raise SystemExit("After a Thursday publication, the next scheduled slot must be Friday.")
+          if scheduled_date_after(date(2026, 10, 16), 1) != date(2026, 10, 20):
+              raise SystemExit("After a Friday publication, the next scheduled slot must be Tuesday.")
+          if scheduled_date_on_or_after(date(2026, 10, 11), 1) != date(2026, 10, 13):
+              raise SystemExit("The first plan topic should be projected to the next Tuesday or Friday.")
+          print("Dashboard validation passed: 30 topics, next-topic publish guard, owner-only requests, Tuesday and Friday 09:00 IST schedule, authentic TruLoop screenshots, and auto-refresh.")
           PY
