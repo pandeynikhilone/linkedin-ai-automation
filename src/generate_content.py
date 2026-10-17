@@ -517,6 +517,55 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Designing a product browsing and review flow":
+        return {
+            "topic": topic,
+            "post": (
+                "A product page needs to do more than display a name and a picture. People also need enough context to judge whether an item fits what they are looking for.\n\n"
+                "TruLoop brings a growing product catalog together with product specifications, in depth user reviews, and the option to submit a review. That connects browsing with a way to learn from other people's experiences.\n\n"
+                "I am thinking about how each section can support the next step without overwhelming the page. Clear information structure matters because useful reviews only help when people can find and understand them."
+            ),
+            "hashtags": ["FullStackDevelopment", "WebDevelopment", "ProductExperience", "MCAStudent"],
+            "video_title": "Designing a Product Browsing and Review Flow",
+            "slides": [
+                {
+                    "title": "Browse Products With Context",
+                    "body": "A catalog gives people a starting point for comparing available products.",
+                    "visual_type": "website",
+                    "layout": "hero",
+                    "visual_labels": ["Live TruLoop UI", "Product catalog", "Browse products"],
+                },
+                {
+                    "title": "Check Product Details First",
+                    "body": "Specifications add context beyond a product name and image.",
+                    "visual_type": "product",
+                    "layout": "split",
+                    "visual_labels": ["Product details", "Specifications", "Catalog"],
+                },
+                {
+                    "title": "Reviews Add Useful Context",
+                    "body": "In depth user reviews help readers consider experiences beyond listed specifications.",
+                    "visual_type": "flow",
+                    "layout": "evidence",
+                    "visual_labels": ["Specifications", "User reviews", "Product context"],
+                },
+                {
+                    "title": "Make Review Submission Clear",
+                    "body": "The project also gives users a way to submit their own reviews.",
+                    "visual_type": "form",
+                    "layout": "process",
+                    "visual_labels": ["Review form", "User submission", "Product review"],
+                },
+                {
+                    "title": "Connect Each Step Naturally",
+                    "body": "Clear information structure helps people find and understand useful product reviews.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Browse", "Compare", "Read reviews", "Submit review"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -578,9 +627,10 @@ def main():
         else "Do not add a portfolio URL or self-promotional call to action today."
     )
 
+    is_truloop_topic = topic_index in range(7, 21)
     website_visual_instruction = (
-        "For this TruLoop topic, make exactly one slide use visual_type 'website' to show the genuine deployed interface. Use flow, code, or database visuals for the remaining technical explanation."
-        if "truloop" in topic.casefold()
+        "For this TruLoop topic, make exactly one slide use visual_type 'website' to show the genuine deployed interface. Use product, flow, form, code, or database visuals for the remaining explanation."
+        if is_truloop_topic
         else "Do not use visual_type 'website' for this topic. Use a relevant diagram or code visual instead."
     )
 
@@ -619,7 +669,7 @@ Video requirements:
 - Use five distinct layouts in the same video. The first must be hero and the last must be closing. Do not repeat one composition with only changed words or colours.
 - visual_labels should identify the actual concepts shown, such as "Browser", "Express route", "Controller", and "MongoDB". Every label must be grounded in the verified facts, with no invented numbers or outcomes.
 - Choose visuals according to the point being taught. Use a real request flow for architecture, meaningful data relationships for database topics, a genuine screenshot for the actual UI, and implementation evidence for code topics.
-- For TruLoop topics, use exactly one visual_type "website" slide to show the deployed site. Never redraw or fabricate its interface. The other slides should explain the relevant code or architecture instead of reusing website screenshots.
+- {website_visual_instruction} Never redraw or fabricate the deployed interface. The website slide must use a genuine capture, and remaining slides should explain the relevant product flow, code, or architecture.
 - Vary both composition and visual treatment across different topics while maintaining a coherent developer series. Avoid repeatedly using the same generic illustration, card arrangement, device mockup, or decorative filler.
 - The "website" visual must use a screenshot captured from the live TruLoop website. If a genuine screenshot is unavailable, use a technical diagram instead.
 - Use only verified facts above. Do not invent UI, product features, data, metrics, reviews, or outcomes.
@@ -789,6 +839,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             fallback_topics = {
                 "Replacing hardcoded chart values with JSON-driven data",
                 "Understanding what happens behind the TruLoop interface",
+                "Designing a product browsing and review flow",
             }
             if topic not in fallback_topics:
                 raise
@@ -905,9 +956,9 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         raise RuntimeError("Each slide must use a distinct composition.")
 
     website_count = sum(1 for slide in cleaned_slides if slide["visual_type"] == "website")
-    if "truloop" in topic.casefold() and website_count != 1:
+    if is_truloop_topic and website_count != 1:
         raise RuntimeError("TruLoop video must contain exactly one website slide using the genuine deployed screenshot.")
-    if "truloop" not in topic.casefold() and website_count:
+    if not is_truloop_topic and website_count:
         raise RuntimeError("Website screenshot slides are only allowed for TruLoop topics.")
     if any(mark in data["post"] for mark in chr(0x2014) + chr(0x2013)):
         raise RuntimeError("Post body must not contain em dash or en dash punctuation.")
