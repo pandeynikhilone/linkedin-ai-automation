@@ -150,6 +150,15 @@
       "published_at": "2026-10-16T09:37:47+05:30",
       "post_id": "urn:li:ugcPost:7516711464603156481",
       "video_urn": "urn:li:video:D5610AQFAJX562g8kWw"
+    },
+    "2026-10-17-request-40": {
+      "status": "publishing",
+      "started_at": "2026-10-17T21:03:01+05:30",
+      "topic": "Designing a product browsing and review flow",
+      "video_sha256": "63f942c86d4715e688bb3713dbc64105e155f524c3dc84bcd74a497e51344654",
+      "video_size_bytes": 59319746,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
