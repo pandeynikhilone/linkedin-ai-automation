@@ -70,7 +70,11 @@ def main() -> None:
         print("No live website visual requested for this topic; screenshot capture skipped.")
         return
 
-    if "truloop" not in str(content.get("topic", "")).casefold():
+    topic = str(content.get("topic", "")).strip()
+    verified_truloop_topics = {
+        "Designing a product browsing and review flow",
+    }
+    if "truloop" not in topic.casefold() and topic not in verified_truloop_topics:
         raise SystemExit("The website visual is reserved for verified TruLoop content.")
 
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
