@@ -820,6 +820,9 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             ],
         }
         print("Using the standardized, source-grounded Day 6 caption and five-slide template.")
+    elif topic == "Designing a product browsing and review flow":
+        data = source_grounded_fallback(topic)
+        print("Using the deterministic source-grounded Day 10 template.")
     else:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
