@@ -710,7 +710,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         data = {
             "topic": topic,
             "post": (
-                "Binary Search is a useful reminder that choosing the right algorithm depends on the structure of the input. It only works correctly when the search range is sorted.\n\n"
+                "Binary Search shows how input structure affects algorithm choice. It only works when the search range is sorted.\n\n"
                 "In C++, the iterative approach uses a while loop, while the recursive approach calls the same function on the left or right half. Both take O(log n) time because each step removes about half of the remaining range.\n\n"
                 "The iterative version uses O(1) auxiliary space, while recursion uses O(log n) call stack space. I also prefer low + (high - low) / 2 for a safer midpoint calculation."
             ),
