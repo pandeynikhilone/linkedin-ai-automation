@@ -665,7 +665,7 @@ Topic angle: {post_angle}
 The purpose of this account is to build a credible early-career developer profile. The audience includes other students, developers, and potential internship or job contacts. Posts should document real work and learning, not pretend to be an industry expert.
 
 LinkedIn text requirements:
-- Write 70 to 95 words in exactly three plain-text paragraphs separated by one blank line.
+- Write 95 to 110 words in exactly three plain-text paragraphs separated by one blank line for sufficient technical substance.
 - Open with a specific observation, technical question, tradeoff, or problem tied to this topic. Do not use a standalone title.
 - In the middle paragraph, explain the real implementation or code detail, using first person only where Nikhil's own contribution is documented.
 - End with a practical lesson or something Nikhil is trying to understand more deeply. Do not force a call to action or a question into every post.
@@ -710,18 +710,18 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         data = {
             "topic": topic,
             "post": (
-                "Binary Search shows how input structure affects algorithm choice. It only works when the search range is sorted.\n\n"
-                "In C++, the iterative approach uses a while loop, while the recursive approach calls the same function on the left or right half. Both take O(log n) time because each step removes about half of the remaining range.\n\n"
-                "The iterative version uses O(1) auxiliary space, while recursion uses O(log n) call stack space. I also prefer low + (high - low) / 2 for a safer midpoint calculation."
+                "Binary search is not just “check the middle.” It is correct only when the search range is sorted and each comparison lets us discard a half that cannot contain the target.\n\n"
+                "For [1, 3, 5, 7, 9, 11, 13], searching for 9 checks 7 at index 3, so low becomes 4. The next midpoint is 11, so high becomes 4. The next midpoint is 9, found at index 4. The condition low <= high keeps a one-element range searchable; low > high means the target is absent.\n\n"
+                "Both iterative and recursive versions take O(log n) time. Iteration uses O(1) auxiliary space; recursion uses O(log n) stack space. The midpoint formula low + (high - low) / 2 avoids potential addition overflow."
             ),
             "hashtags": ["DSA", "CPP", "BinarySearch", "ProblemSolving"],
             "video_title": "Binary Search in C++: Iterative vs Recursive",
             "slides": [
-                {"title": "Search A Sorted Range", "body": "Binary search needs sorted data to safely discard half the range.", "visual_type": "learning", "layout": "hero", "visual_labels": ["Sorted array", "Target", "Middle element"]},
-                {"title": "Update The Search Boundaries", "body": "Compare the target with the midpoint and keep only the possible half.", "visual_type": "flow", "layout": "process", "visual_labels": ["low", "mid", "high", "Target comparison"]},
-                {"title": "The Iterative C++ Version", "body": "A while loop updates low and high until the target is found or range ends.", "visual_type": "code", "layout": "detail", "visual_labels": ["while loop", "low", "high", "return index"]},
-                {"title": "The Recursive C++ Version", "body": "A base case stops recursion; each call searches a smaller half of the array.", "visual_type": "code", "layout": "editorial", "visual_labels": ["Base case", "Left half", "Right half"]},
-                {"title": "Compare Time And Space", "body": "Both take O(log n) time; iterative uses less auxiliary space than recursion.", "visual_type": "learning", "layout": "closing", "visual_labels": ["O(log n) time", "O(1) iterative space", "O(log n) recursive stack"]}
+                {"title": "Binary Search Needs Sorted Data", "body": "Sorted order makes it safe to discard the half that cannot contain the target.", "visual_type": "learning", "layout": "hero", "visual_labels": ["1 3 5 7 9 11 13", "target = 9", "sorted ascending"]},
+                {"title": "Trace Every Boundary Update", "body": "Target 9: midpoint 7 moves low right; midpoint 11 moves high left; midpoint 9 matches.", "visual_type": "code", "layout": "process", "visual_labels": ["Worked trace", "Target = 9"], "code_lines": ["a = [1, 3, 5, 7, 9, 11, 13]", "low = 0, high = 6", "mid = 3 -> a[3] = 7; low = 4", "mid = 5 -> a[5] = 11; high = 4", "mid = 4 -> a[4] = 9; found at index 4"]},
+                {"title": "Iterative Binary Search in C++", "body": "The loop continues while low <= high, including the final one-element search range.", "visual_type": "code", "layout": "detail", "visual_labels": ["C++ implementation", "Loop invariant"], "code_lines": ["int binarySearch(const vector<int>& a, int x) {", "  int low = 0, high = (int)a.size() - 1;", "  while (low <= high) {", "    int mid = low + (high - low) / 2;", "    if (a[mid] == x) return mid;", "    if (a[mid] < x) low = mid + 1;", "    else high = mid - 1;", "  }", "  return -1;", "}"]},
+                {"title": "Recursive Version and Base Case", "body": "The empty-range base case prevents invalid access; each call strictly reduces the interval.", "visual_type": "code", "layout": "editorial", "visual_labels": ["Recursive implementation", "Base case"], "code_lines": ["int binarySearch(const vector<int>& a, int x, int l, int r) {", "  if (l > r) return -1;", "  int m = l + (r - l) / 2;", "  if (a[m] == x) return m;", "  if (a[m] < x)", "    return binarySearch(a, x, m + 1, r);", "  return binarySearch(a, x, l, m - 1);", "}"]},
+                {"title": "Complexity and Interview Details", "body": "Both are O(log n) time; iteration uses O(1) extra space, recursion O(log n) stack.", "visual_type": "learning", "layout": "closing", "visual_labels": ["Sorted input required", "O(log n) time", "O(1) iterative space", "O(log n) recursive stack"]}
             ]
         }
         print("Using deterministic C++ binary-search educational content.")
@@ -899,8 +899,9 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     data["video_title"] = clean_text(data["video_title"])[:180]
 
     word_count = len(data["post"].split())
-    if word_count < 70 or word_count > 95:
-        raise RuntimeError(f"Post body must contain 70 to 95 words, received {word_count}.")
+    min_words, max_words = (95, 110) if custom_binary_search else (70, 95)
+    if word_count < min_words or word_count > max_words:
+        raise RuntimeError(f"Post body must contain {min_words} to {max_words} words, received {word_count}.")
     paragraphs = [paragraph for paragraph in data["post"].split("\n\n") if paragraph.strip()]
     if len(paragraphs) != 3:
         raise RuntimeError(f"Post body must contain exactly three paragraphs, received {len(paragraphs)}.")
@@ -982,12 +983,19 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             if candidate is None:
                 break
             visual_labels.append(candidate)
+        code_lines = slide.get("code_lines", [])
+        if code_lines and (visual_type != "code" or not isinstance(code_lines, list)):
+            raise RuntimeError(f"Slide {number} code_lines must be a list used only with visual_type 'code'.")
+        code_lines = [clean_text(line)[:96] for line in code_lines if clean_text(line)] if isinstance(code_lines, list) else []
+        if len(code_lines) > 10:
+            raise RuntimeError(f"Slide {number} has too many code/trace lines for mobile readability.")
         cleaned_slides.append({
             "title": title,
             "body": body,
             "visual_type": visual_type,
             "layout": layout,
             "visual_labels": visual_labels[:4],
+            **({"code_lines": code_lines} if code_lines else {}),
         })
 
     if cleaned_slides[0]["layout"] != "hero" or cleaned_slides[-1]["layout"] != "closing":
