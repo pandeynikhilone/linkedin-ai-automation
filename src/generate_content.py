@@ -710,7 +710,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         data = {
             "topic": topic,
             "post": (
-                "Binary search is not just “check the middle.” It works only on sorted data, where each comparison proves that one half cannot contain the target.\n\n"
+                "Binary search is not just “check the middle.” It requires sorted data: each comparison proves one half cannot contain the target.\n\n"
                 "For [1, 3, 5, 7, 9, 11, 13], searching for 9 checks 7 at index 3, so low becomes 4. Next, midpoint 11 makes high become 4. Midpoint 9 then finds the target at index 4. The condition low <= high keeps a one-element range searchable; low > high means the target is absent.\n\n"
                 "Both versions take O(log n) time. Iteration uses O(1) auxiliary space; recursion uses O(log n) stack space. The midpoint formula low + (high - low) / 2 avoids potential addition overflow."
             ),
