@@ -259,8 +259,8 @@ def draw_visual(draw, slide, box, slide_index, theme):
         draw.line((left + 34, top + 116, right - 34, top + 116), fill=(70, 78, 100), width=2)
         if code_lines:
             available_h = bottom - top - 150
-            line_h = min(54, max(34, available_h // len(code_lines)))
-            font_size = 18 if len(code_lines) >= 8 else 20
+            line_h = min(54, max(22, available_h // len(code_lines)))
+            font_size = 16 if len(code_lines) >= 8 else 20
             font = load_font(font_size, False)
             yy = top + 135
             for line_text in code_lines:
