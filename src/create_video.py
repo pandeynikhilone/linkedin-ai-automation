@@ -248,22 +248,40 @@ def draw_visual(draw, slide, box, slide_index, theme):
                 draw_arrow(draw, (nx + node_w + 3, cy), (nx + node_w + gap - 5, cy), primary, width=4)
 
     elif kind == "code":
-        # Labelled implementation areas instead of fake code or decorative syntax bars.
+        # Render actual, topic-specific code or trace lines when supplied. Never substitute
+        # generic numbered labels for the implementation the slide claims to teach.
+        code_lines = [str(line) for line in slide.get("code_lines", []) if str(line).strip()]
         draw.rounded_rectangle((left + 12, top + 10, right - 12, bottom - 10), radius=24, fill=theme["dark"])
         for i, color in enumerate([primary, secondary, accent]):
             draw.ellipse((left + 34 + i * 28, top + 30, left + 48 + i * 28, top + 44), fill=color)
         header = labels[0] if labels else slide.get("title", "Implementation detail")
-        draw.text((left + 34, top + 70), header[:42], font=load_font(24, True), fill=theme["on_dark"])
+        draw.text((left + 34, top + 70), header[:42], font=load_font(22, True), fill=theme["on_dark"])
         draw.line((left + 34, top + 116, right - 34, top + 116), fill=(70, 78, 100), width=2)
-        content_labels = labels[1:] or ["Input handling", "Core logic", "Response"]
-        row_h = max(56, min(88, (bottom - top - 160) // max(1, len(content_labels))))
-        for i, label in enumerate(content_labels):
-            yy = top + 143 + i * row_h
-            draw.rounded_rectangle((left + 34, yy, left + 74, yy + 36), radius=10,
-                                   fill=[primary, secondary, accent][i % 3])
-            draw.text((left + 46, yy + 7), f"{i + 1}", font=load_font(17, True), fill=surface)
-            draw.text((left + 94, yy + 3), label[:44], font=load_font(22, True), fill=theme["on_dark"])
-            draw.line((left + 94, yy + 39, right - 34, yy + 39), fill=(53, 61, 82), width=2)
+        if code_lines:
+            available_h = bottom - top - 150
+            line_h = min(54, max(34, available_h // len(code_lines)))
+            font_size = 18 if len(code_lines) >= 8 else 20
+            font = load_font(font_size, False)
+            yy = top + 135
+            for line_text in code_lines:
+                max_width = right - left - 100
+                line_font = font
+                if draw.textbbox((0, 0), line_text, font=line_font)[2] > max_width:
+                    line_font = load_font(max(14, font_size - 4), False)
+                draw.text((left + 34, yy), line_text, font=line_font, fill=theme["on_dark"])
+                yy += line_h
+            if yy > bottom - 8:
+                raise RuntimeError("Code/trace lines overflow the visual box.")
+        else:
+            content_labels = labels[1:] or ["Input handling", "Core logic", "Response"]
+            row_h = max(56, min(88, (bottom - top - 160) // max(1, len(content_labels))))
+            for i, label in enumerate(content_labels):
+                yy = top + 143 + i * row_h
+                draw.rounded_rectangle((left + 34, yy, left + 74, yy + 36), radius=10,
+                                       fill=[primary, secondary, accent][i % 3])
+                draw.text((left + 46, yy + 7), f"{i + 1}", font=load_font(17, True), fill=surface)
+                draw.text((left + 94, yy + 3), label[:44], font=load_font(22, True), fill=theme["on_dark"])
+                draw.line((left + 94, yy + 39, right - 34, yy + 39), fill=(53, 61, 82), width=2)
 
     elif kind == "database":
         cylinder_x = left + max(110, width // 5)
