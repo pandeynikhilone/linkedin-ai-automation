@@ -164,13 +164,16 @@
       "video_urn": "urn:li:video:D5610AQFkiLZzbZ97UA"
     },
     "2026-10-18-request-41": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-18T20:28:03+05:30",
       "topic": "Building Truloop's frontend with Next.js App Router",
       "video_sha256": "302a3e8718153a8b7d4c17e839031d21f12a53c8e7d538dad7ddfa4e66262249",
       "video_size_bytes": 59319743,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-18T20:28:36+05:30",
+      "post_id": "urn:li:ugcPost:7517600022331482112",
+      "video_urn": "urn:li:video:D5610AQEJZPG2NvTByw"
     }
   }
 }
