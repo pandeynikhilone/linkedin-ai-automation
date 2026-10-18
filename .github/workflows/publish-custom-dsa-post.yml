@@ -103,8 +103,21 @@ jobs:
           words = len(post.split())
           if not 95 <= words <= 110 or len(paragraphs) != 3:
               raise SystemExit(f"Caption must have 95-110 words in exactly three paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
-          if len(content.get("slides", [])) != 5 or len(content.get("hashtags", [])) < 3:
+          slides = content.get("slides", [])
+          if len(slides) != 5 or len(content.get("hashtags", [])) < 3:
               raise SystemExit("Exactly five slides and at least three hashtags are required.")
+          if not slides[1].get("code_lines") or not slides[2].get("code_lines") or not slides[3].get("code_lines"):
+              raise SystemExit("DSA video must show a worked trace, iterative C++ code, and recursive C++ code.")
+          trace = "\\n".join(slides[1]["code_lines"])
+          iterative = "\\n".join(slides[2]["code_lines"])
+          recursive = "\\n".join(slides[3]["code_lines"])
+          for required in ("a[3] = 7", "low = 4", "a[5] = 11", "high = 4", "a[4] = 9"):
+              if required not in trace:
+                  raise SystemExit(f"Worked binary-search trace is missing: {required}")
+          if "low + (high - low) / 2" not in iterative or "low <= high" not in iterative:
+              raise SystemExit("Iterative code is missing the safe midpoint or inclusive loop condition.")
+          if "l > r" not in recursive or "m - 1" not in recursive:
+              raise SystemExit("Recursive code is missing the empty-range base case or shrinking boundary.")
           metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
           streams = metadata.get("streams", [])
           video = next((s for s in streams if s.get("codec_type") == "video"), None)
