@@ -614,8 +614,26 @@ def source_grounded_fallback(topic):
 def main():
     today = datetime.now(ZoneInfo("Asia/Kolkata"))
     requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
-    topic_index = select_topic_index(today.date(), requested_day)
-    selected_topic = TOPIC_PLAN[topic_index]
+    custom_topic = os.getenv("PUBLISH_CUSTOM_TOPIC", "").strip().lower()
+    custom_binary_search = custom_topic == "binary-search-cpp"
+    if custom_topic and not custom_binary_search:
+        raise RuntimeError("Unsupported custom topic key.")
+    if custom_binary_search:
+        topic_index = -1
+        selected_topic = {
+            "topic": "Binary Search in C++: Iterative and Recursive",
+            "facts": [
+                "Binary search requires a sorted array or range.",
+                "Each comparison with the midpoint discards about half of the remaining search space.",
+                "Iterative binary search uses a loop; recursive binary search calls itself on a smaller range.",
+                "Both approaches take O(log n) time; iterative uses O(1) auxiliary space and recursive uses O(log n) call-stack space.",
+                "Using low + (high - low) / 2 avoids the potential overflow of (low + high) / 2."
+            ],
+            "angle": "Teach binary search accurately with C++ examples, contrasting iterative and recursive methods."
+        }
+    else:
+        topic_index = select_topic_index(today.date(), requested_day)
+        selected_topic = TOPIC_PLAN[topic_index]
     topic = selected_topic["topic"]
     source_facts = "\n".join(f"- {fact}" for fact in selected_topic["facts"])
     post_angle = selected_topic["angle"]
@@ -688,7 +706,26 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     fixed_day4_correction = os.getenv("PUBLISH_FIXED_DAY4_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
     fixed_day5_standard = os.getenv("PUBLISH_FIXED_DAY5_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
     fixed_day6_standard = os.getenv("PUBLISH_FIXED_DAY6_TEMPLATE", "").strip().lower() in {"1", "true", "yes"}
-    if fixed_day4_correction:
+    if custom_binary_search:
+        data = {
+            "topic": topic,
+            "post": (
+                "Binary Search is a useful reminder that choosing the right algorithm depends on the structure of the input. It only works correctly when the search range is sorted.\n\n"
+                "In C++, the iterative approach uses a while loop, while the recursive approach calls the same function on the left or right half. Both take O(log n) time because each step removes about half of the remaining range.\n\n"
+                "The iterative version uses O(1) auxiliary space, while recursion uses O(log n) call stack space. I also prefer low + (high - low) / 2 for a safer midpoint calculation."
+            ),
+            "hashtags": ["DSA", "CPP", "BinarySearch", "ProblemSolving"],
+            "video_title": "Binary Search in C++: Iterative vs Recursive",
+            "slides": [
+                {"title": "Search A Sorted Range", "body": "Binary search needs sorted data to safely discard half the range.", "visual_type": "learning", "layout": "hero", "visual_labels": ["Sorted array", "Target", "Middle element"]},
+                {"title": "Update The Search Boundaries", "body": "Compare the target with the midpoint and keep only the possible half.", "visual_type": "flow", "layout": "process", "visual_labels": ["low", "mid", "high", "Target comparison"]},
+                {"title": "The Iterative C++ Version", "body": "A while loop updates low and high until the target is found or range ends.", "visual_type": "code", "layout": "detail", "visual_labels": ["while loop", "low", "high", "return index"]},
+                {"title": "The Recursive C++ Version", "body": "A base case stops recursion; each call searches a smaller half of the array.", "visual_type": "code", "layout": "editorial", "visual_labels": ["Base case", "Left half", "Right half"]},
+                {"title": "Compare Time And Space", "body": "Both take O(log n) time; iterative uses less auxiliary space than recursion.", "visual_type": "learning", "layout": "closing", "visual_labels": ["O(log n) time", "O(1) iterative space", "O(log n) recursive stack"]}
+            ]
+        }
+        print("Using deterministic C++ binary-search educational content.")
+    elif fixed_day4_correction:
         if topic != "Loading chart data asynchronously with useEffect":
             raise RuntimeError("The fixed correction template is only available for Day 4.")
         data = {
