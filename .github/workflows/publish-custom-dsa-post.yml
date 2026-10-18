@@ -101,8 +101,8 @@ jobs:
           post = content.get("post", "")
           paragraphs = [p for p in post.split("\n\n") if p.strip()]
           words = len(post.split())
-          if not 70 <= words <= 95 or len(paragraphs) != 3:
-              raise SystemExit(f"Caption must have 70-95 words in exactly three paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
+          if not 95 <= words <= 110 or len(paragraphs) != 3:
+              raise SystemExit(f"Caption must have 95-110 words in exactly three paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
           if len(content.get("slides", [])) != 5 or len(content.get("hashtags", [])) < 3:
               raise SystemExit("Exactly five slides and at least three hashtags are required.")
           metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
