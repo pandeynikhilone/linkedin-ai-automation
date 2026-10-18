@@ -480,6 +480,7 @@ def main():
         extra_topics = {
             "3": "Why I created reusable chart utilities in common.ts",
             "5": "Debugging TypeScript and chart rendering issues",
+            "99": "Binary Search in C++: Iterative and Recursive",
         }
         expected_topic = extra_topics.get(requested_extra_day)
         if expected_topic is None:
