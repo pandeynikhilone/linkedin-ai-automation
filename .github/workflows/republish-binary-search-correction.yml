@@ -23,7 +23,7 @@ jobs:
       contents: read
       issues: read
     outputs:
-      should_run: \${{ steps.slot.outputs.should_run }}
+      should_run: ${{ steps.slot.outputs.should_run }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
         id: slot
         env:
           PUBLISH_INTENT: correction
-          PUBLISH_REQUEST_ID: \${{ github.event.issue.number }}
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
         run: python3 src/check_publication_slot.py
 
   publish:
@@ -133,10 +133,10 @@ jobs:
 
       - name: Publish corrected Binary Search video to LinkedIn
         env:
-          LINKEDIN_ACCESS_TOKEN: \${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PUBLISH_TO_LINKEDIN: "true"
           PUBLISH_INTENT: correction
-          PUBLISH_REQUEST_ID: \${{ github.event.issue.number }}
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
           LINKEDIN_VIDEO_API_VERSION: "202606"
           LINKEDIN_POSTS_API_VERSION: "202609"
         run: python src/publish_linkedin.py
