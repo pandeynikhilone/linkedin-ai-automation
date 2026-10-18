@@ -188,13 +188,16 @@
       "video_urn": "urn:li:video:D5610AQEl9Y7O-DbS7A"
     },
     "2026-10-18-correction-46": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-18T21:46:34+05:30",
       "topic": "Binary Search in C++: Iterative and Recursive",
       "video_sha256": "998cb8c81c798e1e77a2754919f3c9d3853e5812d712a9917420c13f5bbb6d39",
       "video_size_bytes": 59319746,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-18T21:47:00+05:30",
+      "post_id": "urn:li:ugcPost:7517619752966574080",
+      "video_urn": "urn:li:video:D5610AQHMNrUISgAB1g"
     }
   }
 }
