@@ -200,13 +200,16 @@
       "video_urn": "urn:li:video:D5610AQHMNrUISgAB1g"
     },
     "2026-10-19-request-51": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-19T20:05:32+05:30",
       "topic": "Reusable navigation, product cards, and review sections",
       "video_sha256": "03a04d247434fa896ee2d922b549152c9ed61afe675df15ae739cb694cf303d9",
       "video_size_bytes": 59319746,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-19T20:06:01+05:30",
+      "post_id": "urn:li:ugcPost:7517956725807800320",
+      "video_urn": "urn:li:video:D5610AQHHEPTbljG-sw"
     }
   }
 }
