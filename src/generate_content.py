@@ -468,6 +468,57 @@ def fallback_hashtags(topic):
 
 def source_grounded_fallback(topic):
     """Verified deterministic content for selected topics if Gemini is unavailable."""
+    if topic == "Reusable navigation, product cards, and review sections":
+        return {
+            "topic": topic,
+            "post": (
+                "Reusable components become valuable when several parts of a page need a consistent structure.\n\n"
+                "In TruLoop, I built reusable UI components for navigation menus, product cards, and review sections. "
+                "Shared components keep repeated interface patterns together and make those sections easier to update without duplicating their structure.\n\n"
+                "My focus is finding the right level of reuse: consistent where sections are similar, but still clear enough to change each component deliberately. "
+                "That makes component structure a practical part of maintainable frontend work."
+            ),
+            "hashtags": ["NextJS", "ReactJS", "FrontendDevelopment", "WebDevelopment"],
+            "video_title": "Reusable Navigation, Product Cards, and Review Sections",
+            "slides": [
+                {
+                    "title": "Reusable UI Starts With Structure",
+                    "body": "The real interface shows how navigation, products, and reviews meet on one page.",
+                    "visual_type": "website",
+                    "layout": "hero",
+                    "visual_labels": ["Live TruLoop UI", "Navigation", "Product browsing"],
+                },
+                {
+                    "title": "Share Patterns Across Page Sections",
+                    "body": "Reusable menus, product cards, and review sections keep repeated UI patterns manageable.",
+                    "visual_type": "product",
+                    "layout": "split",
+                    "visual_labels": ["Navigation menus", "Product cards", "Review sections"],
+                },
+                {
+                    "title": "Choose A Useful Reuse Boundary",
+                    "body": "Shared components support consistency, but each component still needs a clear responsibility.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Shared component", "Page section", "Component responsibility"],
+                },
+                {
+                    "title": "Keep The Component Easy To Change",
+                    "body": "Clear inputs and responsibilities make future updates easier to follow.",
+                    "visual_type": "code",
+                    "layout": "detail",
+                    "visual_labels": ["Component structure", "Props and content", "Rendered UI"],
+                },
+                {
+                    "title": "Maintainability Starts With Clear Components",
+                    "body": "The goal is easier changes, not abstraction for its own sake.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Consistent UI", "Readable code", "Maintainability"],
+                },
+            ],
+        }
+
     if topic == "Understanding what happens behind the TruLoop interface":
         return {
             "topic": topic,
@@ -857,9 +908,12 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             ],
         }
         print("Using the standardized, source-grounded Day 6 caption and five-slide template.")
-    elif topic == "Designing a product browsing and review flow":
+    elif topic in {
+        "Designing a product browsing and review flow",
+        "Reusable navigation, product cards, and review sections",
+    }:
         data = source_grounded_fallback(topic)
-        print("Using the deterministic source-grounded Day 10 template.")
+        print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
     else:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
@@ -880,6 +934,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Replacing hardcoded chart values with JSON-driven data",
                 "Understanding what happens behind the TruLoop interface",
                 "Designing a product browsing and review flow",
+                "Reusable navigation, product cards, and review sections",
             }
             if topic not in fallback_topics:
                 raise
