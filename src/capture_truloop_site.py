@@ -73,6 +73,7 @@ def main() -> None:
     topic = str(content.get("topic", "")).strip()
     verified_truloop_topics = {
         "Designing a product browsing and review flow",
+        "Reusable navigation, product cards, and review sections",
     }
     if "truloop" not in topic.casefold() and topic not in verified_truloop_topics:
         raise SystemExit("The website visual is reserved for verified TruLoop content.")
