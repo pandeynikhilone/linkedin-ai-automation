@@ -617,6 +617,55 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Separating Truloop's frontend and backend":
+        return {
+            "topic": topic,
+            "post": (
+                "Keeping a frontend and backend in separate folders makes a project easier to navigate, but it is also important to understand how the two parts run together.\n\n"
+                "In TruLoop, the frontend uses Next.js and the backend uses Express. The repository keeps them in separate frontend and backend folders, and the root README explains how to run them together or separately. This describes the project's structure; it does not automatically make the application a microservices system.\n\n"
+                "My takeaway is to document both the folder structure and the startup steps clearly. A useful setup guide lets another developer explore the interface and API without guessing how the parts fit together."
+            ),
+            "hashtags": ["NextJS", "ExpressJS", "FullStackDevelopment", "WebDevelopment"],
+            "video_title": "Separating TruLoop's Frontend and Backend",
+            "slides": [
+                {
+                    "title": "Two Parts Of One Project",
+                    "body": "TruLoop keeps its Next.js frontend and Express backend in separate folders.",
+                    "visual_type": "website",
+                    "layout": "hero",
+                    "visual_labels": ["TruLoop interface", "Next.js frontend", "Project structure"],
+                },
+                {
+                    "title": "Keep Each Side Organized",
+                    "body": "The frontend and backend folders make each part easier to locate in the repository.",
+                    "visual_type": "stack",
+                    "layout": "split",
+                    "visual_labels": ["frontend folder", "backend folder", "Next.js", "Express"],
+                },
+                {
+                    "title": "Understand How They Run",
+                    "body": "The root README explains how to run both parts together or separately.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Read setup guide", "Start frontend", "Start backend"],
+                },
+                {
+                    "title": "Structure Is Not Microservices",
+                    "body": "Separate folders describe code organization, not a claim about distributed services.",
+                    "visual_type": "code",
+                    "layout": "detail",
+                    "visual_labels": ["Repository folders", "Application structure", "Accurate terminology"],
+                },
+                {
+                    "title": "Document The Setup Clearly",
+                    "body": "Clear startup instructions help another developer understand how the parts fit together.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Readable README", "Repeatable setup", "Developer onboarding"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -935,6 +984,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Understanding what happens behind the TruLoop interface",
                 "Designing a product browsing and review flow",
                 "Reusable navigation, product cards, and review sections",
+                "Separating Truloop's frontend and backend",
             }
             if topic not in fallback_topics:
                 raise
