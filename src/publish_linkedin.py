@@ -481,11 +481,12 @@ def main():
             "3": "Why I created reusable chart utilities in common.ts",
             "5": "Debugging TypeScript and chart rendering issues",
             "99": "Binary Search in C++: Iterative and Recursive",
+            "100": "Java Polymorphism: Reference Type vs Runtime Object",
         }
         expected_topic = extra_topics.get(requested_extra_day)
         if expected_topic is None:
             raise RuntimeError(
-                "Extra publication is allowed only for explicitly supported content-plan days (3 or 5)."
+                "Extra publication is allowed only for explicitly supported content-plan days (3, 5, 99, or 100)."
             )
         if data.get("topic") != expected_topic:
             raise RuntimeError(
