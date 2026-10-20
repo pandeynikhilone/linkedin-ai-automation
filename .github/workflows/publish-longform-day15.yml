@@ -2,7 +2,7 @@ name: Publish Long-Form Day 15 LinkedIn Video
 
 on:
   issues:
-    types: [opened]
+    types: [opened, edited]
 
 permissions:
   contents: read
@@ -15,10 +15,10 @@ concurrency:
 jobs:
   preflight:
     if: >-
-      ${{ github.event.issue.user.login }} == github.repository_owner &&
-      ${{ github.event.issue.title }} == 'Publish Long-Form LinkedIn Post Now' &&
-      contains(${{ github.event.issue.body }}, 'PUBLISH_LONGFORM_DAY=15') &&
-      contains(${{ github.event.issue.body }}, 'PUBLISH_LONGFORM=true')
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish Long-Form LinkedIn Post Now' &&
+      contains(github.event.issue.body, 'PUBLISH_LONGFORM_DAY=15') &&
+      contains(github.event.issue.body, 'PUBLISH_LONGFORM=true')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -99,9 +99,9 @@ jobs:
   publish:
     needs: preflight
     if: >-
-      ${{ github.event.issue.user.login }} == github.repository_owner &&
-      ${{ github.event.issue.title }} == 'Publish Long-Form LinkedIn Post Now' &&
-      contains(${{ github.event.issue.body }}, 'PUBLISH_LONGFORM_DAY=15') &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish Long-Form LinkedIn Post Now' &&
+      contains(github.event.issue.body, 'PUBLISH_LONGFORM_DAY=15') &&
       needs.preflight.result == 'success' &&
       needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
@@ -222,9 +222,9 @@ jobs:
     needs: [preflight, publish]
     if: >-
       always() &&
-      ${{ github.event.issue.user.login }} == github.repository_owner &&
-      ${{ github.event.issue.title }} == 'Publish Long-Form LinkedIn Post Now' &&
-      contains(${{ github.event.issue.body }}, 'PUBLISH_LONGFORM_DAY=15') &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish Long-Form LinkedIn Post Now' &&
+      contains(github.event.issue.body, 'PUBLISH_LONGFORM_DAY=15') &&
       needs.preflight.result == 'success' &&
       needs.publish.result == 'failure'
     runs-on: ubuntu-latest
