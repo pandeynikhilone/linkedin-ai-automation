@@ -716,7 +716,8 @@ def main():
     requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
     custom_topic = os.getenv("PUBLISH_CUSTOM_TOPIC", "").strip().lower()
     custom_binary_search = custom_topic == "binary-search-cpp"
-    if custom_topic and not custom_binary_search:
+    custom_java_polymorphism = custom_topic == "java-polymorphism"
+    if custom_topic and not (custom_binary_search or custom_java_polymorphism):
         raise RuntimeError("Unsupported custom topic key.")
     if custom_binary_search:
         topic_index = -1
@@ -730,6 +731,18 @@ def main():
                 "Using low + (high - low) / 2 avoids the potential overflow of (low + high) / 2."
             ],
             "angle": "Teach binary search accurately with C++ examples, contrasting iterative and recursive methods."
+        }
+    elif custom_java_polymorphism:
+        topic_index = -2
+        selected_topic = {
+            "topic": "Java Polymorphism: Reference Type vs Runtime Object",
+            "facts": [
+                "A parent-class reference in Java can refer to an instance of a child class.",
+                "For an overridden instance method, dynamic dispatch selects the implementation from the actual object's class.",
+                "Compile-time member access is checked against the declared reference type.",
+                "Inheritance, overriding, and polymorphism are part of the user's current Core Java coursework."
+            ],
+            "angle": "Explain the difference between a variable's declared reference type and its runtime object's class using a small Java example. Write as a student practising Core Java, invite readers to share what helped polymorphism click, and do not imply professional Java project experience."
         }
     else:
         topic_index = select_topic_index(today.date(), requested_day)
@@ -825,6 +838,25 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             ]
         }
         print("Using deterministic C++ binary-search educational content.")
+    elif custom_java_polymorphism:
+        data = {
+            "topic": topic,
+            "post": (
+                "Polymorphism clicked for me when I separated two questions: what type is the reference, and what object does it point to?\n\n"
+                "In Java, Animal animal = new Dog() is a parent-type reference holding a child object. If Dog overrides an instance method such as sound(), calling animal.sound() runs the Dog implementation at runtime. But which members you can access are still checked against the declared reference type at compile time.\n\n"
+                "I am practising OOP in Core Java, and tracing those two types separately helps me reason about the output. What made polymorphism click for you: a small code example, a diagram, or a project?"
+            ),
+            "hashtags": ["Java", "OOP", "MCA", "SoftwareDevelopment"],
+            "video_title": "Java Polymorphism: Reference vs Runtime Object",
+            "slides": [
+                {"title": "One Reference, One Child Object", "body": "A parent type can refer to an object created from a child class.", "visual_type": "learning", "layout": "hero", "visual_labels": ["Animal reference", "Dog instance", "Java"]},
+                {"title": "Compile Time Uses Reference Type", "body": "Available members are checked against the declared reference type.", "visual_type": "code", "layout": "split", "visual_labels": ["Declared type", "Member access"], "code_lines": ["Animal animal = new Dog();", "animal.sound();", "// Animal declares sound()"]},
+                {"title": "Runtime Chooses Overridden Method", "body": "For an overridden instance method, the actual object's class determines the implementation.", "visual_type": "code", "layout": "process", "visual_labels": ["Method overriding", "Runtime dispatch"], "code_lines": ["class Dog extends Animal {", "  @Override", "  void sound() { System.out.println(\"Bark\"); }", "}"]},
+                {"title": "Trace Both Types Separately", "body": "Ask what the variable is declared as and what object it holds.", "visual_type": "flow", "layout": "detail", "visual_labels": ["Declared type: Animal", "Runtime object: Dog", "Method dispatch"]},
+                {"title": "What Made It Click?", "body": "A tiny runnable example can make dynamic method dispatch easier to see.", "visual_type": "learning", "layout": "closing", "visual_labels": ["Predict the output", "Run and compare", "Explain why"]}
+            ]
+        }
+        print("Using deterministic Java polymorphism educational content.")
     elif fixed_day4_correction:
         if topic != "Loading chart data asynchronously with useEffect":
             raise RuntimeError("The fixed correction template is only available for Day 4.")
@@ -1005,7 +1037,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     data["video_title"] = clean_text(data["video_title"])[:180]
 
     word_count = len(data["post"].split())
-    min_words, max_words = (95, 110) if custom_binary_search else (70, 95)
+    min_words, max_words = (95, 110) if (custom_binary_search or custom_java_polymorphism) else (70, 95)
     if word_count < min_words or word_count > max_words:
         raise RuntimeError(f"Post body must contain {min_words} to {max_words} words, received {word_count}.")
     paragraphs = [paragraph for paragraph in data["post"].split("\n\n") if paragraph.strip()]
