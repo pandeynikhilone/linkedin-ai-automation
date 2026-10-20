@@ -621,9 +621,9 @@ def source_grounded_fallback(topic):
         return {
             "topic": topic,
             "post": (
-                "Keeping a frontend and backend in separate folders makes a project easier to navigate, but it is also important to understand how the two parts run together.\n\n"
-                "In TruLoop, the frontend uses Next.js and the backend uses Express. The repository keeps them in separate frontend and backend folders, and the root README explains how to run them together or separately. This describes the project's structure; it does not automatically make the application a microservices system.\n\n"
-                "My takeaway is to document both the folder structure and the startup steps clearly. A useful setup guide lets another developer explore the interface and API without guessing how the parts fit together."
+                "Keeping frontend and backend folders separate makes a project easier to navigate.\n\n"
+                "In TruLoop, the frontend uses Next.js and the backend uses Express. The repository keeps them in separate frontend and backend folders, and the root README explains how to run them together or separately. Separate folders describe code organization; they do not automatically make an application a microservices system.\n\n"
+                "My takeaway is to document the folder structure and startup steps clearly. A useful setup guide helps another developer explore the interface and API without guessing how the parts fit together."
             ),
             "hashtags": ["NextJS", "ExpressJS", "FullStackDevelopment", "WebDevelopment"],
             "video_title": "Separating TruLoop's Frontend and Backend",
