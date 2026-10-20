@@ -2,7 +2,7 @@ name: Publish Selected LinkedIn Plan Day
 
 on:
   issues:
-    types: [opened]
+    types: [opened, edited]
 
 permissions:
   contents: read
