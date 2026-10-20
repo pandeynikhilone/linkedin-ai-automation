@@ -1,0 +1,257 @@
+name: Publish Long-Form Day 15 LinkedIn Video
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: linkedin-longform-publication
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: >-
+      ${{ github.event.issue.user.login }} == github.repository_owner &&
+      ${{ github.event.issue.title }} == 'Publish Long-Form LinkedIn Post Now' &&
+      contains(${{ github.event.issue.body }}, 'PUBLISH_LONGFORM_DAY=15') &&
+      contains(${{ github.event.issue.body }}, 'PUBLISH_LONGFORM=true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      should_run: ${{ steps.slot.outputs.should_run }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate request and confirm Day 15 is next
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          body = os.environ.get("ISSUE_BODY", "")
+          required = (
+              "PUBLISH_LONGFORM_DAY=15",
+              "PUBLISH_LONGFORM=true",
+              "PUBLISH_VIDEO_DURATION_SECONDS=90",
+              "REQUEST_STATUS: OPEN",
+          )
+          if not all(marker in body for marker in required):
+              raise SystemExit("Long-form request is missing a required marker.")
+
+          plan = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          ledger = json.loads(Path("published-ledger.json").read_text(encoding="utf-8"))
+          topics = plan.get("topics", [])
+          dates = ledger.get("dates", {})
+          if not topics or not isinstance(dates, dict):
+              raise SystemExit("The content plan or publication ledger is invalid.")
+
+          topic_days = {
+              str(item["topic"]): int(item.get("day", index + 1))
+              for index, item in enumerate(topics)
+          }
+          records = []
+          for key, record in dates.items():
+              if not isinstance(record, dict) or record.get("status") != "published":
+                  continue
+              topic = str(record.get("topic") or "")
+              if topic not in topic_days:
+                  continue
+              stamp_text = record.get("published_at") or record.get("started_at") or record.get("recorded_at") or str(key)[:10]
+              try:
+                  stamp = datetime.fromisoformat(str(stamp_text).replace("Z", "+00:00"))
+              except (TypeError, ValueError):
+                  stamp = datetime.fromisoformat(str(key)[:10])
+              if stamp.tzinfo is None:
+                  stamp = stamp.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+              records.append((stamp.timestamp(), str(key), topic_days[topic]))
+
+          expected_day = int(topics[0].get("day", 1)) if not records else max(records)[2] % len(topics) + 1
+          day15 = next((item for item in topics if int(item.get("day", 0)) == 15), None)
+          if expected_day != 15:
+              raise SystemExit(f"Day 15 is not the next topic; the next expected day is {expected_day}.")
+          if not day15 or day15.get("topic") != "Structuring review data with MongoDB":
+              raise SystemExit("The verified Day 15 topic changed; refusing to guess.")
+          print("Request validated: Day 15 is next, for a 90-second long-form video.")
+          PY
+
+      - name: Check long-form publication slot
+        id: slot
+        env:
+          PUBLISH_INTENT: longform
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_TOPIC_DAY: "15"
+          PUBLISH_LONGFORM: "true"
+          PUBLISH_VIDEO_DURATION_SECONDS: "90"
+        run: python3 src/check_publication_slot.py
+
+  publish:
+    needs: preflight
+    if: >-
+      ${{ github.event.issue.user.login }} == github.repository_owner &&
+      ${{ github.event.issue.title }} == 'Publish Long-Form LinkedIn Post Now' &&
+      contains(${{ github.event.issue.body }}, 'PUBLISH_LONGFORM_DAY=15') &&
+      needs.preflight.result == 'success' &&
+      needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install FFmpeg and fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Generate source-grounded long-form caption and ten scenes
+        env:
+          PUBLISH_TOPIC_DAY: "15"
+        run: python src/generate_longform_content.py
+
+      - name: Render 90-second video at 30 Mbps
+        env:
+          PUBLISH_LONGFORM: "true"
+          PUBLISH_VIDEO_DURATION_SECONDS: "90"
+        run: python src/create_longform_video.py
+
+      - name: Validate caption and 90-second video
+        env:
+          PUBLISH_LONGFORM: "true"
+          PUBLISH_VIDEO_DURATION_SECONDS: "90"
+        run: |
+          test -s content.json
+          test -s linkedin_video.mp4
+          python -m json.tool content.json > /dev/null
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,pix_fmt,profile,level,bit_rate -show_entries format=duration,format_name -of json linkedin_video.mp4 > video_metadata.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          words = len(data.get("post", "").split())
+          if data.get("topic") != "Structuring review data with MongoDB":
+              raise SystemExit("The post does not match the verified Day 15 topic.")
+          if not 180 <= words <= 250:
+              raise SystemExit(f"Caption must have 180-250 words; got {words}.")
+          if len([p for p in data["post"].split("\n\n") if p.strip()]) != 3:
+              raise SystemExit("Caption must contain exactly three paragraphs.")
+          if len(data.get("slides", [])) != 10:
+              raise SystemExit("Long-form video must have ten scenes.")
+
+          metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
+          streams = metadata.get("streams", [])
+          video = next((stream for stream in streams if stream.get("codec_type") == "video"), None)
+          duration = float(metadata.get("format", {}).get("duration", 0))
+          formats = metadata.get("format", {}).get("format_name", "").split(",")
+          size = Path("linkedin_video.mp4").stat().st_size
+          bitrate = int((video or {}).get("bit_rate") or 0)
+          if not video or video.get("codec_name") != "h264" or video.get("width") != 1080 or video.get("height") != 1350:
+              raise SystemExit("Video must be 1080x1350 H.264.")
+          if video.get("r_frame_rate") != "24/1" or video.get("pix_fmt") != "yuv420p" or video.get("profile") != "High" or video.get("level") != 42:
+              raise SystemExit("Video encoding differs from the required H.264 High@4.2, 24 fps format.")
+          if "mp4" not in formats or any(stream.get("codec_type") == "audio" for stream in streams):
+              raise SystemExit("Video must be a silent MP4.")
+          if not 89.5 <= duration <= 90.5:
+              raise SystemExit(f"Video must be 90 seconds; got {duration:.2f}s.")
+          if not 25_000_000 <= bitrate <= 31_000_000:
+              raise SystemExit(f"Video bitrate must be near 30 Mbps; got {bitrate:,} bps.")
+          if not 300_000_000 <= size <= 380_000_000:
+              raise SystemExit(f"Video size outside 300-380 MB target: {size:,} bytes.")
+          print(f"Validated {words}-word post and ten scenes: {duration:.2f}s, {size:,} bytes, {bitrate:,} bps.")
+          PY
+
+      - name: Publish long-form video to LinkedIn
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PUBLISH_TO_LINKEDIN: "true"
+          PUBLISH_INTENT: longform
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_TOPIC_DAY: "15"
+          PUBLISH_LONGFORM: "true"
+          PUBLISH_VIDEO_DURATION_SECONDS: "90"
+          LINKEDIN_VIDEO_API_VERSION: "202606"
+          LINKEDIN_POSTS_API_VERSION: "202609"
+        run: python src/publish_linkedin.py
+
+      - name: Confirm publication and close request
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const oldBody = issue.body || "";
+            const newBody = oldBody.split("REQUEST_STATUS: OPEN").join("REQUEST_STATUS: PUBLISHED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "LinkedIn confirmed the 90-second long-form video post, and the publication ledger was updated."
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: newBody,
+              state: "closed"
+            });
+
+  mark-failed:
+    needs: [preflight, publish]
+    if: >-
+      always() &&
+      ${{ github.event.issue.user.login }} == github.repository_owner &&
+      ${{ github.event.issue.title }} == 'Publish Long-Form LinkedIn Post Now' &&
+      contains(${{ github.event.issue.body }}, 'PUBLISH_LONGFORM_DAY=15') &&
+      needs.preflight.result == 'success' &&
+      needs.publish.result == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Record failure without an unsafe retry
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "The long-form publication failed. Check the Actions log and published-ledger.json before retrying. If the ledger says publishing or needs_review, do not retry blindly."
+            });
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            const oldBody = issue.data.body || "";
+            const newBody = oldBody.split("REQUEST_STATUS: OPEN").join("REQUEST_STATUS: FAILED");
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: newBody,
+              state: "closed"
+            });
