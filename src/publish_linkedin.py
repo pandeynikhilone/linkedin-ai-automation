@@ -24,8 +24,9 @@ POSTS_URL = "https://api.linkedin.com/rest/posts"
 VIDEO_API_VERSION = os.getenv("LINKEDIN_VIDEO_API_VERSION", "202606")
 POSTS_API_VERSION = os.getenv("LINKEDIN_POSTS_API_VERSION", "202609")
 MIN_VIDEO_BYTES = 75 * 1024
-TARGET_MIN_VIDEO_BYTES = 50_000_000
-MAX_VIDEO_BYTES = 70_000_000
+LONGFORM_MODE = os.getenv("PUBLISH_LONGFORM", "").strip().lower() in {"1", "true", "yes"}
+TARGET_MIN_VIDEO_BYTES = 300_000_000 if LONGFORM_MODE else 50_000_000
+MAX_VIDEO_BYTES = 380_000_000 if LONGFORM_MODE else 70_000_000
 
 
 def check_response(response, operation):
