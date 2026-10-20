@@ -389,7 +389,7 @@ def main():
     is_longform = publish_intent == "longform"
     is_reformat = publish_intent == "reformat"
     is_plan_extra = publish_intent == "plan_extra"
-    if publish_intent in {"correction", "extra", "extra_override", "reformat", "plan_extra"} and not request_id.isdigit():
+    if publish_intent in {"correction", "extra", "extra_override", "longform", "reformat", "plan_extra"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for correction, extra, reformat, or planned-extra publication.")
     if request_id:
         if not request_id.isdigit():
