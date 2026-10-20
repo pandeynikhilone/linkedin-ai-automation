@@ -9,7 +9,7 @@ permissions:
   issues: read
 
 concurrency:
-  group: linkedin-plan-day-publication
+  group: linkedin-plan-day13-recovery
   cancel-in-progress: false
 
 jobs:
