@@ -38,15 +38,59 @@ def main() -> int:
         print("PREVIEW: Manual workflow run is preview-only, so the publication ledger will not block it.")
         write_output("should_run", "true")
         return 0
-    if intent not in {"scheduled", "request", "correction", "extra", "extra_override", "reformat", "plan_extra"}:
+    if intent not in {"scheduled", "request", "correction", "extra", "extra_override", "longform", "reformat", "plan_extra"}:
         raise RuntimeError(f"Unsupported PUBLISH_INTENT: {intent!r}")
 
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
-    if intent in {"request", "correction", "extra", "extra_override", "reformat", "plan_extra"} and not request_id.isdigit():
+    if intent in {"request", "correction", "extra", "extra_override", "longform", "reformat", "plan_extra"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for one-off publication requests.")
 
     today = datetime.now(TIME_ZONE).date().isoformat()
     dates = load_dates()
+
+    if intent == "longform":
+        # This narrowly scoped, owner-requested long video is allowed only
+        # for the next verified plan topic (Day 15), once per India-local date.
+        if os.getenv("PUBLISH_TOPIC_DAY", "").strip() != "15":
+            raise RuntimeError("Long-form publishing is restricted to the next planned topic, Day 15.")
+        if os.getenv("PUBLISH_LONGFORM", "").strip().lower() not in {"1", "true", "yes"}:
+            raise RuntimeError("Long-form publication requires PUBLISH_LONGFORM=true.")
+        if os.getenv("PUBLISH_VIDEO_DURATION_SECONDS", "").strip() != "90":
+            raise RuntimeError("Long-form publication requires a validated 90-second render.")
+        longform_key = f"{today}-longform-{request_id}"
+        day_prefix = f"{today}-"
+        day_records = [
+            (key, record) for key, record in dates.items()
+            if key == today or key.startswith(day_prefix)
+        ]
+        baseline_published = any(
+            isinstance(record, dict) and record.get("status") == "published"
+            for _, record in day_records
+        )
+        if not baseline_published:
+            raise RuntimeError("Long-form publication requires an earlier confirmed post today.")
+        uncertain = [
+            key for key, record in day_records
+            if isinstance(record, dict) and record.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger has an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before publishing another video."
+            )
+        prior_longforms = [
+            key for key, record in day_records
+            if key.startswith(f"{today}-longform-")
+            and isinstance(record, dict)
+            and record.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_longforms:
+            raise RuntimeError("A long-form LinkedIn video was already attempted today.")
+        if longform_key in dates:
+            raise RuntimeError(f"Long-form ledger entry {longform_key} already exists; refusing to retry.")
+        print(f"READY: Explicit long-form Day 15 request is clear ({today}).")
+        write_output("should_run", "true")
+        return 0
 
     if intent == "extra_override":
         # Explicit user-approved second post, restricted to the next planned
