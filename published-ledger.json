@@ -234,6 +234,15 @@
       "published_at": "2026-10-20T22:35:24+05:30",
       "post_id": "urn:li:ugcPost:7518356708935548931",
       "video_urn": "urn:li:video:D5610AQHIGshgHH9L4w"
+    },
+    "2026-10-20-extra-override-57": {
+      "status": "publishing",
+      "started_at": "2026-10-20T22:58:27+05:30",
+      "topic": "Connecting Truloop's interface to backend APIs",
+      "video_sha256": "24d8219b13e8a5ac93d9c4553542d46cd6de104099f1fc97b6be7dee2b7b4e58",
+      "video_size_bytes": 59319745,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
