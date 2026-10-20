@@ -145,7 +145,10 @@ def validate_video(video_path):
         raise RuntimeError(f"LinkedIn video bitrate must remain near 30 Mbps; got {video_bitrate:,} bps.")
     if any(s.get("codec_type") == "audio" for s in streams):
         raise RuntimeError("LinkedIn video must remain silent, without an audio track.")
-    if not 15.5 <= duration <= 16.2:
+    if LONGFORM_MODE:
+        if not 89.5 <= duration <= 90.5:
+            raise RuntimeError(f"Long-form video must be 90 seconds; got {duration:.2f}s.")
+    elif not 15.5 <= duration <= 16.2:
         raise RuntimeError(f"LinkedIn video duration must remain near 15.9 seconds; got {duration:.2f}s.")
 
 
