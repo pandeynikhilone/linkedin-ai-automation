@@ -560,6 +560,40 @@ def main():
         ]
         if prior_overrides:
             raise RuntimeError("A same-day override post was already attempted today. Refusing another.")
+    elif is_longform:
+        requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
+        expected_topic = {"15": "Structuring review data with MongoDB"}.get(requested_day)
+        if expected_topic is None or data.get("topic") != expected_topic:
+            raise RuntimeError("Long-form publishing is restricted to the verified Day 15 MongoDB topic.")
+        if not LONGFORM_MODE or os.getenv("PUBLISH_VIDEO_DURATION_SECONDS", "").strip() != "90":
+            raise RuntimeError("Long-form publishing requires the validated 90-second video configuration.")
+        day_records = [
+            (key, value) for key, value in ledger["dates"].items()
+            if key == daily_key or key.startswith(f"{daily_key}-")
+        ]
+        baseline_published = any(
+            isinstance(value, dict) and value.get("status") == "published"
+            for _, value in day_records
+        )
+        if not baseline_published:
+            raise RuntimeError("Long-form publishing requires an earlier confirmed post today.")
+        uncertain = [
+            key for key, value in day_records
+            if isinstance(value, dict) and value.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger has an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before publishing another video."
+            )
+        prior_longforms = [
+            key for key, value in ledger["dates"].items()
+            if key.startswith(f"{daily_key}-longform-") and key != date_key
+            and isinstance(value, dict)
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_longforms:
+            raise RuntimeError("A long-form post was already attempted today. Refusing another.")
     elif is_correction:
         day_records = [
             (key, value) for key, value in ledger["dates"].items()
