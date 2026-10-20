@@ -38,15 +38,55 @@ def main() -> int:
         print("PREVIEW: Manual workflow run is preview-only, so the publication ledger will not block it.")
         write_output("should_run", "true")
         return 0
-    if intent not in {"scheduled", "request", "correction", "extra", "reformat", "plan_extra"}:
+    if intent not in {"scheduled", "request", "correction", "extra", "extra_override", "reformat", "plan_extra"}:
         raise RuntimeError(f"Unsupported PUBLISH_INTENT: {intent!r}")
 
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
-    if intent in {"request", "correction", "extra", "reformat", "plan_extra"} and not request_id.isdigit():
+    if intent in {"request", "correction", "extra", "extra_override", "reformat", "plan_extra"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for one-off publication requests.")
 
     today = datetime.now(TIME_ZONE).date().isoformat()
     dates = load_dates()
+
+    if intent == "extra_override":
+        # Explicit user-approved second post, restricted to the next planned
+        # topic. The normal one-post and one-extra-post safeguards stay intact.
+        if os.getenv("PUBLISH_TOPIC_DAY", "").strip() != "14":
+            raise RuntimeError("Same-day override is restricted to the next planned topic, Day 14.")
+        override_key = f"{today}-extra-override-{request_id}"
+        day_prefix = f"{today}-"
+        day_records = [
+            (key, record) for key, record in dates.items()
+            if key == today or key.startswith(day_prefix)
+        ]
+        baseline_published = any(
+            isinstance(record, dict) and record.get("status") == "published"
+            for _, record in day_records
+        )
+        if not baseline_published:
+            raise RuntimeError("A same-day override requires an earlier confirmed publication today.")
+        uncertain = [
+            key for key, record in day_records
+            if isinstance(record, dict) and record.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger has an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before publishing another post."
+            )
+        prior_overrides = [
+            key for key, record in day_records
+            if key.startswith(f"{today}-extra-override-")
+            and isinstance(record, dict)
+            and record.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_overrides:
+            raise RuntimeError("A same-day override post was already attempted today.")
+        if override_key in dates:
+            raise RuntimeError(f"Override ledger entry {override_key} already exists; refusing to retry.")
+        print(f"READY: Explicit same-day override for planned Day 14 is clear ({today}).")
+        write_output("should_run", "true")
+        return 0
 
     if intent == "extra":
         extra_key = f"{today}-extra-{request_id}"
