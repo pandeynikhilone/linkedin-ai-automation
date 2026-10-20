@@ -224,13 +224,16 @@
       "video_urn": "urn:li:video:D5610AQEbp9VElBA5zA"
     },
     "2026-10-20-extra-55": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-20T22:35:02+05:30",
       "topic": "Java Polymorphism: Reference Type vs Runtime Object",
       "video_sha256": "942fb8e2f158dafe7687dd2a5549491215037a1388864b6d6df838f2c2b18663",
       "video_size_bytes": 59319747,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-20T22:35:24+05:30",
+      "post_id": "urn:li:ugcPost:7518356708935548931",
+      "video_urn": "urn:li:video:D5610AQHIGshgHH9L4w"
     }
   }
 }
