@@ -104,9 +104,9 @@ def validate_video(video_path):
             f"expected at least {TARGET_MIN_VIDEO_BYTES:,} bytes."
         )
     if size_bytes > MAX_VIDEO_BYTES:
+        expected_cap = "380 MB" if LONGFORM_MODE else "70 MB"
         raise RuntimeError(
-            f"Video exceeds the workflow's 70 MB safety cap: {size_bytes:,} bytes. "
-            "This workflow keeps the ~16-second clip within LinkedIn's published 30 Mbps bitrate guidance."
+            f"Video exceeds the workflow's {expected_cap} safety cap: {size_bytes:,} bytes."
         )
 
     if not shutil_which("ffprobe"):
