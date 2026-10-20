@@ -258,13 +258,16 @@
       "error_type": "CaptionWordLimitValidation"
     },
     "2026-10-20-longform-59": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-20T23:34:34+05:30",
       "topic": "Structuring review data with MongoDB",
       "video_sha256": "eeebc818c58b3b240954aca2de3508f050b1e5b1a763f3d72b25d2193efcfc34",
       "video_size_bytes": 337158325,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-20T23:36:17+05:30",
+      "post_id": "urn:li:ugcPost:7518372030967152642",
+      "video_urn": "urn:li:video:D5610AQFCU9KePWOkvw"
     }
   }
 }
