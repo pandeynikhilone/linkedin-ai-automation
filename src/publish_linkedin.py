@@ -230,7 +230,7 @@ def upload_video(video_path, owner_urn):
 def wait_for_video(video_urn):
     encoded_urn = quote(video_urn, safe="")
     url = f"{VIDEOS_URL}/{encoded_urn}"
-    deadline = time.time() + 240
+    deadline = time.time() + (900 if LONGFORM_MODE else 240)
 
     while time.time() < deadline:
         response = requests.get(
