@@ -380,14 +380,15 @@ def main():
     publish_intent = os.getenv("PUBLISH_INTENT", "scheduled").strip().lower()
     is_correction = publish_intent == "correction"
     is_extra = publish_intent == "extra"
+    is_extra_override = publish_intent == "extra_override"
     is_reformat = publish_intent == "reformat"
     is_plan_extra = publish_intent == "plan_extra"
-    if publish_intent in {"correction", "extra", "reformat", "plan_extra"} and not request_id.isdigit():
+    if publish_intent in {"correction", "extra", "extra_override", "reformat", "plan_extra"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for correction, extra, reformat, or planned-extra publication.")
     if request_id:
         if not request_id.isdigit():
             raise RuntimeError("PUBLISH_REQUEST_ID must be a numeric GitHub issue number.")
-        suffix = "correction" if is_correction else "extra" if is_extra else "reformat" if is_reformat else "plan-extra" if is_plan_extra else "request"
+        suffix = "correction" if is_correction else "extra" if is_extra else "extra-override" if is_extra_override else "reformat" if is_reformat else "plan-extra" if is_plan_extra else "request"
         date_key = f"{now.date().isoformat()}-{suffix}-{request_id}"
     else:
         if is_correction:
@@ -519,6 +520,40 @@ def main():
         ]
         if prior_extras:
             raise RuntimeError("An extra LinkedIn post was already attempted today. Refusing another.")
+    elif is_extra_override:
+        requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
+        expected_topic = {"14": "Connecting Truloop's interface to backend APIs"}.get(requested_day)
+        if expected_topic is None or data.get("topic") != expected_topic:
+            raise RuntimeError("Same-day override is restricted to the verified Day 14 API-integration topic.")
+        day_records = [
+            (key, value) for key, value in ledger["dates"].items()
+            if key == daily_key or key.startswith(f"{daily_key}-")
+        ]
+        baseline_published = any(
+            isinstance(value, dict)
+            and value.get("status") == "published"
+            and not key.startswith(f"{daily_key}-extra-override-")
+            for key, value in day_records
+        )
+        if not baseline_published:
+            raise RuntimeError("Same-day override requires a previously confirmed publication today.")
+        uncertain = [
+            key for key, value in day_records
+            if isinstance(value, dict) and value.get("status") in {"publishing", "needs_review"}
+        ]
+        if uncertain:
+            raise RuntimeError(
+                "Today's ledger has an in-progress or uncertain publication "
+                f"({', '.join(uncertain)}). Inspect LinkedIn before publishing another post."
+            )
+        prior_overrides = [
+            key for key, value in ledger["dates"].items()
+            if key.startswith(f"{daily_key}-extra-override-") and key != date_key
+            and isinstance(value, dict)
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_overrides:
+            raise RuntimeError("A same-day override post was already attempted today. Refusing another.")
     elif is_correction:
         day_records = [
             (key, value) for key, value in ledger["dates"].items()
