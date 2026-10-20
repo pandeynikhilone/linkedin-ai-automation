@@ -960,6 +960,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     elif topic in {
         "Designing a product browsing and review flow",
         "Reusable navigation, product cards, and review sections",
+        "Separating Truloop's frontend and backend",
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
