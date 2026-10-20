@@ -386,6 +386,7 @@ def main():
     is_correction = publish_intent == "correction"
     is_extra = publish_intent == "extra"
     is_extra_override = publish_intent == "extra_override"
+    is_longform = publish_intent == "longform"
     is_reformat = publish_intent == "reformat"
     is_plan_extra = publish_intent == "plan_extra"
     if publish_intent in {"correction", "extra", "extra_override", "reformat", "plan_extra"} and not request_id.isdigit():
