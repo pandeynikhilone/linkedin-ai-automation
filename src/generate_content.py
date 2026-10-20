@@ -666,6 +666,57 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Connecting Truloop's interface to backend APIs":
+        return {
+            "topic": topic,
+            "post": (
+                "A frontend feature is only one part of a full-stack request. The interface needs an API to read or update data.\n\n"
+                "In TruLoop, I worked with Node.js and Express.js APIs for products, reviews, and user interactions. "
+                "Thinking through the request path helps separate the interface from backend handling, then connect both through a clear response. "
+                "I am keeping the explanation grounded in the documented project instead of assuming deployment details or performance results.\n\n"
+                "When debugging a full-stack feature, what do you check first: the browser request, the Express route, or the data operation?"
+            ),
+            "hashtags": ["ExpressJS", "NodeJS", "FullStackDevelopment", "WebDevelopment"],
+            "video_title": "Connecting TruLoop's Frontend to Backend APIs",
+            "slides": [
+                {
+                    "title": "Follow a Frontend Request",
+                    "body": "The visible interface is one part of a request that needs backend data.",
+                    "visual_type": "website",
+                    "layout": "hero",
+                    "visual_labels": ["TruLoop interface", "Frontend", "API request"],
+                },
+                {
+                    "title": "Frontend Presents the Data",
+                    "body": "The interface organizes user actions and presents product and review information.",
+                    "visual_type": "stack",
+                    "layout": "split",
+                    "visual_labels": ["Frontend", "Product view", "Review view"],
+                },
+                {
+                    "title": "Express Handles API Requests",
+                    "body": "Node.js and Express.js APIs support products, reviews, and user interactions.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["API request", "Express backend", "Response"],
+                },
+                {
+                    "title": "Trace the Data Operation",
+                    "body": "Check the route logic and data operation before assuming where a problem starts.",
+                    "visual_type": "database",
+                    "layout": "detail",
+                    "visual_labels": ["Route logic", "Data operation", "Returned data"],
+                },
+                {
+                    "title": "Debug One Layer at a Time",
+                    "body": "A clear request path gives me a more deliberate starting point for debugging.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Browser request", "Backend route", "Data operation"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -993,6 +1044,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Designing a product browsing and review flow",
         "Reusable navigation, product cards, and review sections",
         "Separating Truloop's frontend and backend",
+        "Connecting Truloop's interface to backend APIs",
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
@@ -1018,6 +1070,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Designing a product browsing and review flow",
                 "Reusable navigation, product cards, and review sections",
                 "Separating Truloop's frontend and backend",
+                "Connecting Truloop's interface to backend APIs",
             }
             if topic not in fallback_topics:
                 raise
