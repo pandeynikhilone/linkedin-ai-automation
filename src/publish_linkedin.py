@@ -394,7 +394,7 @@ def main():
     if request_id:
         if not request_id.isdigit():
             raise RuntimeError("PUBLISH_REQUEST_ID must be a numeric GitHub issue number.")
-        suffix = "correction" if is_correction else "extra" if is_extra else "extra-override" if is_extra_override else "reformat" if is_reformat else "plan-extra" if is_plan_extra else "request"
+        suffix = "correction" if is_correction else "extra" if is_extra else "extra-override" if is_extra_override else "longform" if is_longform else "reformat" if is_reformat else "plan-extra" if is_plan_extra else "request"
         date_key = f"{now.date().isoformat()}-{suffix}-{request_id}"
     else:
         if is_correction:
