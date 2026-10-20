@@ -248,14 +248,14 @@
       "video_urn": "urn:li:video:D5610AQEnM1yBOclRUg"
     },
     "2026-10-20-longform-58": {
-      "status": "needs_review",
+      "status": "failed_before_post",
       "started_at": "2026-10-20T23:28:44+05:30",
       "topic": "Structuring review data with MongoDB",
       "video_sha256": "d92a3e80b056edabb85aa3c8537d73847bd78656ba279b2a47c3ddd3954743eb",
       "video_size_bytes": 337158325,
       "video_dimensions": "1080x1350",
-      "note": "Workflow failed after reserving the date. Inspect LinkedIn before retrying.",
-      "error_type": "RuntimeError"
+      "note": "LinkedIn video upload finalized and processing completed, but no public post was created: the publisher rejected the 241-word caption against a legacy 110-word guard before the Posts API request. The asset URN was not retained in the ledger; use a new explicit publication request after fixing long-form validation. Do not retry this ledger key.",
+      "error_type": "CaptionWordLimitValidation"
     }
   }
 }
