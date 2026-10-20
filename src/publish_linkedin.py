@@ -69,8 +69,9 @@ def build_commentary(data):
 
     if len(tags) < 3:
         raise RuntimeError("At least three relevant hashtags are required.")
-    if len(post_text.split()) > 110:
-        raise RuntimeError("Post body exceeds 110 words. Refusing to publish.")
+    maximum_words = 250 if LONGFORM_MODE else 110
+    if len(post_text.split()) > maximum_words:
+        raise RuntimeError(f"Post body exceeds {maximum_words} words. Refusing to publish.")
     return post_text + "\n\n" + " ".join(tags)
 
 
