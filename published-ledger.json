@@ -210,6 +210,15 @@
       "published_at": "2026-10-19T20:06:01+05:30",
       "post_id": "urn:li:ugcPost:7517956725807800320",
       "video_urn": "urn:li:video:D5610AQHHEPTbljG-sw"
+    },
+    "2026-10-20-request-54": {
+      "status": "publishing",
+      "started_at": "2026-10-20T15:18:40+05:30",
+      "topic": "Separating Truloop's frontend and backend",
+      "video_sha256": "ea863e6533aa838c6c1b76e8c6440c069bfe6234efa54dfd0ab90aa6394dd5c5",
+      "video_size_bytes": 59319746,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
