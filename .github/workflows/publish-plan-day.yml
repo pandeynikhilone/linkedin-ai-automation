@@ -50,6 +50,8 @@ jobs:
           marker_day = int(marker_match.group(1))
           if title_day != marker_day or not 1 <= title_day <= 30:
               raise SystemExit("The requested day in the issue title and body must match and be from 1 to 30.")
+          if "ALLOW_SECOND_POST_TODAY=true" in body and title_day != 14:
+              raise SystemExit("Same-day override is restricted to Day 14, the next planned topic.")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write("topic_day=" + str(title_day) + "\n")
           print("Validated explicit request for content-plan Day " + str(title_day) + ".")
@@ -108,8 +110,9 @@ jobs:
       - name: Check today's publication slot before generation
         id: slot
         env:
-          PUBLISH_INTENT: request
+          PUBLISH_INTENT: ${{ contains(github.event.issue.body, 'ALLOW_SECOND_POST_TODAY=true') && 'extra_override' || 'request' }}
           PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_TOPIC_DAY: ${{ steps.request.outputs.topic_day }}
         run: python3 src/check_publication_slot.py
 
   publish-selected-day:
@@ -228,7 +231,7 @@ jobs:
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PUBLISH_TO_LINKEDIN: "true"
-          PUBLISH_INTENT: request
+          PUBLISH_INTENT: ${{ contains(github.event.issue.body, 'ALLOW_SECOND_POST_TODAY=true') && 'extra_override' || 'request' }}
           PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
           PUBLISH_TOPIC_DAY: ${{ needs.publication-preflight.outputs.topic_day }}
           LINKEDIN_VIDEO_API_VERSION: "202606"
