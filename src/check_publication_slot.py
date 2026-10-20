@@ -38,7 +38,7 @@ def main() -> int:
         print("PREVIEW: Manual workflow run is preview-only, so the publication ledger will not block it.")
         write_output("should_run", "true")
         return 0
-    if intent not in {"scheduled", "request", "correction", "extra", "extra_override", "longform", "reformat", "plan_extra"}:
+    if intent not in {"scheduled", "request", "correction", "extra", "extra_override", "longform", "longform_recovery", "reformat", "plan_extra"}:
         raise RuntimeError(f"Unsupported PUBLISH_INTENT: {intent!r}")
 
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
