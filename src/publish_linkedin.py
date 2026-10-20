@@ -365,8 +365,9 @@ def main():
         raise RuntimeError("Could not read valid content.json.") from exc
     if not isinstance(data, dict) or not data.get("topic") or not data.get("post"):
         raise RuntimeError("Generated post content is incomplete.")
-    if not data.get("video_title") or not isinstance(data.get("slides"), list) or len(data["slides"]) != 5:
-        raise RuntimeError("A video title and exactly five validated slides are required.")
+    expected_slide_count = 10 if LONGFORM_MODE else 5
+    if not data.get("video_title") or not isinstance(data.get("slides"), list) or len(data["slides"]) != expected_slide_count:
+        raise RuntimeError(f"A video title and exactly {expected_slide_count} validated slides are required.")
 
     validate_video(VIDEO_FILE)
     publish_enabled = os.getenv("PUBLISH_TO_LINKEDIN", "false").strip().lower() == "true"
