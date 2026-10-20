@@ -256,6 +256,15 @@
       "video_dimensions": "1080x1350",
       "note": "LinkedIn video upload finalized and processing completed, but no public post was created: the publisher rejected the 241-word caption against a legacy 110-word guard before the Posts API request. The asset URN was not retained in the ledger; use a new explicit publication request after fixing long-form validation. Do not retry this ledger key.",
       "error_type": "CaptionWordLimitValidation"
+    },
+    "2026-10-20-longform-59": {
+      "status": "publishing",
+      "started_at": "2026-10-20T23:34:34+05:30",
+      "topic": "Structuring review data with MongoDB",
+      "video_sha256": "eeebc818c58b3b240954aca2de3508f050b1e5b1a763f3d72b25d2193efcfc34",
+      "video_size_bytes": 337158325,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
