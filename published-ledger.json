@@ -268,6 +268,15 @@
       "published_at": "2026-10-20T23:36:17+05:30",
       "post_id": "urn:li:ugcPost:7518372030967152642",
       "video_urn": "urn:li:video:D5610AQFCU9KePWOkvw"
+    },
+    "2026-10-22-request-62": {
+      "status": "publishing",
+      "started_at": "2026-10-22T17:48:13+05:30",
+      "topic": "A look at Truloop's receipt proof validation",
+      "video_sha256": "93a50564ce25b99b54e1ba745ec57329387b29aac32e360cf574e30fd82b0d8e",
+      "video_size_bytes": 59319746,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
