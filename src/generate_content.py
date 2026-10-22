@@ -717,6 +717,57 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "A look at Truloop's receipt proof validation":
+        return {
+            "topic": topic,
+            "post": (
+                "Receipt proof validation is an interesting example of a practical check that still has limits.\n\n"
+                "In TruLoop, the service uses Tesseract.js to read text from image files and pdf-parse for PDFs. "
+                "It then checks the extracted text for receipt-related terms and a match with the product name.\n\n"
+                "That is a text-based validation step, not proof that a purchase is genuine. "
+                "I want to keep that distinction clear when building trust features: useful checks can reduce ambiguity without promising certainty."
+            ),
+            "hashtags": ["FullStackDevelopment", "WebDevelopment", "SoftwareDevelopment", "MCAStudent"],
+            "video_title": "How TruLoop Checks Receipt Proof",
+            "slides": [
+                {
+                    "title": "Receipt Proof Validation Starts With Text",
+                    "body": "The interface introduces a check, but text extraction is only one step.",
+                    "visual_type": "website",
+                    "layout": "hero",
+                    "visual_labels": ["TruLoop review flow", "Receipt proof", "Validation step"],
+                },
+                {
+                    "title": "Extract Text From Each File Type",
+                    "body": "Tesseract.js handles image OCR, while pdf-parse extracts text from PDFs.",
+                    "visual_type": "flow",
+                    "layout": "split",
+                    "visual_labels": ["Image file", "Tesseract.js OCR", "PDF file", "pdf-parse"],
+                },
+                {
+                    "title": "Look For Receipt Terms And Product Name",
+                    "body": "The validator checks extracted text for receipt terms and a product-name match.",
+                    "visual_type": "checklist",
+                    "layout": "process",
+                    "visual_labels": ["Extracted text", "Receipt-related terms", "Product name"],
+                },
+                {
+                    "title": "A Match Is Not Proof Of Purchase",
+                    "body": "Text checks do not independently prove that a purchase was genuine.",
+                    "visual_type": "checklist",
+                    "layout": "detail",
+                    "visual_labels": ["Text match", "Validation signal", "Not a guarantee"],
+                },
+                {
+                    "title": "Be Clear About Validation Limits",
+                    "body": "Trust features should explain what their checks can and cannot confirm.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Useful checks", "Clear limits", "Honest product claims"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -1045,6 +1096,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Reusable navigation, product cards, and review sections",
         "Separating Truloop's frontend and backend",
         "Connecting Truloop's interface to backend APIs",
+        "A look at Truloop's receipt proof validation",
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
@@ -1071,6 +1123,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Reusable navigation, product cards, and review sections",
                 "Separating Truloop's frontend and backend",
                 "Connecting Truloop's interface to backend APIs",
+                "A look at Truloop's receipt proof validation",
             }
             if topic not in fallback_topics:
                 raise
