@@ -209,13 +209,13 @@ jobs:
           content = source_grounded_fallback(topic)
           post = content["post"]
           words = len(post.split())
-          paragraphs = [part for part in post.split("\\n\\n") if part.strip()]
+          paragraphs = [part for part in post.splitlines() if part.strip()]
           slides = content["slides"]
 
           if content.get("topic") != topic:
               raise SystemExit("Day 17 fallback must preserve the selected topic.")
           if not 70 <= words <= 95 or len(paragraphs) != 3:
-              raise SystemExit("Day 17 fallback caption must have 70-95 words in three paragraphs.")
+              raise SystemExit(f"Day 17 fallback caption must have 70-95 words in three paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
           if len(slides) != 5 or len({slide.get("layout") for slide in slides}) != 5:
               raise SystemExit("Day 17 fallback must contain five slides with distinct layouts.")
           if slides[0].get("layout") != "hero" or slides[-1].get("layout") != "closing":
