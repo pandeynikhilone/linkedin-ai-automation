@@ -218,6 +218,8 @@ jobs:
               raise SystemExit(f"Day 17 fallback caption must have 70-95 words in three paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
           if len(slides) != 5 or len({slide.get("layout") for slide in slides}) != 5:
               raise SystemExit("Day 17 fallback must contain five slides with distinct layouts.")
+          if sum(slide.get("visual_type") == "website" for slide in slides) != 1:
+              raise SystemExit("Day 17 TruLoop fallback must include exactly one genuine website slide.")
           if slides[0].get("layout") != "hero" or slides[-1].get("layout") != "closing":
               raise SystemExit("Day 17 fallback must start with hero and end with closing.")
           for index, slide in enumerate(slides, 1):
