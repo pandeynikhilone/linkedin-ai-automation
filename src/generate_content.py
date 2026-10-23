@@ -468,6 +468,57 @@ def fallback_hashtags(topic):
 
 def source_grounded_fallback(topic):
     """Verified deterministic content for selected topics if Gemini is unavailable."""
+    if topic == "Checking purchase dates against product release dates":
+        return {
+            "topic": topic,
+            "post": (
+                "TruLoop checks the relationship between a purchase date and a product's release date. "
+                "When both dates are present, the review controller rejects a purchase date earlier than the release date.\\n\\n"
+                "Each date might look valid alone while the pair is inconsistent. Comparing related fields lets the application apply a clear rule before a review is created.\\n\\n"
+                "This is a consistency check, not proof that a purchase happened or a guarantee against fake reviews. "
+                "I want to describe the code accurately without overstating its effect."
+            ),
+            "hashtags": ["FullStackDevelopment", "WebDevelopment", "SoftwareDevelopment", "MCAStudent"],
+            "video_title": "Checking Purchase Dates Against Release Dates",
+            "slides": [
+                {
+                    "title": "Compare Related Dates",
+                    "body": "The rule checks purchase and release dates when both are present.",
+                    "visual_type": "checklist",
+                    "layout": "hero",
+                    "visual_labels": ["Purchase date", "Release date", "Both present"],
+                },
+                {
+                    "title": "Check The Date Order",
+                    "body": "A purchase date earlier than the release date is rejected.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Purchase date", "Compare", "Release date"],
+                },
+                {
+                    "title": "Reject Inconsistent Data",
+                    "body": "The review controller applies the rule before creating the review.",
+                    "visual_type": "code",
+                    "layout": "detail",
+                    "visual_labels": ["Review controller", "Date check", "Validation result"],
+                },
+                {
+                    "title": "Keep The Claim Narrow",
+                    "body": "This check does not prove that a purchase actually happened.",
+                    "visual_type": "learning",
+                    "layout": "split",
+                    "visual_labels": ["Consistency check", "Not proof", "Limited scope"],
+                },
+                {
+                    "title": "Validate With Context",
+                    "body": "Related fields can be valid alone but inconsistent together.",
+                    "visual_type": "closing",
+                    "layout": "closing",
+                    "visual_labels": ["Related values", "Clear rule", "Careful claims"],
+                },
+            ],
+        }
+
     if topic == "Reusable navigation, product cards, and review sections":
         return {
             "topic": topic,
@@ -1097,6 +1148,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Separating Truloop's frontend and backend",
         "Connecting Truloop's interface to backend APIs",
         "A look at Truloop's receipt proof validation",
+        "Checking purchase dates against product release dates",
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
@@ -1124,6 +1176,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Separating Truloop's frontend and backend",
                 "Connecting Truloop's interface to backend APIs",
                 "A look at Truloop's receipt proof validation",
+                "Checking purchase dates against product release dates",
             }
             if topic not in fallback_topics:
                 raise
