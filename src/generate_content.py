@@ -484,9 +484,9 @@ def source_grounded_fallback(topic):
                 {
                     "title": "Compare Related Dates",
                     "body": "The rule checks purchase and release dates when both are present.",
-                    "visual_type": "checklist",
+                    "visual_type": "website",
                     "layout": "hero",
-                    "visual_labels": ["Purchase date", "Release date", "Both present"],
+                    "visual_labels": ["Live TruLoop UI", "TruLoop project", "Interface context"],
                 },
                 {
                     "title": "Check The Date Order",
