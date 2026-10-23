@@ -187,7 +187,10 @@ jobs:
               raise SystemExit("TruLoop fallback must start with hero and end with closing.")
           if len({slide.get("layout") for slide in slides}) != 5:
               raise SystemExit("TruLoop fallback layouts must all be distinct.")
+          allowed_visual_types = {"chart", "flow", "code", "product", "database", "form", "checklist", "git", "stack", "learning", "website"}
           for index, slide in enumerate(slides, 1):
+              if slide.get("visual_type") not in allowed_visual_types:
+                  raise SystemExit(f"Day 17 slide {index} uses an unsupported visual type.")
               if not 3 <= len(slide.get("title", "").split()) <= 7:
                   raise SystemExit(f"Fallback slide {index} title must contain 3-7 words.")
               if not 5 <= len(slide.get("body", "").split()) <= 18:
