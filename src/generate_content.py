@@ -473,8 +473,8 @@ def source_grounded_fallback(topic):
             "topic": topic,
             "post": (
                 "TruLoop checks the relationship between a purchase date and a product's release date. "
-                "When both dates are present, the review controller rejects a purchase date earlier than the release date.\\n\\n"
-                "Each date might look valid alone while the pair is inconsistent. Comparing related fields lets the application apply a clear rule before a review is created.\\n\\n"
+                "When both dates are present, the review controller rejects a purchase date earlier than the release date.\n\n"
+                "Each date might look valid alone while the pair is inconsistent. Comparing related fields lets the application apply a clear rule before a review is created.\n\n"
                 "This is a consistency check, not proof that a purchase happened or a guarantee against fake reviews. "
                 "I want to describe the code accurately without overstating its effect."
             ),
