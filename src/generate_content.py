@@ -512,7 +512,7 @@ def source_grounded_fallback(topic):
                 {
                     "title": "Validate With Context",
                     "body": "Related fields can be valid alone but inconsistent together.",
-                    "visual_type": "closing",
+                    "visual_type": "learning",
                     "layout": "closing",
                     "visual_labels": ["Related values", "Clear rule", "Careful claims"],
                 },
