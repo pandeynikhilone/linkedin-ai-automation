@@ -321,6 +321,59 @@ def load_ledger():
     return ledger
 
 
+def merge_ledger_changes(base, local, remote):
+    """Apply this run's ledger delta without overwriting concurrent ledger state."""
+    if not all(isinstance(value, dict) for value in (base, local, remote)):
+        raise RuntimeError("Cannot safely merge publication ledgers with an unexpected structure.")
+
+    missing = object()
+    merged = json.loads(json.dumps(remote))
+
+    for field in set(base) | set(local):
+        if field == "dates":
+            continue
+        base_value = base.get(field, missing)
+        local_value = local.get(field, missing)
+        if local_value == base_value:
+            continue
+        remote_value = remote.get(field, missing)
+        if remote_value == base_value:
+            if local_value is missing:
+                merged.pop(field, None)
+            else:
+                merged[field] = local_value
+        elif remote_value != local_value:
+            raise RuntimeError(
+                f"Concurrent publication-ledger metadata change for {field!r}; refusing to overwrite."
+            )
+
+    base_dates = base.get("dates")
+    local_dates = local.get("dates")
+    remote_dates = remote.get("dates")
+    if not all(isinstance(value, dict) for value in (base_dates, local_dates, remote_dates)):
+        raise RuntimeError("Cannot safely merge publication ledgers without a dates object.")
+
+    merged_dates = merged.setdefault("dates", {})
+    for key in set(base_dates) | set(local_dates):
+        base_value = base_dates.get(key, missing)
+        local_value = local_dates.get(key, missing)
+        if local_value == base_value:
+            continue
+
+        remote_value = remote_dates.get(key, missing)
+        if remote_value == base_value:
+            if local_value is missing:
+                merged_dates.pop(key, None)
+            else:
+                merged_dates[key] = local_value
+        elif remote_value != local_value:
+            raise RuntimeError(
+                f"Concurrent publication-ledger change for {key!r}; refusing to overwrite."
+            )
+
+    return merged
+
+
 def persist_ledger(ledger, message):
     LEDGER_FILE.write_text(
         json.dumps(ledger, ensure_ascii=False, indent=2) + "\n",
@@ -336,6 +389,9 @@ def persist_ledger(ledger, message):
             check=False,
         )
 
+    def command_detail(result):
+        return (result.stderr or result.stdout or f"exit code {result.returncode}").strip()
+
     for args in (
         ["config", "user.name", "github-actions[bot]"],
         ["config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"],
@@ -343,14 +399,89 @@ def persist_ledger(ledger, message):
     ):
         result = git(args)
         if result.returncode != 0:
-            raise RuntimeError("Could not stage the publication ledger; refusing to publish.")
+            raise RuntimeError(
+                f"Could not stage the publication ledger; refusing to publish. {command_detail(result)}"
+            )
 
     commit = git(["commit", "-m", message])
     if commit.returncode != 0:
-        raise RuntimeError("Could not commit the publication ledger; refusing to publish.")
+        raise RuntimeError(
+            f"Could not commit the publication ledger; refusing to publish. {command_detail(commit)}"
+        )
+
     push = git(["push", "origin", "HEAD:main"])
-    if push.returncode != 0:
-        raise RuntimeError("Could not persist the publication ledger to main. Check it before retrying.")
+    if push.returncode == 0:
+        return
+
+    push_detail = command_detail(push)
+    lowered_detail = push_detail.lower()
+    concurrent_update = any(
+        marker in lowered_detail
+        for marker in (
+            "non-fast-forward",
+            "fetch first",
+            "failed to push some refs",
+            "tip of your current branch is behind",
+        )
+    )
+    if not concurrent_update:
+        raise RuntimeError(
+            "Could not persist the publication ledger to main. Check it before retrying. "
+            f"Git push error: {push_detail}"
+        )
+
+    # A concurrent workflow may have updated another ledger entry after checkout.
+    # Reconcile JSON keys instead of force-pushing or blindly retrying the upload.
+    fetch = git(["fetch", "origin", "main"])
+    if fetch.returncode != 0:
+        raise RuntimeError(
+            "Could not fetch main to reconcile a concurrent ledger update. "
+            f"{command_detail(fetch)}"
+        )
+
+    base_result = git(["show", "HEAD^:published-ledger.json"])
+    remote_result = git(["show", "origin/main:published-ledger.json"])
+    if base_result.returncode != 0 or remote_result.returncode != 0:
+        detail = command_detail(base_result if base_result.returncode != 0 else remote_result)
+        raise RuntimeError(f"Could not safely read the base and remote ledgers. {detail}")
+
+    try:
+        base_ledger = json.loads(base_result.stdout)
+        remote_ledger = json.loads(remote_result.stdout)
+        merged_ledger = merge_ledger_changes(base_ledger, ledger, remote_ledger)
+    except (json.JSONDecodeError, RuntimeError) as exc:
+        raise RuntimeError(
+            "Concurrent publication-ledger changes could not be merged safely; refusing to overwrite main."
+        ) from exc
+
+    reset = git(["reset", "--hard", "origin/main"])
+    if reset.returncode != 0:
+        raise RuntimeError(f"Could not reset to the latest main before ledger merge. {command_detail(reset)}")
+
+    # If another writer already persisted this exact state, no second commit is needed.
+    if merged_ledger == remote_ledger:
+        print("Publication ledger update is already present on main; no duplicate commit needed.")
+        return
+
+    LEDGER_FILE.write_text(
+        json.dumps(merged_ledger, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    stage = git(["add", "published-ledger.json"])
+    if stage.returncode != 0:
+        raise RuntimeError(f"Could not stage the reconciled publication ledger. {command_detail(stage)}")
+
+    merge_commit = git(["commit", "-m", message])
+    if merge_commit.returncode != 0:
+        raise RuntimeError(f"Could not commit the reconciled publication ledger. {command_detail(merge_commit)}")
+
+    retry_push = git(["push", "origin", "HEAD:main"])
+    if retry_push.returncode != 0:
+        raise RuntimeError(
+            "Could not persist the reconciled publication ledger to main. Check it before retrying. "
+            f"Git push error: {command_detail(retry_push)}"
+        )
+    print("Publication ledger safely reconciled with a concurrent, non-conflicting update.")
 
 
 def main():
