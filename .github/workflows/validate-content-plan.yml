@@ -165,6 +165,69 @@ jobs:
           print("Source, publishing schedule, and video-format checks passed.")
           PY
 
+      - name: Test safe concurrent publication-ledger merge
+        run: |
+          python - <<'PY'
+          from src.publish_linkedin import merge_ledger_changes
+
+          base = {
+              "timezone": "Asia/Kolkata",
+              "dates": {"2026-10-23": {"status": "published", "post_id": "urn:old"}},
+          }
+          local = {
+              "timezone": "Asia/Kolkata",
+              "dates": {
+                  "2026-10-23": {"status": "published", "post_id": "urn:old"},
+                  "2026-10-24-request-test": {"status": "publishing", "video_sha256": "local-hash"},
+              },
+          }
+          remote = {
+              "timezone": "Asia/Kolkata",
+              "dates": {
+                  "2026-10-23": {"status": "published", "post_id": "urn:old"},
+                  "2026-10-22": {"status": "published", "post_id": "urn:remote"},
+              },
+          }
+          merged = merge_ledger_changes(base, local, remote)
+          if merged["dates"].get("2026-10-24-request-test", {}).get("status") != "publishing":
+              raise SystemExit("The local reservation must survive a non-conflicting merge.")
+          if merged["dates"].get("2026-10-22", {}).get("post_id") != "urn:remote":
+              raise SystemExit("A concurrent remote ledger entry must be preserved.")
+
+          base_transition = {
+              "timezone": "Asia/Kolkata",
+              "dates": {"today": {"status": "publishing", "video_sha256": "same-hash"}},
+          }
+          local_transition = {
+              "timezone": "Asia/Kolkata",
+              "dates": {"today": {"status": "published", "video_sha256": "same-hash", "post_id": "urn:confirmed"}},
+          }
+          remote_transition = {
+              "timezone": "Asia/Kolkata",
+              "dates": {
+                  "today": {"status": "publishing", "video_sha256": "same-hash"},
+                  "other": {"status": "published", "post_id": "urn:other"},
+              },
+          }
+          transitioned = merge_ledger_changes(base_transition, local_transition, remote_transition)
+          if transitioned["dates"]["today"].get("status") != "published":
+              raise SystemExit("A local confirmed publication may advance its unchanged reservation.")
+          if "other" not in transitioned["dates"]:
+              raise SystemExit("Concurrent unrelated entries must survive a publication status update.")
+
+          conflicting_remote = {
+              "timezone": "Asia/Kolkata",
+              "dates": {"2026-10-24-request-test": {"status": "published", "post_id": "urn:unknown"}},
+          }
+          try:
+              merge_ledger_changes(base, local, conflicting_remote)
+          except RuntimeError:
+              pass
+          else:
+              raise SystemExit("Conflicting same-key ledger state must fail closed.")
+          print("Concurrent ledger merge tests passed: unrelated entries preserved; same-key conflicts rejected.")
+          PY
+
       - name: Test deterministic TruLoop fallback content
         run: |
           python - <<'PY'
