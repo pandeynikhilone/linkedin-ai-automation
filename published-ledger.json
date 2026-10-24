@@ -280,6 +280,15 @@
       "published_at": "2026-10-22T17:48:38+05:30",
       "post_id": "urn:li:ugcPost:7519009318390747136",
       "video_urn": "urn:li:video:D5610AQHc393n-gduaQ"
+    },
+    "2026-10-24-request-66": {
+      "status": "publishing",
+      "started_at": "2026-10-24T09:35:41+05:30",
+      "topic": "Checking purchase dates against product release dates",
+      "video_sha256": "b689463f8a363a441d9773f0defd0eaa982021df4dcacbd3866c0ec922b9e911",
+      "video_size_bytes": 59319746,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
