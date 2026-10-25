@@ -519,6 +519,57 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Validating the data required to submit a Truloop review":
+        return {
+            "topic": topic,
+            "post": (
+                "Review forms need clear requirements before a submission can be created.\n\n"
+                "In TruLoop, the review controller requires productId, rating, comment, reviewer, usageDuration, and recommend before creating a review. "
+                "Naming these fields makes the endpoint's expected input clear and describes what a complete review request must contain.\n\n"
+                "I'm learning to treat validation as part of an API contract, not just a frontend convenience. "
+                "The backend should check the data it receives, even when the interface already asks users for the same values."
+            ),
+            "hashtags": ["FullStackDevelopment", "BackendDevelopment", "WebDevelopment", "MCAStudent"],
+            "video_title": "Validating the Data Required to Submit a TruLoop Review",
+            "slides": [
+                {
+                    "title": "Required Fields Matter",
+                    "body": "A review request needs a clear set of values before creation.",
+                    "visual_type": "form",
+                    "layout": "hero",
+                    "visual_labels": ["Review form", "Required inputs", "Submit review"],
+                },
+                {
+                    "title": "Validate The Request",
+                    "body": "The controller checks the fields required for a review.",
+                    "visual_type": "code",
+                    "layout": "detail",
+                    "visual_labels": ["productId", "rating", "comment", "reviewer", "usageDuration", "recommend"],
+                },
+                {
+                    "title": "Make The Contract Clear",
+                    "body": "Required fields define what the review endpoint expects.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Request body", "Validation", "Review creation"],
+                },
+                {
+                    "title": "Frontend And Backend",
+                    "body": "The server still checks submitted data, even when the interface asks for it.",
+                    "visual_type": "learning",
+                    "layout": "split",
+                    "visual_labels": ["Frontend form", "API request", "Backend validation"],
+                },
+                {
+                    "title": "Validate Before Creating",
+                    "body": "Clear requirements make endpoint behavior easier to understand.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Clear inputs", "Consistent checks", "Review record"],
+                },
+            ],
+        }
+
     if topic == "Reusable navigation, product cards, and review sections":
         return {
             "topic": topic,
@@ -1149,6 +1200,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Connecting Truloop's interface to backend APIs",
         "A look at Truloop's receipt proof validation",
         "Checking purchase dates against product release dates",
+        "Validating the data required to submit a Truloop review",
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
@@ -1177,6 +1229,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Connecting Truloop's interface to backend APIs",
                 "A look at Truloop's receipt proof validation",
                 "Checking purchase dates against product release dates",
+                "Validating the data required to submit a Truloop review",
             }
             if topic not in fallback_topics:
                 raise
@@ -1210,6 +1263,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             "Connecting Truloop's interface to backend APIs",
             "A look at Truloop's receipt proof validation",
             "Checking purchase dates against product release dates",
+            "Validating the data required to submit a Truloop review",
         }
         if topic in fallback_topics and not (custom_binary_search or custom_java_polymorphism):
             print(
