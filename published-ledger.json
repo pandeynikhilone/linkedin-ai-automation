@@ -292,6 +292,15 @@
       "published_at": "2026-10-24T09:36:09+05:30",
       "post_id": "urn:li:ugcPost:7519610156012351488",
       "video_urn": "urn:li:video:D5610AQHdyhWRhiK5Iw"
+    },
+    "2026-10-25-request-69": {
+      "status": "publishing",
+      "started_at": "2026-10-25T18:04:51+05:30",
+      "topic": "Validating the data required to submit a Truloop review",
+      "video_sha256": "a71f64551b5bcc0293853c342bd108a03fa644615858e2b49e33265ca42eb560",
+      "video_size_bytes": 59319738,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
