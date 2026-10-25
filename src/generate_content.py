@@ -534,8 +534,8 @@ def source_grounded_fallback(topic):
             "slides": [
                 {
                     "title": "Required Fields Matter",
-                    "body": "A review request needs a clear set of values before creation.",
-                    "visual_type": "form",
+                    "body": "The live TruLoop review interface shows where a review request begins.",
+                    "visual_type": "website",
                     "layout": "hero",
                     "visual_labels": ["Review form", "Required inputs", "Submit review"],
                 },
