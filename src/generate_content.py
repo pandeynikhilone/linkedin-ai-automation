@@ -1198,7 +1198,32 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     word_count = len(data["post"].split())
     min_words, max_words = (95, 110) if (custom_binary_search or custom_java_polymorphism) else (70, 95)
     if word_count < min_words or word_count > max_words:
-        raise RuntimeError(f"Post body must contain {min_words} to {max_words} words, received {word_count}.")
+        # A malformed model caption is still a pre-publication generation failure.
+        # For topics with verified deterministic content, fall back safely and
+        # re-check the fallback rather than failing before the publisher runs.
+        fallback_topics = {
+            "Replacing hardcoded chart values with JSON-driven data",
+            "Understanding what happens behind the TruLoop interface",
+            "Designing a product browsing and review flow",
+            "Reusable navigation, product cards, and review sections",
+            "Separating Truloop's frontend and backend",
+            "Connecting Truloop's interface to backend APIs",
+            "A look at Truloop's receipt proof validation",
+            "Checking purchase dates against product release dates",
+        }
+        if topic in fallback_topics and not (custom_binary_search or custom_java_polymorphism):
+            print(
+                f"WARNING: Generated caption for {topic!r} contained {word_count} words; "
+                "using verified, source-grounded fallback content."
+            )
+            data = source_grounded_fallback(topic)
+            data["topic"] = topic
+            data["source_facts"] = selected_topic["facts"]
+            data["post"] = normalize_post_text(data["post"])
+            data["video_title"] = clean_text(data["video_title"])[:180]
+            word_count = len(data["post"].split())
+        if word_count < min_words or word_count > max_words:
+            raise RuntimeError(f"Post body must contain {min_words} to {max_words} words, received {word_count}.")
     paragraphs = [paragraph for paragraph in data["post"].split("\n\n") if paragraph.strip()]
     if len(paragraphs) != 3:
         raise RuntimeError(f"Post body must contain exactly three paragraphs, received {len(paragraphs)}.")
