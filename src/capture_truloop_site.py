@@ -75,6 +75,7 @@ def main() -> None:
         "Designing a product browsing and review flow",
         "Reusable navigation, product cards, and review sections",
         "Checking purchase dates against product release dates",
+        "Validating the data required to submit a Truloop review",
     }
     if "truloop" not in topic.casefold() and topic not in verified_truloop_topics:
         raise SystemExit("The website visual is reserved for verified TruLoop content.")
