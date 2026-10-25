@@ -39,8 +39,9 @@ def main():
             raise SystemExit(f"Day 18 fallback slide {index} has empty title, body, or visual labels.")
 
     source = Path("src/generate_content.py").read_text(encoding="utf-8")
-    if source.count(f'"{TOPIC}",') != 3:
-        raise SystemExit("Day 18 must be included in all three deterministic-fallback routing sets.")
+    # One occurrence is the plan entry; the other three are fallback-routing sets.
+    if source.count(f'"{TOPIC}",') != 4:
+        raise SystemExit("Day 18 must be present in the plan and all three deterministic-fallback routing sets.")
 
     print(f"Day 18 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
 
