@@ -51,7 +51,8 @@ jobs:
 
       - name: Validate source and video-only publishing pipeline
         run: |
-          python -m py_compile src/generate_content.py src/create_video.py src/capture_truloop_site.py src/publish_linkedin.py src/test_linkedin_video_upload.py
+          python -m py_compile src/generate_content.py src/create_video.py src/capture_truloop_site.py src/publish_linkedin.py src/test_linkedin_video_upload.py src/test_content_fallbacks.py
+          python src/test_content_fallbacks.py
           python - <<'PY'
           import ast
           import json
