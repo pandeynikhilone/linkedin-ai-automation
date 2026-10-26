@@ -570,6 +570,55 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Keeping product ratings current after a new review":
+        return {
+            "topic": topic,
+            "post": (
+                "A new review is only one part of keeping product information current. The controller's follow-up work matters too.\n\n"
+                "In TruLoop, the review controller retrieves the product's reviews, calculates the average rating, updates averageRating and reviewCount, and saves the product after a review is created.\n\n"
+                "I'm learning to trace what happens after a write operation instead of stopping at the successful request. Following the calculation and save makes the data flow easier to understand and debug."
+            ),
+            "hashtags": ["FullStackDevelopment", "MongoDB", "WebDevelopment", "MCAStudent"],
+            "video_title": "Keeping Product Ratings Current After a New Review",
+            "slides": [
+                {
+                    "title": "Keep Product Ratings Current",
+                    "body": "The live TruLoop interface presents product ratings alongside review information.",
+                    "visual_type": "website",
+                    "layout": "hero",
+                    "visual_labels": ["Product rating", "Review summary", "TruLoop interface"],
+                },
+                {
+                    "title": "Recalculate After A Review",
+                    "body": "The controller retrieves reviews for the product after creation.",
+                    "visual_type": "code",
+                    "layout": "detail",
+                    "visual_labels": ["Review controller", "Product reviews", "New review"],
+                },
+                {
+                    "title": "Update The Product Summary",
+                    "body": "It calculates averageRating and reviewCount, then saves the product.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Retrieve reviews", "Calculate aggregates", "Save product"],
+                },
+                {
+                    "title": "Store The Updated Aggregates",
+                    "body": "The product is saved with the calculated rating and review count.",
+                    "visual_type": "database",
+                    "layout": "editorial",
+                    "visual_labels": ["averageRating", "reviewCount", "Saved product"],
+                },
+                {
+                    "title": "Trace The Update Path",
+                    "body": "Follow review creation through calculation and product save.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["New review", "Updated aggregates", "Product saved"],
+                },
+            ],
+        }
+
     if topic == "Reusable navigation, product cards, and review sections":
         return {
             "topic": topic,
@@ -1201,6 +1250,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "A look at Truloop's receipt proof validation",
         "Checking purchase dates against product release dates",
         "Validating the data required to submit a Truloop review",
+        "Keeping product ratings current after a new review",
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
@@ -1230,6 +1280,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "A look at Truloop's receipt proof validation",
                 "Checking purchase dates against product release dates",
                 "Validating the data required to submit a Truloop review",
+        "Keeping product ratings current after a new review",
             }
             if topic not in fallback_topics:
                 raise
@@ -1264,6 +1315,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             "A look at Truloop's receipt proof validation",
             "Checking purchase dates against product release dates",
             "Validating the data required to submit a Truloop review",
+        "Keeping product ratings current after a new review",
         }
         if topic in fallback_topics and not (custom_binary_search or custom_java_polymorphism):
             print(
