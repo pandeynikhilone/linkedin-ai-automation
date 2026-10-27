@@ -77,7 +77,7 @@ def validate_day19():
     word_count = len(post.split())
     if not 70 <= word_count <= 95:
         raise SystemExit(f"Day 19 fallback must contain 70-95 words; got {word_count}.")
-    paragraphs = [paragraph for paragraph in post.split("\\n\\n") if paragraph.strip()]
+    paragraphs = [paragraph for paragraph in post.split("\n\n") if paragraph.strip()]
     if len(paragraphs) != 3:
         raise SystemExit(f"Day 19 fallback must contain exactly three paragraphs; got {len(paragraphs)}.")
     for field in ("averageRating", "reviewCount"):
