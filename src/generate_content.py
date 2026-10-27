@@ -468,6 +468,58 @@ def fallback_hashtags(topic):
 
 def source_grounded_fallback(topic):
     """Verified deterministic content for selected topics if Gemini is unavailable."""
+    if topic == "Replacing hardcoded chart values with JSON-driven data":
+        return {
+            "topic": topic,
+            "post": (
+                "At Techqueto, chart data and configuration were moved from hardcoded values to JSON-driven values. "
+                "The work used TypeScript, React, and Google Charts.\n\n"
+                "Keeping configuration separate from component logic makes it easier to see which values drive a chart "
+                "and which code renders it. It also gives the data a consistent place to be reviewed when a chart needs an update.\n\n"
+                "I'm learning to treat data shape as part of the interface between code and visualization, not as an afterthought. "
+                "The goal is clarity, not a claim of measured performance gains."
+            ),
+            "hashtags": ["ReactJS", "TypeScript", "GoogleCharts", "FrontendDevelopment"],
+            "video_title": "Replacing Hardcoded Chart Values With JSON-Driven Data",
+            "slides": [
+                {
+                    "title": "Move Chart Values Into Data",
+                    "body": "The Techqueto chart work used JSON-driven values instead of hardcoded values.",
+                    "visual_type": "chart",
+                    "layout": "hero",
+                    "visual_labels": ["JSON data", "Chart values", "Google Charts"],
+                },
+                {
+                    "title": "Separate Configuration From Rendering",
+                    "body": "Structured values describe chart data while React components render the visualization.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["JSON configuration", "React component", "Rendered chart"],
+                },
+                {
+                    "title": "Keep The Data Path Clear",
+                    "body": "A consistent configuration makes the values driving a chart easier to review.",
+                    "visual_type": "code",
+                    "layout": "detail",
+                    "visual_labels": ["TypeScript", "Data shape", "Chart options"],
+                },
+                {
+                    "title": "Use The Tools In Context",
+                    "body": "The documented stack for this work included TypeScript, React, and Google Charts.",
+                    "visual_type": "stack",
+                    "layout": "split",
+                    "visual_labels": ["TypeScript", "React", "Google Charts"],
+                },
+                {
+                    "title": "Prefer Clarity Over Big Claims",
+                    "body": "The implementation choice is documented; no quantified performance gain is claimed.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Clear configuration", "Readable code", "Measured claims only"],
+                },
+            ],
+        }
+
     if topic == "Checking purchase dates against product release dates":
         return {
             "topic": topic,
