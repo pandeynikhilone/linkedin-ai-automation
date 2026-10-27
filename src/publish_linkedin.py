@@ -23,6 +23,8 @@ POSTS_URL = "https://api.linkedin.com/rest/posts"
 
 VIDEO_API_VERSION = os.getenv("LINKEDIN_VIDEO_API_VERSION", "202606")
 POSTS_API_VERSION = os.getenv("LINKEDIN_POSTS_API_VERSION", "202609")
+PUBLISH_ASPECT_RATIO = os.getenv("PUBLISH_ASPECT_RATIO", "4:5").strip()
+EXPECTED_VIDEO_HEIGHT = {"4:5": 1350, "9:16": 1920}.get(PUBLISH_ASPECT_RATIO)
 MIN_VIDEO_BYTES = 75 * 1024
 LONGFORM_MODE = os.getenv("PUBLISH_LONGFORM", "").strip().lower() in {"1", "true", "yes"}
 TARGET_MIN_VIDEO_BYTES = 300_000_000 if LONGFORM_MODE else 50_000_000
@@ -130,8 +132,10 @@ def validate_video(video_path):
     formats = str(metadata.get("format", {}).get("format_name", "")).split(",")
     if not stream or stream.get("codec_name") != "h264":
         raise RuntimeError("LinkedIn video must contain an H.264 video stream.")
-    if stream.get("width") != 1080 or stream.get("height") != 1350:
-        raise RuntimeError("LinkedIn video must use the 1080 x 1350 portrait template.")
+    if EXPECTED_VIDEO_HEIGHT is None:
+        raise RuntimeError("PUBLISH_ASPECT_RATIO must be 4:5 or 9:16.")
+    if stream.get("width") != 1080 or stream.get("height") != EXPECTED_VIDEO_HEIGHT:
+        raise RuntimeError(f"LinkedIn video must use the 1080 x {EXPECTED_VIDEO_HEIGHT} {PUBLISH_ASPECT_RATIO} portrait template.")
     if "mp4" not in formats:
         raise RuntimeError("LinkedIn video must use the MP4 container.")
     if stream.get("r_frame_rate") != "24/1" or stream.get("pix_fmt") != "yuv420p":
@@ -508,7 +512,7 @@ def main():
         print("\nPost preview:\n")
         print(build_commentary(data))
         print(f"\nVideo ready: {VIDEO_FILE.name}")
-        print("Video format: 1080 x 1350 MP4, H.264, 24 fps, 4:5 portrait")
+        print(f"Video format: 1080 x {EXPECTED_VIDEO_HEIGHT} MP4, H.264, 24 fps, {PUBLISH_ASPECT_RATIO} portrait")
         print("Set PUBLISH_TO_LINKEDIN=true only for a scheduled public post.")
         return
 
@@ -521,12 +525,13 @@ def main():
     is_longform = publish_intent == "longform"
     is_reformat = publish_intent == "reformat"
     is_plan_extra = publish_intent == "plan_extra"
-    if publish_intent in {"correction", "extra", "extra_override", "longform", "reformat", "plan_extra"} and not request_id.isdigit():
+    is_replacement = publish_intent == "replacement"
+    if publish_intent in {"correction", "extra", "extra_override", "longform", "reformat", "plan_extra", "replacement"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for correction, extra, reformat, or planned-extra publication.")
     if request_id:
         if not request_id.isdigit():
             raise RuntimeError("PUBLISH_REQUEST_ID must be a numeric GitHub issue number.")
-        suffix = "correction" if is_correction else "extra" if is_extra else "extra-override" if is_extra_override else "longform" if is_longform else "reformat" if is_reformat else "plan-extra" if is_plan_extra else "request"
+        suffix = "correction" if is_correction else "extra" if is_extra else "extra-override" if is_extra_override else "longform" if is_longform else "reformat" if is_reformat else "plan-extra" if is_plan_extra else "replacement" if is_replacement else "request"
         date_key = f"{now.date().isoformat()}-{suffix}-{request_id}"
     else:
         if is_correction:
@@ -726,6 +731,60 @@ def main():
         ]
         if prior_longforms:
             raise RuntimeError("A long-form post was already attempted today. Refusing another.")
+    elif is_replacement:
+        old_post_id = os.getenv("PUBLISH_REPLACEMENT_OLD_POST_ID", "").strip()
+        old_ledger_key = os.getenv("PUBLISH_REPLACEMENT_OLD_LEDGER_KEY", "").strip()
+        expected_topic = os.getenv("PUBLISH_EXPECTED_TOPIC", "").strip()
+        requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
+        if not old_post_id.startswith(("urn:li:ugcPost:", "urn:li:share:")) or not old_ledger_key:
+            raise RuntimeError("Replacement requires the exact old post URN and its ledger key.")
+        if not requested_day.isdigit() or not expected_topic or data.get("topic") != expected_topic:
+            raise RuntimeError("Replacement content must match the preflight-verified plan topic.")
+        old_record = ledger["dates"].get(old_ledger_key)
+        if not isinstance(old_record, dict) or old_record.get("status") != "published" or old_record.get("post_id") != old_post_id:
+            raise RuntimeError("The target post no longer matches its confirmed published ledger record.")
+        if old_record.get("topic") != data.get("topic"):
+            raise RuntimeError("Replacement topic does not match the exact post selected for replacement.")
+
+        def record_time(item):
+            key, record = item
+            stamp_text = record.get("published_at") or record.get("started_at") or record.get("recorded_at") or str(key)[:10]
+            try:
+                stamp = datetime.fromisoformat(str(stamp_text).replace("Z", "+00:00"))
+            except (TypeError, ValueError):
+                stamp = datetime.fromisoformat(str(key)[:10]).replace(tzinfo=TIME_ZONE)
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=TIME_ZONE)
+            return (stamp.timestamp(), str(key))
+
+        all_published = [
+            (key, value) for key, value in ledger["dates"].items()
+            if isinstance(value, dict) and value.get("status") == "published"
+        ]
+        if not all_published or max(all_published, key=record_time)[0] != old_ledger_key:
+            raise RuntimeError("The target is no longer the latest confirmed post; refusing replacement.")
+
+        day_records = [
+            (key, value) for key, value in ledger["dates"].items()
+            if key == daily_key or key.startswith(f"{daily_key}-")
+        ]
+        unsafe_today = [
+            key for key, value in day_records
+            if isinstance(value, dict) and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if unsafe_today:
+            raise RuntimeError(
+                "Today's ledger already contains a published or uncertain post "
+                f"({', '.join(unsafe_today)}); refusing a second publication."
+            )
+        prior_replacements = [
+            key for key, value in ledger["dates"].items()
+            if isinstance(value, dict)
+            and value.get("replaces_post_id") == old_post_id
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_replacements:
+            raise RuntimeError("This original post already has a replacement attempt recorded.")
     elif is_correction:
         day_records = [
             (key, value) for key, value in ledger["dates"].items()
@@ -813,9 +872,11 @@ def main():
         "topic": str(data["topic"])[:200],
         "video_sha256": video_hash,
         "video_size_bytes": VIDEO_FILE.stat().st_size,
-        "video_dimensions": "1080x1350",
+        "video_dimensions": f"1080x{EXPECTED_VIDEO_HEIGHT}",
         "note": "Reserved before upload to prevent duplicate daily posts.",
     }
+    if is_replacement:
+        ledger["dates"][date_key]["replaces_post_id"] = os.getenv("PUBLISH_REPLACEMENT_OLD_POST_ID", "").strip()
     persist_ledger(ledger, f"Reserve LinkedIn video publication for {date_key}")
     print(f"Publication slot reserved for {date_key}.")
 
