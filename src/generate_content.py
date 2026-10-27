@@ -1083,7 +1083,7 @@ Topic angle: {post_angle}
 The purpose of this account is to build a credible early-career developer profile. The audience includes other students, developers, and potential internship or job contacts. Posts should document real work and learning, not pretend to be an industry expert.
 
 LinkedIn text requirements:
-- Write 95 to 110 words in exactly three plain-text paragraphs separated by one blank line for sufficient technical substance.
+- For standard scheduled topics, write 70 to 95 words in exactly three plain-text paragraphs separated by one blank line. Only for the explicitly requested custom Binary Search or Java Polymorphism posts, write 95 to 110 words.
 - Open with a specific observation, technical question, tradeoff, or problem tied to this topic. Do not use a standalone title.
 - In the middle paragraph, explain the real implementation or code detail, using first person only where Nikhil's own contribution is documented.
 - End with a practical lesson or something Nikhil is trying to understand more deeply. Do not force a call to action or a question into every post.
