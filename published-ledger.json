@@ -318,14 +318,17 @@
       "video_urn": "urn:li:video:D5610AQH3AODIg8RnEA"
     },
     "2026-10-27-replacement-71": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-27T06:57:42+05:30",
       "topic": "Keeping product ratings current after a new review",
       "video_sha256": "f01bcddc8627678a294740e319e36d727870ce354bb0c7923c7419009b12ad45",
       "video_size_bytes": 59319747,
       "video_dimensions": "1080x1920",
-      "note": "Reserved before upload to prevent duplicate daily posts.",
-      "replaces_post_id": "urn:li:ugcPost:7520507278370979840"
+      "note": "LinkedIn API confirmed video-post creation.",
+      "replaces_post_id": "urn:li:ugcPost:7520507278370979840",
+      "published_at": "2026-10-27T06:58:11+05:30",
+      "post_id": "urn:li:ugcPost:7520657567270797314",
+      "video_urn": "urn:li:video:D5610AQGPnJkfyCZITA"
     }
   }
 }
