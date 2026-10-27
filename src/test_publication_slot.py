@@ -9,7 +9,7 @@ import tempfile
 from datetime import datetime as RealDateTime
 from pathlib import Path
 
-from src import check_publication_slot as slot
+import check_publication_slot as slot
 
 
 class FixedDateTime:
