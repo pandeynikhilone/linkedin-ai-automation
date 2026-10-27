@@ -337,40 +337,52 @@ def main() -> int:
         write_output("should_run", "true")
         return 0
 
-    relevant = []
-    daily_record = dates.get(today)
-    if daily_record is not None:
-        if not isinstance(daily_record, dict):
-            raise RuntimeError(f"Malformed ledger entry for {today}; refusing to continue.")
-        relevant.append((today, daily_record))
-
-    request_prefix = f"{today}-request-"
+    # The scheduled slot must account for every ledger key created today, not
+    # only the base date and request keys. In particular, a confirmed replacement
+    # or explicitly requested extra post must suppress a second scheduled post.
+    day_prefix = f"{today}-"
+    day_records = []
     for key, record in dates.items():
-        if key.startswith(request_prefix):
-            if not isinstance(record, dict):
-                raise RuntimeError(f"Malformed ledger entry for {key}; refusing to continue.")
-            relevant.append((key, record))
+        if key != today and not key.startswith(day_prefix):
+            continue
+        if not isinstance(record, dict):
+            raise RuntimeError(f"Malformed ledger entry for {key}; refusing to continue.")
+        day_records.append((key, record))
 
-    for key, record in relevant:
+    for key, record in day_records:
         status = record.get("status")
         if status in {"publishing", "needs_review"}:
             raise RuntimeError(
                 f"Ledger entry {key} is '{status}'. Inspect LinkedIn and the ledger manually; "
                 "no content or video was generated."
             )
-        if status != "published":
+        if status not in {"published", "replaced"}:
             raise RuntimeError(
                 f"Unexpected ledger status {status!r} for {key}; refusing to spend API usage or risk a duplicate."
             )
 
-    if relevant:
-        published_keys = ", ".join(key for key, _ in relevant)
+    published_today = [
+        key for key, record in day_records if record.get("status") == "published"
+    ]
+    if published_today:
+        published_keys = ", ".join(published_today)
         print(
             f"SKIP: Today's India-local publishing slot ({today}) is already recorded as published "
             f"({published_keys}). Gemini and FFmpeg will not run."
         )
         write_output("should_run", "false")
         return 0
+
+    if day_records:
+        # A replaced record without its confirmed replacement is not enough
+        # evidence that today's slot is clear. Fail closed for manual review.
+        replaced_keys = ", ".join(
+            key for key, record in day_records if record.get("status") == "replaced"
+        )
+        raise RuntimeError(
+            f"Today's ledger has replaced entry/entries ({replaced_keys}) but no confirmed "
+            "published replacement. Inspect the ledger and LinkedIn before continuing."
+        )
 
     print(f"READY: No publication is recorded for {today} in Asia/Kolkata; generation may proceed.")
     write_output("should_run", "true")
