@@ -22,7 +22,13 @@ LOGIN_SCREENSHOT = ROOT / "generated_assets" / "truloop_login.png"
 REGISTER_SCREENSHOT = ROOT / "generated_assets" / "truloop_register.png"
 PROFILE_SCREENSHOT = ROOT / "generated_assets" / "truloop_profile.png"
 WIDTH = 1080
+# Draw the existing 4:5 artwork without distortion; the 9:16 output adds
+# vertical safe-space bars around it so the actual video frame is 9:16.
+PUBLISH_ASPECT_RATIO = os.getenv("PUBLISH_ASPECT_RATIO", "4:5").strip()
+if PUBLISH_ASPECT_RATIO not in {"4:5", "9:16"}:
+    raise RuntimeError("PUBLISH_ASPECT_RATIO must be 4:5 or 9:16.")
 HEIGHT = 1350
+OUTPUT_HEIGHT = 1920 if PUBLISH_ASPECT_RATIO == "9:16" else HEIGHT
 FPS = 24
 SLIDE_SECONDS = 3.4
 TRANSITION_SECONDS = 0.28
@@ -628,9 +634,10 @@ def main():
         for index in range(len(slide_paths)):
             label = f"v{index}"
             filter_parts.append(
-                f"[{index}:v]zoompan=z='min(zoom+0.00025,1.025)':"
+                f"[{index}:v]pad={WIDTH}:{OUTPUT_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=black,"
+                f"zoompan=z='min(zoom+0.00025,1.025)':"
                 f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
-                f"d=1:s={WIDTH}x{HEIGHT}:fps={FPS},"
+                f"d=1:s={WIDTH}x{OUTPUT_HEIGHT}:fps={FPS},"
                 f"trim=duration={SLIDE_SECONDS},setpts=PTS-STARTPTS,"
                 f"settb=AVTB,format=yuv420p[{label}]"
             )
@@ -704,13 +711,13 @@ def main():
     duration = float(metadata.get("format", {}).get("duration", 0))
     if not video_stream or video_stream.get("codec_name") != "h264":
         raise RuntimeError("Rendered video does not contain an H.264 video stream.")
-    if video_stream.get("width") != WIDTH or video_stream.get("height") != HEIGHT:
-        raise RuntimeError("Rendered video dimensions differ from the 1080 x 1350 template.")
+    if video_stream.get("width") != WIDTH or video_stream.get("height") != OUTPUT_HEIGHT:
+        raise RuntimeError(f"Rendered video dimensions differ from the 1080 x {OUTPUT_HEIGHT} template.")
     if not 12 <= duration <= 20:
         raise RuntimeError(f"Rendered video duration is outside the expected range: {duration:.2f}s.")
 
     print(f"SUCCESS: created {OUTPUT_FILE.name}")
-    print(f"Resolution: {WIDTH} x {HEIGHT} (4:5 portrait), {FPS} fps")
+    print(f"Resolution: {WIDTH} x {OUTPUT_HEIGHT} ({PUBLISH_ASPECT_RATIO} portrait), {FPS} fps")
     print(f"Duration: {duration:.2f} seconds")
     print(f"Size: {size_bytes:,} bytes")
 
