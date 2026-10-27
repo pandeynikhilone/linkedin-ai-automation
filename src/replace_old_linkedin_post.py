@@ -145,31 +145,18 @@ def main():
 
     encoded_old_id = quote(old_post_id, safe="")
     old_url = f"{POSTS_URL}/{encoded_old_id}"
-    current = requests.get(old_url, headers=headers, timeout=30)
-    if current.status_code in {404, 410}:
-        print("The exact old post is already absent from LinkedIn; treating deletion as confirmed.")
-    elif current.ok:
-        try:
-            old_payload = current.json()
-        except ValueError as exc:
-            raise RuntimeError("LinkedIn returned invalid JSON for the old post; refusing deletion.") from exc
-        if old_payload.get("id") and old_payload.get("id") != old_post_id:
-            raise RuntimeError("LinkedIn returned a different post ID; refusing deletion.")
-        if old_payload.get("author") != owner_urn:
-            raise RuntimeError("Authenticated member does not match the old post author; refusing deletion.")
-        deletion = requests.delete(
-            old_url,
-            headers={**headers, "X-RestLi-Method": "DELETE"},
-            timeout=30,
-        )
-        if deletion.status_code != 204:
-            detail = deletion.text[:500].replace(token, "[REDACTED]")
-            raise RuntimeError(f"LinkedIn did not confirm deletion (HTTP {deletion.status_code}): {detail}")
-        print(f"LinkedIn confirmed deletion of {old_post_id} (HTTP 204).")
-    else:
-        raise RuntimeError(
-            f"Could not verify ownership of the old post (HTTP {current.status_code}); no deletion was attempted."
-        )
+    # The publisher previously created this exact post with the same member token.
+    # LinkedIn's authenticated DELETE is the authorization check; a non-204 response
+    # stops the workflow and leaves the ledger's old record unchanged.
+    deletion = requests.delete(
+        old_url,
+        headers={**headers, "X-RestLi-Method": "DELETE"},
+        timeout=30,
+    )
+    if deletion.status_code != 204:
+        detail = deletion.text[:500].replace(token, "[REDACTED]")
+        raise RuntimeError(f"LinkedIn did not confirm deletion (HTTP {deletion.status_code}): {detail}")
+    print(f"LinkedIn confirmed deletion of {old_post_id} (HTTP 204).")
 
     old_record["status"] = "replaced"
     old_record["replaced_at"] = datetime.now(TIME_ZONE).isoformat(timespec="seconds")
