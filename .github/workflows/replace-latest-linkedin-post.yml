@@ -1,0 +1,365 @@
+name: Replace Latest LinkedIn Post with Validated 9:16 Video
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: linkedin-publishing
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: ${{ github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Replace latest LinkedIn post with 9:16 video now' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      should_run: ${{ steps.slot.outputs.should_run }}
+      topic_day: ${{ steps.request.outputs.topic_day }}
+      expected_topic: ${{ steps.request.outputs.expected_topic }}
+      old_post_id: ${{ steps.request.outputs.old_post_id }}
+      old_ledger_key: ${{ steps.request.outputs.old_ledger_key }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify exact target and latest-post status
+        id: request
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          if os.getenv("ISSUE_TITLE") != "Replace latest LinkedIn post with 9:16 video now":
+              raise SystemExit("Unexpected replacement request title.")
+          body = os.getenv("ISSUE_BODY", "")
+          id_match = re.search(r"^REPLACE_POST_ID=(.+)$", body, re.MULTILINE)
+          key_match = re.search(r"^REPLACE_OLD_LEDGER_KEY=(.+)$", body, re.MULTILINE)
+          day_match = re.search(r"^PUBLISH_TOPIC_DAY=(\d{1,2})$", body, re.MULTILINE)
+          expected_old_id = "urn:li:ugcPost:7520507278370979840"
+          expected_old_key = "2026-10-26-request-70"
+          if not id_match or not key_match or not day_match:
+              raise SystemExit("Request must contain exact target URN, ledger key and plan day.")
+          old_post_id = id_match.group(1).strip()
+          old_key = key_match.group(1).strip()
+          day = int(day_match.group(1))
+          if old_post_id != expected_old_id or old_key != expected_old_key or day != 19:
+              raise SystemExit("Request does not match the explicitly selected latest post and Day 19 topic.")
+
+          plan = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          ledger = json.loads(Path("published-ledger.json").read_text(encoding="utf-8"))
+          topics = {int(item["day"]): str(item["topic"]) for item in plan.get("topics", [])}
+          expected_topic = topics.get(day)
+          dates = ledger.get("dates", {})
+          if not isinstance(dates, dict) or not expected_topic:
+              raise SystemExit("The publication ledger or plan is malformed.")
+          old_record = dates.get(old_key)
+          if not isinstance(old_record, dict) or old_record.get("status") != "published":
+              raise SystemExit("The exact old post is not confirmed published in the ledger.")
+          if old_record.get("post_id") != old_post_id or old_record.get("topic") != expected_topic:
+              raise SystemExit("Old post ID/topic does not match the requested Day 19 replacement.")
+
+          timezone = ZoneInfo("Asia/Kolkata")
+          today = datetime.now(timezone).date().isoformat()
+          def record_time(item):
+              key, record = item
+              value = record.get("published_at") or record.get("started_at") or record.get("recorded_at") or str(key)[:10]
+              try:
+                  stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+              except (TypeError, ValueError):
+                  stamp = datetime.fromisoformat(str(key)[:10]).replace(tzinfo=timezone)
+              if stamp.tzinfo is None:
+                  stamp = stamp.replace(tzinfo=timezone)
+              return (stamp.timestamp(), str(key))
+
+          published = [
+              (key, value) for key, value in dates.items()
+              if isinstance(value, dict) and value.get("status") == "published"
+          ]
+          if not published or max(published, key=record_time)[0] != old_key:
+              raise SystemExit("The selected post is no longer the latest confirmed publication.")
+          if any(
+              isinstance(value, dict)
+              and value.get("replaces_post_id") == old_post_id
+              and value.get("status") in {"published", "publishing", "needs_review"}
+              for value in dates.values()
+          ):
+              raise SystemExit("This original post already has a replacement attempt recorded.")
+
+          today_records = [
+              (key, value) for key, value in dates.items()
+              if key == today or key.startswith(f"{today}-")
+          ]
+          unsafe_today = [
+              key for key, value in today_records
+              if isinstance(value, dict) and value.get("status") in {"published", "publishing", "needs_review"}
+          ]
+          if unsafe_today:
+              raise SystemExit(
+                  "Today's ledger already contains a published or uncertain post: "
+                  + ", ".join(unsafe_today)
+              )
+          issue_number = os.getenv("ISSUE_NUMBER", "").strip()
+          if not issue_number.isdigit():
+              raise SystemExit("Issue number is missing.")
+          replacement_key = f"{today}-replacement-{issue_number}"
+          if replacement_key in dates:
+              raise SystemExit("This exact replacement request already has a ledger record.")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"topic_day={day}\n")
+              output.write(f"expected_topic={expected_topic}\n")
+              output.write(f"old_post_id={old_post_id}\n")
+              output.write(f"old_ledger_key={old_key}\n")
+          print(f"Preflight passed for exact latest post {old_post_id} and topic Day {day}.")
+          PY
+
+      - name: Check guarded one-time replacement slot
+        id: slot
+        env:
+          PUBLISH_INTENT: replacement
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_TOPIC_DAY: ${{ steps.request.outputs.topic_day }}
+          PUBLISH_EXPECTED_TOPIC: ${{ steps.request.outputs.expected_topic }}
+          PUBLISH_REPLACEMENT_OLD_POST_ID: ${{ steps.request.outputs.old_post_id }}
+          PUBLISH_REPLACEMENT_OLD_LEDGER_KEY: ${{ steps.request.outputs.old_ledger_key }}
+        run: python3 src/check_publication_slot.py
+
+  publish-replacement:
+    needs: preflight
+    if: ${{ github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Replace latest LinkedIn post with 9:16 video now' && needs.preflight.result == 'success' && needs.preflight.outputs.should_run == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install FFmpeg and fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Generate verified Day 19 post and five slides
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
+          PUBLISH_TOPIC_DAY: ${{ needs.preflight.outputs.topic_day }}
+        run: python src/generate_content.py
+
+      - name: Determine whether a genuine website screenshot is required
+        id: website_capture
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          needed = any(
+              isinstance(slide, dict) and slide.get("visual_type") == "website"
+              for slide in data.get("slides", [])
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"needed={'true' if needed else 'false'}\n")
+          PY
+
+      - name: Install Chromium for website capture
+        if: steps.website_capture.outputs.needed == 'true'
+        run: python -m playwright install --with-deps chromium
+
+      - name: Capture the deployed TruLoop site
+        if: steps.website_capture.outputs.needed == 'true'
+        run: python src/capture_truloop_site.py
+
+      - name: Render 1080x1920 9:16 portrait video
+        env:
+          PUBLISH_ASPECT_RATIO: "9:16"
+        run: python src/create_video.py
+
+      - name: Validate exact topic, copy and 9:16 video encoding
+        env:
+          REQUESTED_TOPIC_DAY: ${{ needs.preflight.outputs.topic_day }}
+          PUBLISH_ASPECT_RATIO: "9:16"
+        run: |
+          test -s content.json
+          test -s linkedin_video.mp4
+          python -m json.tool content.json > /dev/null
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,pix_fmt,profile,level,bit_rate -show_entries format=duration,format_name -of json linkedin_video.mp4 > video_metadata.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          day = int(os.environ["REQUESTED_TOPIC_DAY"])
+          plan = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          expected_topic = next((item["topic"] for item in plan["topics"] if int(item["day"]) == day), None)
+          if not expected_topic or data.get("topic") != expected_topic:
+              raise SystemExit(f"Topic mismatch for Day {day}: expected {expected_topic!r}.")
+          post = str(data.get("post") or "").strip()
+          paragraphs = [part.strip() for part in post.split("\n\n") if part.strip()]
+          words = len(post.split())
+          if not 70 <= words <= 95 or len(paragraphs) != 3:
+              raise SystemExit(f"Caption must be 70-95 words in exactly three paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
+          if "#" in post or any(part.startswith(("#", "- ", "* ", "• ")) for part in paragraphs):
+              raise SystemExit("Caption must use plain paragraphs; hashtags are appended separately.")
+          if not isinstance(data.get("hashtags"), list) or len(data["hashtags"]) < 3:
+              raise SystemExit("At least three relevant hashtags are required.")
+          slides = data.get("slides")
+          if not isinstance(slides, list) or len(slides) != 5:
+              raise SystemExit("Exactly five slides are required.")
+          for index, slide in enumerate(slides, 1):
+              title_words = len(str(slide.get("title", "")).split())
+              body_words = len(str(slide.get("body", "")).split())
+              if not 3 <= title_words <= 7 or not 5 <= body_words <= 18:
+                  raise SystemExit(f"Slide {index} copy is outside standard title/body lengths.")
+
+          metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
+          streams = metadata.get("streams", [])
+          video = next((stream for stream in streams if stream.get("codec_type") == "video"), None)
+          duration = float(metadata.get("format", {}).get("duration", 0))
+          formats = str(metadata.get("format", {}).get("format_name", "")).split(",")
+          size = Path("linkedin_video.mp4").stat().st_size
+          try:
+              bitrate = int(video.get("bit_rate") or 0) if video else 0
+          except (TypeError, ValueError):
+              bitrate = 0
+          if not video or video.get("codec_name") != "h264" or video.get("width") != 1080 or video.get("height") != 1920:
+              raise SystemExit("Video must be H.264 at exactly 1080x1920 (9:16).")
+          if video.get("r_frame_rate") != "24/1" or video.get("pix_fmt") != "yuv420p" or video.get("profile") != "High" or video.get("level") != 42:
+              raise SystemExit("Video must be H.264 High Profile Level 4.2, 24 fps, yuv420p.")
+          if "mp4" not in formats or any(stream.get("codec_type") == "audio" for stream in streams):
+              raise SystemExit("Video must be a silent MP4.")
+          if not 15.5 <= duration <= 16.2 or not 50_000_000 <= size <= 70_000_000 or not 25_000_000 <= bitrate <= 31_000_000:
+              raise SystemExit(f"Video outside target: duration={duration:.2f}s, size={size:,}, bitrate={bitrate}.")
+          print(f"Validated Day {day}: 1080x1920 9:16 H.264 MP4, {duration:.2f}s, {size:,} bytes.")
+          PY
+
+      - name: Publish the new LinkedIn video post
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PUBLISH_TO_LINKEDIN: "true"
+          PUBLISH_INTENT: replacement
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_TOPIC_DAY: ${{ needs.preflight.outputs.topic_day }}
+          PUBLISH_EXPECTED_TOPIC: ${{ needs.preflight.outputs.expected_topic }}
+          PUBLISH_REPLACEMENT_OLD_POST_ID: ${{ needs.preflight.outputs.old_post_id }}
+          PUBLISH_REPLACEMENT_OLD_LEDGER_KEY: ${{ needs.preflight.outputs.old_ledger_key }}
+          PUBLISH_ASPECT_RATIO: "9:16"
+          LINKEDIN_VIDEO_API_VERSION: "202606"
+          LINKEDIN_POSTS_API_VERSION: "202609"
+        run: python src/publish_linkedin.py
+
+      - name: Delete old post only after the replacement is confirmed
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_POSTS_API_VERSION: "202609"
+          PUBLISH_REQUEST_ID: ${{ github.event.issue.number }}
+          PUBLISH_ASPECT_RATIO: "9:16"
+          REPLACE_POST_ID: ${{ needs.preflight.outputs.old_post_id }}
+          REPLACE_OLD_LEDGER_KEY: ${{ needs.preflight.outputs.old_ledger_key }}
+        run: python src/replace_old_linkedin_post.py
+
+      - name: Verify replacement and deletion ledger states
+        id: verify
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPLACE_OLD_LEDGER_KEY: ${{ needs.preflight.outputs.old_ledger_key }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          today = datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat()
+          issue = os.getenv("ISSUE_NUMBER", "").strip()
+          ledger = json.loads(Path("published-ledger.json").read_text(encoding="utf-8"))
+          new = ledger["dates"].get(f"{today}-replacement-{issue}")
+          old = ledger["dates"].get(os.getenv("REPLACE_OLD_LEDGER_KEY", ""))
+          if not isinstance(new, dict) or new.get("status") != "published" or new.get("video_dimensions") != "1080x1920":
+              raise SystemExit("Replacement post is not confirmed in the ledger.")
+          if not isinstance(old, dict) or old.get("status") != "replaced" or old.get("replaced_by_post_id") != new.get("post_id"):
+              raise SystemExit("Old-post deletion/replacement state is not confirmed in the ledger.")
+          post_id = str(new.get("post_id") or "")
+          if not post_id:
+              raise SystemExit("Replacement post ID is missing.")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"post_id={post_id}\n")
+              output.write(f"post_url=https://www.linkedin.com/feed/update/{post_id}/\n")
+          print(f"Confirmed replacement publication {post_id}; prior post is marked replaced.")
+          PY
+
+      - name: Confirm completion and close request
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const postId = "${{ steps.verify.outputs.post_id }}";
+            const postUrl = "${{ steps.verify.outputs.post_url }}";
+            const updatedBody = (issue.body || "").replace("REQUEST_STATUS: OPEN", "REQUEST_STATUS: REPLACED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "Replacement confirmed. New 9:16 LinkedIn video post: " + postUrl + " (URN: " + postId + "). The old post was deleted through the authenticated LinkedIn Posts API, and the ledger records it as replaced. Run: https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/actions/runs/" + context.runId
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: updatedBody,
+              state: "closed"
+            });
+
+  close-failed-request:
+    needs: [preflight, publish-replacement]
+    if: ${{ always() && github.event.issue.user.login == github.repository_owner && github.event.issue.title == 'Replace latest LinkedIn post with 9:16 video now' && (needs.preflight.result == 'failure' || needs.publish-replacement.result == 'failure') }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Mark failed replacement for manual review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const updatedBody = (issue.body || "").replace("REQUEST_STATUS: OPEN", "REQUEST_STATUS: FAILED");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "The replacement workflow failed or was blocked. Do not retry blindly. Inspect the run and published-ledger.json first. The old post is deleted only after a new post is confirmed; if publication succeeded but deletion failed, the old post may still be visible. Run: https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/actions/runs/" + context.runId
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: updatedBody,
+              state: "closed"
+            });
