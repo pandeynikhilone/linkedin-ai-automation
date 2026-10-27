@@ -306,16 +306,18 @@
       "video_urn": "urn:li:video:D5610AQGRLFuLF0-aSg"
     },
     "2026-10-26-request-70": {
-      "status": "published",
+      "status": "replaced",
       "started_at": "2026-10-26T21:00:39+05:30",
       "topic": "Keeping product ratings current after a new review",
       "video_sha256": "a7eb3fafd05a35597174389c2c8fe677df306b86166ace598f9711b8a0714e9a",
       "video_size_bytes": 59319746,
       "video_dimensions": "1080x1350",
-      "note": "LinkedIn API confirmed video-post creation.",
+      "note": "Deleted via authenticated LinkedIn Posts API after the replacement was confirmed published.",
       "published_at": "2026-10-26T21:01:00+05:30",
       "post_id": "urn:li:ugcPost:7520507278370979840",
-      "video_urn": "urn:li:video:D5610AQH3AODIg8RnEA"
+      "video_urn": "urn:li:video:D5610AQH3AODIg8RnEA",
+      "replaced_at": "2026-10-27T06:58:13+05:30",
+      "replaced_by_post_id": "urn:li:ugcPost:7520657567270797314"
     },
     "2026-10-27-replacement-71": {
       "status": "published",
