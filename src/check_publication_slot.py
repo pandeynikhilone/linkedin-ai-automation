@@ -38,11 +38,11 @@ def main() -> int:
         print("PREVIEW: Manual workflow run is preview-only, so the publication ledger will not block it.")
         write_output("should_run", "true")
         return 0
-    if intent not in {"scheduled", "request", "correction", "extra", "extra_override", "longform", "longform_recovery", "reformat", "plan_extra"}:
+    if intent not in {"scheduled", "request", "correction", "extra", "extra_override", "longform", "longform_recovery", "reformat", "plan_extra", "replacement"}:
         raise RuntimeError(f"Unsupported PUBLISH_INTENT: {intent!r}")
 
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
-    if intent in {"request", "correction", "extra", "extra_override", "longform", "reformat", "plan_extra"} and not request_id.isdigit():
+    if intent in {"request", "correction", "extra", "extra_override", "longform", "reformat", "plan_extra", "replacement"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for one-off publication requests.")
 
     today = datetime.now(TIME_ZONE).date().isoformat()
@@ -165,6 +165,62 @@ def main() -> int:
         if extra_key in dates:
             raise RuntimeError(f"Extra-post ledger entry {extra_key} already exists; refusing to retry.")
         print(f"READY: One explicitly requested extra post is available for today ({today}).")
+        write_output("should_run", "true")
+        return 0
+
+    if intent == "replacement":
+        replacement_key = f"{today}-replacement-{request_id}"
+        old_post_id = os.getenv("PUBLISH_REPLACEMENT_OLD_POST_ID", "").strip()
+        old_ledger_key = os.getenv("PUBLISH_REPLACEMENT_OLD_LEDGER_KEY", "").strip()
+        expected_topic = os.getenv("PUBLISH_EXPECTED_TOPIC", "").strip()
+        requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
+        old_record = dates.get(old_ledger_key)
+        if not old_post_id or not old_ledger_key or not expected_topic or not requested_day.isdigit():
+            raise RuntimeError("Replacement preflight is missing the exact target post or verified topic.")
+        if not isinstance(old_record, dict) or old_record.get("status") != "published":
+            raise RuntimeError("Replacement target is not a confirmed published post.")
+        if old_record.get("post_id") != old_post_id or old_record.get("topic") != expected_topic:
+            raise RuntimeError("Replacement target ID/topic does not match the confirmed ledger record.")
+        def record_time(item):
+            key, record = item
+            stamp_text = record.get("published_at") or record.get("started_at") or record.get("recorded_at") or str(key)[:10]
+            try:
+                stamp = datetime.fromisoformat(str(stamp_text).replace("Z", "+00:00"))
+            except (TypeError, ValueError):
+                stamp = datetime.fromisoformat(str(key)[:10]).replace(tzinfo=TIME_ZONE)
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=TIME_ZONE)
+            return (stamp.timestamp(), str(key))
+        published = [
+            (key, value) for key, value in dates.items()
+            if isinstance(value, dict) and value.get("status") == "published"
+        ]
+        if not published or max(published, key=record_time)[0] != old_ledger_key:
+            raise RuntimeError("Replacement target is no longer the latest confirmed post.")
+        day_records = [
+            (key, value) for key, value in dates.items()
+            if key == today or key.startswith(f"{today}-")
+        ]
+        unsafe_today = [
+            key for key, value in day_records
+            if isinstance(value, dict) and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if unsafe_today:
+            raise RuntimeError(
+                "Today's ledger already contains a published or uncertain post "
+                f"({', '.join(unsafe_today)}); refusing a second publication."
+            )
+        if replacement_key in dates:
+            raise RuntimeError(f"Replacement ledger key {replacement_key} already exists; refusing to retry.")
+        prior_replacements = [
+            key for key, value in dates.items()
+            if isinstance(value, dict)
+            and value.get("replaces_post_id") == old_post_id
+            and value.get("status") in {"published", "publishing", "needs_review"}
+        ]
+        if prior_replacements:
+            raise RuntimeError("This original post already has a replacement attempt recorded.")
+        print(f"READY: exact latest post {old_post_id} may be replaced once today.")
         write_output("should_run", "true")
         return 0
 
