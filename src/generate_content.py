@@ -971,6 +971,58 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "What Truloop means by real usage experience":
+        return {
+            "topic": topic,
+            "post": (
+                "TruLoop's README says product reviews should reflect real usage experience, not just a quick impression. "
+                "It gives battery life and software stability as examples of details that matter when describing a product.\n\n"
+                "That framing makes me think about review quality as more than a star rating. A useful review explains "
+                "what someone actually observed, while the project aims to emphasize honest, unbiased feedback.\n\n"
+                "I'm learning how clear examples can give readers context without suggesting that one review proves every claim. "
+                "Specific observations help people understand what a reviewer means."
+            ),
+            "hashtags": ["NextJS", "FullStackDevelopment", "WebDevelopment", "MCAStudent"],
+            "video_title": "What Real Usage Experience Adds To Reviews",
+            "slides": [
+                {
+                    "title": "Real Usage Shapes Better Reviews",
+                    "body": "TruLoop's README centers reviews on real product experience.",
+                    "visual_type": "learning",
+                    "layout": "hero",
+                    "visual_labels": ["Real usage", "Review context", "Product experience"],
+                },
+                {
+                    "title": "Look Beyond A Star Rating",
+                    "body": "Battery life and software stability are README examples.",
+                    "visual_type": "checklist",
+                    "layout": "process",
+                    "visual_labels": ["Battery life", "Software stability", "Observed experience"],
+                },
+                {
+                    "title": "Describe What You Observed",
+                    "body": "Specific observations give readers more context than a score alone.",
+                    "visual_type": "form",
+                    "layout": "detail",
+                    "visual_labels": ["Observation", "Product context", "Review detail"],
+                },
+                {
+                    "title": "Honest Feedback Needs Context",
+                    "body": "The project aims to emphasize honest, unbiased product reviews.",
+                    "visual_type": "product",
+                    "layout": "split",
+                    "visual_labels": ["Honest feedback", "Unbiased reviews", "Reader context"],
+                },
+                {
+                    "title": "Keep Claims Within The Evidence",
+                    "body": "A review describes experience; it does not prove every claim.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Clear evidence", "Careful claims", "Useful context"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -1330,6 +1382,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Separating Truloop's frontend and backend",
                 "Connecting Truloop's interface to backend APIs",
                 "A look at Truloop's receipt proof validation",
+                "What Truloop means by real usage experience",
                 "Checking purchase dates against product release dates",
                 "Validating the data required to submit a Truloop review",
         "Keeping product ratings current after a new review",
@@ -1365,6 +1418,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             "Separating Truloop's frontend and backend",
             "Connecting Truloop's interface to backend APIs",
             "A look at Truloop's receipt proof validation",
+            "What Truloop means by real usage experience",
             "Checking purchase dates against product release dates",
             "Validating the data required to submit a Truloop review",
         "Keeping product ratings current after a new review",
