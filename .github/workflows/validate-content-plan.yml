@@ -341,7 +341,7 @@ jobs:
           content = source_grounded_fallback(topic)
           post = content["post"]
           words = len(post.split())
-          paragraphs = [part for part in post.split("\\n\\n") if part.strip()]
+          paragraphs = [part for part in post.splitlines() if part.strip()]
           slides = content["slides"]
 
           if content.get("topic") != topic:
