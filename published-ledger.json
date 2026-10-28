@@ -333,13 +333,16 @@
       "video_urn": "urn:li:video:D5610AQGPnJkfyCZITA"
     },
     "2026-10-28-request-72": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-10-28T17:40:08+05:30",
       "topic": "Organizing Truloop's routes by responsibility",
       "video_sha256": "1709f2a33defea312f77fadd4f0db923d4209e67b096900006ad8a1b868cbefe",
       "video_size_bytes": 59319745,
       "video_dimensions": "1080x1350",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-10-28T17:40:27+05:30",
+      "post_id": "urn:li:ugcPost:7521181586508128257",
+      "video_urn": "urn:li:video:D5610AQG5JK2rCKR9gw"
     }
   }
 }
