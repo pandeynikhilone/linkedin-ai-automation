@@ -770,7 +770,9 @@ def main():
         ]
         unsafe_today = [
             key for key, value in day_records
-            if isinstance(value, dict) and value.get("status") in {"published", "publishing", "needs_review"}
+            if key != old_ledger_key
+            and isinstance(value, dict)
+            and value.get("status") in {"published", "publishing", "needs_review"}
         ]
         if unsafe_today:
             raise RuntimeError(
