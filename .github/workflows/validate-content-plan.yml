@@ -332,6 +332,36 @@ jobs:
           print(f"Day 18 fallback validation passed: {words}-word caption and one genuine website slide.")
           PY
 
+      - name: Test deterministic real-usage review fallback
+        run: |
+          python - <<'PY'
+          from src.generate_content import source_grounded_fallback
+
+          topic = "What Truloop means by real usage experience"
+          content = source_grounded_fallback(topic)
+          post = content["post"]
+          words = len(post.split())
+          paragraphs = [part for part in post.split("\\n\\n") if part.strip()]
+          slides = content["slides"]
+
+          if content.get("topic") != topic:
+              raise SystemExit("Real-usage fallback must preserve the selected topic.")
+          if not 70 <= words <= 95 or len(paragraphs) != 3:
+              raise SystemExit(f"Real-usage fallback must have 70-95 words in three paragraphs; got {words} words and {len(paragraphs)} paragraphs.")
+          if len(slides) != 5 or len({slide.get("layout") for slide in slides}) != 5:
+              raise SystemExit("Real-usage fallback must contain five slides with distinct layouts.")
+          if slides[0].get("layout") != "hero" or slides[-1].get("layout") != "closing":
+              raise SystemExit("Real-usage fallback must start with hero and end with closing.")
+          for index, slide in enumerate(slides, 1):
+              if not 3 <= len(slide.get("title", "").split()) <= 7:
+                  raise SystemExit(f"Real-usage slide {index} title must contain 3-7 words.")
+              if not 5 <= len(slide.get("body", "").split()) <= 18:
+                  raise SystemExit(f"Real-usage slide {index} body must contain 5-18 words.")
+              if not slide.get("visual_labels"):
+                  raise SystemExit(f"Real-usage slide {index} needs meaningful visual labels.")
+          print(f"Real-usage fallback validation passed: {words}-word caption and five distinct slides.")
+          PY
+
       - name: Test ledger-driven topic progression
         run: |
           python - <<'PY'
