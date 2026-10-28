@@ -622,6 +622,55 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Organizing Truloop's routes by responsibility":
+        return {
+            "topic": topic,
+            "post": (
+                "Clear routes give each feature a place to start. I'm reviewing how TruLoop groups its frontend pages and backend API paths.\n\n"
+                "Frontend routes cover products, product information, product reviews, review submission, profiles, and authentication. Backend route files separate auth, products, reviews, uploads, and admin. This makes the right area easier to locate before tracing its behavior.\n\n"
+                "As an MCA student, I'm learning to follow both sides of a full-stack application instead of treating each URL in isolation. A clear route structure gives me a useful starting point when reading or debugging code."
+            ),
+            "hashtags": ["NextJS", "NodeJS", "WebDevelopment", "MCAStudent"],
+            "video_title": "Organizing TruLoop Routes by Responsibility",
+            "slides": [
+                {
+                    "title": "Clear Routes Make Features Easier",
+                    "body": "TruLoop separates page paths for distinct product and account features.",
+                    "visual_type": "website",
+                    "layout": "hero",
+                    "visual_labels": ["Frontend pages", "Feature routes", "Live TruLoop website"],
+                },
+                {
+                    "title": "Group Frontend Pages By Feature",
+                    "body": "Products, product information, reviews, profiles, and authentication have separate routes.",
+                    "visual_type": "flow",
+                    "layout": "split",
+                    "visual_labels": ["Products", "Reviews", "Authentication"],
+                },
+                {
+                    "title": "Keep Backend Routes Organized",
+                    "body": "Separate files cover auth, products, reviews, uploads, and admin.",
+                    "visual_type": "code",
+                    "layout": "process",
+                    "visual_labels": ["Auth routes", "Product routes", "Review routes"],
+                },
+                {
+                    "title": "Trace Each Route With Purpose",
+                    "body": "Clear route ownership helps me find where a feature starts.",
+                    "visual_type": "stack",
+                    "layout": "editorial",
+                    "visual_labels": ["Route file", "Controller", "Feature behavior"],
+                },
+                {
+                    "title": "Start With One Clear Responsibility",
+                    "body": "I am learning to follow routes before debugging a full-stack feature.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Find the route", "Trace the feature", "Understand the flow"],
+                },
+            ],
+        }
+
     if topic == "Keeping product ratings current after a new review":
         return {
             "topic": topic,
@@ -1355,6 +1404,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Checking purchase dates against product release dates",
         "Validating the data required to submit a Truloop review",
         "Keeping product ratings current after a new review",
+        "Organizing Truloop's routes by responsibility",
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
@@ -1386,6 +1436,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Checking purchase dates against product release dates",
                 "Validating the data required to submit a Truloop review",
         "Keeping product ratings current after a new review",
+        "Organizing Truloop's routes by responsibility",
             }
             if topic not in fallback_topics:
                 raise
@@ -1422,6 +1473,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             "Checking purchase dates against product release dates",
             "Validating the data required to submit a Truloop review",
         "Keeping product ratings current after a new review",
+        "Organizing Truloop's routes by responsibility",
         }
         if topic in fallback_topics and not (custom_binary_search or custom_java_polymorphism):
             print(
