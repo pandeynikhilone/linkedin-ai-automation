@@ -50,14 +50,14 @@ jobs:
           id_match = re.search(r"^REPLACE_POST_ID=(.+)$", body, re.MULTILINE)
           key_match = re.search(r"^REPLACE_OLD_LEDGER_KEY=(.+)$", body, re.MULTILINE)
           day_match = re.search(r"^PUBLISH_TOPIC_DAY=(\d{1,2})$", body, re.MULTILINE)
-          expected_old_id = "urn:li:ugcPost:7520507278370979840"
-          expected_old_key = "2026-10-26-request-70"
+          expected_old_id = "urn:li:ugcPost:7521181586508128257"
+          expected_old_key = "2026-10-28-request-72"
           if not id_match or not key_match or not day_match:
               raise SystemExit("Request must contain exact target URN, ledger key and plan day.")
           old_post_id = id_match.group(1).strip()
           old_key = key_match.group(1).strip()
           day = int(day_match.group(1))
-          if old_post_id != expected_old_id or old_key != expected_old_key or day != 19:
+          if old_post_id != expected_old_id or old_key != expected_old_key or day != 20:
               raise SystemExit("Request does not match the explicitly selected latest post and Day 19 topic.")
 
           plan = json.loads(Path("content-plan.json").read_text(encoding="utf-8"))
@@ -71,7 +71,7 @@ jobs:
           if not isinstance(old_record, dict) or old_record.get("status") != "published":
               raise SystemExit("The exact old post is not confirmed published in the ledger.")
           if old_record.get("post_id") != old_post_id or old_record.get("topic") != expected_topic:
-              raise SystemExit("Old post ID/topic does not match the requested Day 19 replacement.")
+              raise SystemExit("Old post ID/topic does not match the requested Day 20 replacement.")
 
           timezone = ZoneInfo("Asia/Kolkata")
           today = datetime.now(timezone).date().isoformat()
@@ -106,7 +106,7 @@ jobs:
           ]
           unsafe_today = [
               key for key, value in today_records
-              if isinstance(value, dict) and value.get("status") in {"published", "publishing", "needs_review"}
+              if key != old_key and isinstance(value, dict) and value.get("status") in {"published", "publishing", "needs_review"}
           ]
           if unsafe_today:
               raise SystemExit(
@@ -164,7 +164,7 @@ jobs:
       - name: Install Python dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Generate verified Day 19 post and five slides
+      - name: Generate verified Day 20 post and five slides
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
