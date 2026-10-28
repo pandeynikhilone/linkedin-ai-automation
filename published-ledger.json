@@ -343,6 +343,16 @@
       "published_at": "2026-10-28T17:40:27+05:30",
       "post_id": "urn:li:ugcPost:7521181586508128257",
       "video_urn": "urn:li:video:D5610AQG5JK2rCKR9gw"
+    },
+    "2026-10-28-replacement-74": {
+      "status": "publishing",
+      "started_at": "2026-10-28T18:56:59+05:30",
+      "topic": "Organizing Truloop's routes by responsibility",
+      "video_sha256": "a688598faee754a866347ea33457349328deb578b99ba28bc45fd55dc9b380ce",
+      "video_size_bytes": 59319746,
+      "video_dimensions": "1080x1920",
+      "note": "Reserved before upload to prevent duplicate daily posts.",
+      "replaces_post_id": "urn:li:ugcPost:7521181586508128257"
     }
   }
 }
