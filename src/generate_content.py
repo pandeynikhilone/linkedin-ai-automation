@@ -468,6 +468,56 @@ def fallback_hashtags(topic):
 
 def source_grounded_fallback(topic):
     """Verified deterministic content for selected topics if Gemini is unavailable."""
+    if topic == "The problem Truloop is designed to address":
+        return {
+            "topic": topic,
+            "post": (
+                "TruLoop is built around a simple problem: sponsored content and fake or incentivized reviews can make product research harder to trust. "
+                "Its README describes a goal of emphasizing honest, unbiased, real-world product reviews.\n\n"
+                "That is the motivation, not proof that the problem has been solved. A product review platform still needs clear rules, useful context, "
+                "and careful handling of submissions to help readers judge what they see.\n\n"
+                "As I work through the project, I'm learning to describe the intended value precisely and separate a product's goal from evidence of its impact."
+            ),
+            "hashtags": ["FullStackDevelopment", "WebDevelopment", "ProductReviews", "MCAStudent"],
+            "video_title": "The Problem TruLoop Is Designed to Address",
+            "slides": [
+                {
+                    "title": "The Trust Problem Behind TruLoop",
+                    "body": "Sponsored content and incentivized reviews can make product research harder to trust.",
+                    "visual_type": "learning",
+                    "layout": "hero",
+                    "visual_labels": ["Product reviews", "Trust signals", "TruLoop README"],
+                },
+                {
+                    "title": "Focus On Honest Product Reviews",
+                    "body": "TruLoop aims to emphasize honest, unbiased, real-world product reviews.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Honest reviews", "Unbiased context", "Real-world use"],
+                },
+                {
+                    "title": "Describe The Goal Carefully",
+                    "body": "The README states the motivation; it does not prove the problem has been solved.",
+                    "visual_type": "code",
+                    "layout": "detail",
+                    "visual_labels": ["Project goal", "Evidence", "Careful claims"],
+                },
+                {
+                    "title": "Give Readers Useful Context",
+                    "body": "Clear rules and useful context can help readers assess the information presented.",
+                    "visual_type": "learning",
+                    "layout": "split",
+                    "visual_labels": ["Review context", "Submission rules", "Reader judgment"],
+                },
+                {
+                    "title": "Separate Goals From Outcomes",
+                    "body": "I want to explain intended value without claiming unmeasured product impact.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Intended value", "Measured impact", "Honest explanation"],
+                },
+            ],
+        }
     if topic == "Replacing hardcoded chart values with JSON-driven data":
         return {
             "topic": topic,
@@ -1397,6 +1447,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         print("Using the standardized, source-grounded Day 6 caption and five-slide template.")
     elif topic in {
         "Designing a product browsing and review flow",
+        "The problem Truloop is designed to address",
         "Reusable navigation, product cards, and review sections",
         "Separating Truloop's frontend and backend",
         "Connecting Truloop's interface to backend APIs",
@@ -1428,6 +1479,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Replacing hardcoded chart values with JSON-driven data",
                 "Understanding what happens behind the TruLoop interface",
                 "Designing a product browsing and review flow",
+                "The problem Truloop is designed to address",
                 "Reusable navigation, product cards, and review sections",
                 "Separating Truloop's frontend and backend",
                 "Connecting Truloop's interface to backend APIs",
@@ -1465,6 +1517,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             "Replacing hardcoded chart values with JSON-driven data",
             "Understanding what happens behind the TruLoop interface",
             "Designing a product browsing and review flow",
+            "The problem Truloop is designed to address",
             "Reusable navigation, product cards, and review sections",
             "Separating Truloop's frontend and backend",
             "Connecting Truloop's interface to backend APIs",
