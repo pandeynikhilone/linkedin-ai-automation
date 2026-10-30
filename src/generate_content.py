@@ -1122,6 +1122,57 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Iterating on Truloop with Git":
+        return {
+            "topic": topic,
+            "post": (
+                "Git is useful for more than saving snapshots of a project. It gives a record of how code changes as an idea develops.\n\n"
+                "During my work on TruLoop, I used Git for version control and iterative development to enhance features and architecture. "
+                "The repository also keeps separate frontend, backend, and scratch folders, with a commit history that records changes over time.\n\n"
+                "Looking at that history helps me connect the current structure with the steps that shaped it. "
+                "I want to keep changes understandable, because a project is easier to maintain when its evolution is visible."
+            ),
+            "hashtags": ["Git", "VersionControl", "SoftwareDevelopment", "MCAStudent"],
+            "video_title": "Iterating on TruLoop with Git",
+            "slides": [
+                {
+                    "title": "Track Changes As Work Evolves",
+                    "body": "Git records project changes and supports iterative development over time.",
+                    "visual_type": "git",
+                    "layout": "hero",
+                    "visual_labels": ["Git history", "Project changes", "Iteration"],
+                },
+                {
+                    "title": "Keep Project Areas Distinct",
+                    "body": "The repository separates frontend, backend, and scratch folders.",
+                    "visual_type": "stack",
+                    "layout": "split",
+                    "visual_labels": ["frontend/", "backend/", "scratch/"],
+                },
+                {
+                    "title": "Use History As A Record",
+                    "body": "A recorded commit history shows how the repository has changed.",
+                    "visual_type": "git",
+                    "layout": "evidence",
+                    "visual_labels": ["Commit history", "Recorded changes", "Repository"],
+                },
+                {
+                    "title": "Improve Features In Iterations",
+                    "body": "Git supported iterative work to enhance features and architecture.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Change", "Commit", "Next iteration"],
+                },
+                {
+                    "title": "Make Project Evolution Understandable",
+                    "body": "Clear version history helps explain how today's structure developed.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Version control", "Project structure", "Maintainability"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -1456,6 +1507,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Validating the data required to submit a Truloop review",
         "Keeping product ratings current after a new review",
         "Organizing Truloop's routes by responsibility",
+        "Iterating on Truloop with Git",
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
@@ -1489,6 +1541,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
                 "Validating the data required to submit a Truloop review",
         "Keeping product ratings current after a new review",
         "Organizing Truloop's routes by responsibility",
+        "Iterating on Truloop with Git",
             }
             if topic not in fallback_topics:
                 raise
@@ -1527,6 +1580,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             "Validating the data required to submit a Truloop review",
         "Keeping product ratings current after a new review",
         "Organizing Truloop's routes by responsibility",
+        "Iterating on Truloop with Git",
         }
         if topic in fallback_topics and not (custom_binary_search or custom_java_polymorphism):
             print(
