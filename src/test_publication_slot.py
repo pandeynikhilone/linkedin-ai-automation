@@ -13,15 +13,18 @@ import check_publication_slot as slot
 
 
 class FixedDateTime:
+    value = RealDateTime(2026, 10, 27, 9, 12)
+
     @classmethod
     def now(cls, tz=None):
-        return RealDateTime(2026, 10, 27, 8, 12, tzinfo=tz)
+        return cls.value.replace(tzinfo=tz)
 
 
-def run_preflight(records):
+def run_preflight(records, now=None, intent="scheduled"):
     original_ledger = slot.LEDGER_FILE
     original_datetime = slot.datetime
     original_write_output = slot.write_output
+    original_fixed_value = FixedDateTime.value
     original_intent = os.environ.get("PUBLISH_INTENT")
     outputs = {}
     stdout = io.StringIO()
@@ -37,8 +40,9 @@ def run_preflight(records):
             )
             slot.LEDGER_FILE = ledger_path
             slot.datetime = FixedDateTime
+            FixedDateTime.value = now or RealDateTime(2026, 10, 27, 9, 12)
             slot.write_output = lambda name, value: outputs.__setitem__(name, value)
-            os.environ["PUBLISH_INTENT"] = "scheduled"
+            os.environ["PUBLISH_INTENT"] = intent
             with contextlib.redirect_stdout(stdout):
                 try:
                     result = slot.main()
@@ -48,6 +52,7 @@ def run_preflight(records):
         slot.LEDGER_FILE = original_ledger
         slot.datetime = original_datetime
         slot.write_output = original_write_output
+        FixedDateTime.value = original_fixed_value
         if original_intent is None:
             os.environ.pop("PUBLISH_INTENT", None)
         else:
@@ -80,7 +85,31 @@ def main():
     if not error or "no confirmed published replacement" not in error:
         raise SystemExit("A replaced entry without a confirmed replacement must fail closed.")
 
-    print("Publication-slot safeguards passed: replacement blocks duplicates, uncertain state fails closed, and an empty slot remains available.")
+    _, output, outputs, error = run_preflight(
+        {}, now=RealDateTime(2026, 10, 28, 10, 0)
+    )
+    if error or outputs.get("should_run") != "false" or "outside the Tuesday/Friday" not in output:
+        raise SystemExit("A queued scheduled run on a non-publishing weekday must skip.")
+
+    _, output, outputs, error = run_preflight(
+        {}, now=RealDateTime(2026, 10, 27, 15, 0)
+    )
+    if error or outputs.get("should_run") != "false" or "outside the Tuesday/Friday" not in output:
+        raise SystemExit("A queued scheduled run after the 14:00 recovery window must skip.")
+
+    _, _, outputs, error = run_preflight(
+        {}, now=RealDateTime(2026, 10, 30, 14, 59)
+    )
+    if error or outputs.get("should_run") != "true":
+        raise SystemExit("A delayed Friday recovery run must remain eligible through 14:59 IST.")
+
+    _, _, outputs, error = run_preflight(
+        {}, now=RealDateTime(2026, 10, 28, 10, 0), intent="preview"
+    )
+    if error or outputs.get("should_run") != "true":
+        raise SystemExit("Manual preview mode must remain available outside scheduled windows.")
+
+    print("Publication-slot safeguards passed: duplicates blocked, uncertain state fails closed, empty slots remain available, and queued scheduled runs outside Tuesday/Friday 09:00-14:59 IST skip safely.")
 
 
 if __name__ == "__main__":

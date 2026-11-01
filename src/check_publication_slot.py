@@ -45,7 +45,18 @@ def main() -> int:
     if intent in {"request", "correction", "extra", "extra_override", "longform", "reformat", "plan_extra", "replacement"} and not request_id.isdigit():
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for one-off publication requests.")
 
-    today = datetime.now(TIME_ZONE).date().isoformat()
+    now = datetime.now(TIME_ZONE)
+    if intent == "scheduled" and (
+        now.weekday() not in {1, 4} or not (9 <= now.hour < 15)
+    ):
+        print(
+            "SKIP: Scheduled LinkedIn run started outside the Tuesday/Friday "
+            f"09:00-14:59 Asia/Kolkata window ({now.isoformat()}); refusing to publish."
+        )
+        write_output("should_run", "false")
+        return 0
+
+    today = now.date().isoformat()
     dates = load_dates()
 
     if intent == "longform":
