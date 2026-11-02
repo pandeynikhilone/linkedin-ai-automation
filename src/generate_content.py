@@ -1173,6 +1173,58 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Why the TechFest site was built as an alternative to Google Forms":
+        return {
+            "topic": topic,
+            "post": (
+                "TechFest's README describes a registration website built as an alternative to traditional forms such as Google Forms. "
+                "Its purpose is to give students another way to register for an event.\n\n"
+                "My documented role was frontend developer volunteer at National Post Graduate College from December 2024 to February 2025. "
+                "That is the contribution I can describe directly from my resume.\n\n"
+                "When I explain this project, I want to connect its purpose with my actual frontend role. "
+                "Clear attribution makes the work easier to understand without overstating what I built."
+            ),
+            "hashtags": ["WebDevelopment", "FrontendDevelopment", "StudentProjects", "MCAStudent"],
+            "video_title": "Why TechFest Uses A Registration Website",
+            "slides": [
+                {
+                    "title": "An Alternative To Traditional Forms",
+                    "body": "The README describes a registration website as an alternative to Google Forms.",
+                    "visual_type": "form",
+                    "layout": "hero",
+                    "visual_labels": ["TechFest README", "Registration website", "Google Forms"],
+                },
+                {
+                    "title": "Give Students Another Registration Option",
+                    "body": "The project offers students another way to register for an event.",
+                    "visual_type": "flow",
+                    "layout": "split",
+                    "visual_labels": ["Student registration", "Event", "Website"],
+                },
+                {
+                    "title": "Keep The Role Description Accurate",
+                    "body": "The resume records a frontend volunteer role at National Post Graduate College.",
+                    "visual_type": "learning",
+                    "layout": "process",
+                    "visual_labels": ["Frontend volunteer", "National Post Graduate College", "Resume"],
+                },
+                {
+                    "title": "Describe The Frontend Work Clearly",
+                    "body": "Use the documented role when describing your contribution to the project.",
+                    "visual_type": "code",
+                    "layout": "editorial",
+                    "visual_labels": ["Frontend contribution", "Documented role", "Project scope"],
+                },
+                {
+                    "title": "Connect Purpose And Contribution",
+                    "body": "Explain the project's purpose alongside the work you actually contributed.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Purpose", "Contribution", "Accurate attribution"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -1511,6 +1563,9 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     }:
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded TruLoop content without depending on Gemini availability.")
+    elif topic == "Why the TechFest site was built as an alternative to Google Forms":
+        data = source_grounded_fallback(topic)
+        print("Using deterministic, source-grounded Day 22 content without depending on Gemini availability.")
     else:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
@@ -1542,6 +1597,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Keeping product ratings current after a new review",
         "Organizing Truloop's routes by responsibility",
         "Iterating on Truloop with Git",
+        "Why the TechFest site was built as an alternative to Google Forms",
             }
             if topic not in fallback_topics:
                 raise
@@ -1581,6 +1637,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Keeping product ratings current after a new review",
         "Organizing Truloop's routes by responsibility",
         "Iterating on Truloop with Git",
+        "Why the TechFest site was built as an alternative to Google Forms",
         }
         if topic in fallback_topics and not (custom_binary_search or custom_java_polymorphism):
             print(
