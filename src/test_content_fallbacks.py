@@ -200,6 +200,9 @@ def validate_day21():
     slides = data.get("slides")
     if not isinstance(slides, list) or len(slides) != 5:
         raise SystemExit("Day 21 fallback must contain exactly five slides.")
+
+    if sum(slide.get("visual_type") == "website" for slide in slides) != 1:
+        raise SystemExit("Day 21 TruLoop fallback must contain exactly one genuine website slide.")
     slide_fields = {"title", "body", "visual_type", "layout", "visual_labels"}
     allowed_visual_types = {"chart", "flow", "code", "product", "database", "form", "checklist", "git", "stack", "learning", "website"}
     layouts = set()

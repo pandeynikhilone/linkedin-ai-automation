@@ -1150,11 +1150,11 @@ def source_grounded_fallback(topic):
                     "visual_labels": ["frontend/", "backend/", "scratch/"],
                 },
                 {
-                    "title": "Use History As A Record",
-                    "body": "A recorded commit history shows how the repository has changed.",
-                    "visual_type": "git",
+                    "title": "See The Project In Context",
+                    "body": "The deployed TruLoop homepage shows the interface being developed.",
+                    "visual_type": "website",
                     "layout": "evidence",
-                    "visual_labels": ["Commit history", "Recorded changes", "Repository"],
+                    "visual_labels": ["Live TruLoop website", "Real interface", "Source screenshot"],
                 },
                 {
                     "title": "Improve Features In Iterations",
