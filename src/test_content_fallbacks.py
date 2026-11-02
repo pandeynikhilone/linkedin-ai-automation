@@ -291,7 +291,7 @@ def validate_day13():
     word_count = len(post.split())
     if not 70 <= word_count <= 95:
         raise SystemExit(f"Day 13 fallback must contain 70-95 words; got {word_count}.")
-    paragraphs = [paragraph for paragraph in post.split("\\n\\n") if paragraph.strip()]
+    paragraphs = [paragraph for paragraph in post.split("\n\n") if paragraph.strip()]
     if len(paragraphs) != 3:
         raise SystemExit(f"Day 13 fallback must contain exactly three paragraphs; got {len(paragraphs)}.")
     for fact in ("Next.js", "Express", "frontend", "backend", "root README", "microservices"):
