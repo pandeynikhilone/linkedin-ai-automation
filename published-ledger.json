@@ -358,6 +358,15 @@
       "published_at": "2026-10-28T18:57:22+05:30",
       "post_id": "urn:li:ugcPost:7521200942864572417",
       "video_urn": "urn:li:video:D5610AQEOgUGIw17NDQ"
+    },
+    "2026-11-02-request-76": {
+      "status": "publishing",
+      "started_at": "2026-11-02T21:48:23+05:30",
+      "topic": "Iterating on Truloop with Git",
+      "video_sha256": "9ef5d83b3c227d24c97cb511db0c604487ba58704778da089a240ad78d77f0a4",
+      "video_size_bytes": 59319746,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
