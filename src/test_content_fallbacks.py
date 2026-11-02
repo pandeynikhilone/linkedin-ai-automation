@@ -62,6 +62,7 @@ def main():
 
     print(f"Day 18 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
     validate_day9()
+    validate_day13()
     validate_day19()
 
 
@@ -274,6 +275,58 @@ def validate_day9():
 
     print(f"Day 9 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
 
+
+
+def validate_day13():
+    topic = "Separating Truloop's frontend and backend"
+    matches = [entry for entry in TOPIC_PLAN if entry.get("topic") == topic]
+    if len(matches) != 1:
+        raise SystemExit("Day 13 must appear exactly once in TOPIC_PLAN.")
+
+    data = source_grounded_fallback(topic)
+    if data.get("topic") != topic:
+        raise SystemExit("Day 13 fallback returned the wrong topic.")
+
+    post = data.get("post", "")
+    word_count = len(post.split())
+    if not 70 <= word_count <= 95:
+        raise SystemExit(f"Day 13 fallback must contain 70-95 words; got {word_count}.")
+    paragraphs = [paragraph for paragraph in post.split("\\n\\n") if paragraph.strip()]
+    if len(paragraphs) != 3:
+        raise SystemExit(f"Day 13 fallback must contain exactly three paragraphs; got {len(paragraphs)}.")
+    for fact in ("Next.js", "Express", "frontend", "backend", "root README", "microservices"):
+        if fact not in post:
+            raise SystemExit(f"Day 13 fallback must preserve the verified project fact: {fact}.")
+
+    slides = data.get("slides")
+    if not isinstance(slides, list) or len(slides) != 5:
+        raise SystemExit("Day 13 fallback must contain exactly five slides.")
+    slide_fields = {"title", "body", "visual_type", "layout", "visual_labels"}
+    allowed_visual_types = {"chart", "flow", "code", "product", "database", "form", "checklist", "git", "stack", "learning", "website"}
+    layouts = set()
+    for index, slide in enumerate(slides, start=1):
+        if not isinstance(slide, dict) or not slide_fields.issubset(slide):
+            raise SystemExit(f"Day 13 fallback slide {index} is missing required fields.")
+        if slide.get("visual_type") not in allowed_visual_types:
+            raise SystemExit(f"Day 13 fallback slide {index} uses an unsupported visual type.")
+        if not 3 <= len(slide.get("title", "").split()) <= 7:
+            raise SystemExit(f"Day 13 fallback slide {index} title must contain 3-7 words.")
+        if not 5 <= len(slide.get("body", "").split()) <= 18:
+            raise SystemExit(f"Day 13 fallback slide {index} body must contain 5-18 words.")
+        if not slide.get("visual_labels"):
+            raise SystemExit(f"Day 13 fallback slide {index} needs visual labels.")
+        layouts.add(slide.get("layout"))
+
+    if sum(slide.get("visual_type") == "website" for slide in slides) != 1:
+        raise SystemExit("Day 13 fallback must contain exactly one genuine website visual.")
+    if slides[0].get("layout") != "hero" or slides[-1].get("layout") != "closing" or len(layouts) != 5:
+        raise SystemExit("Day 13 fallback must use five distinct layouts, starting with hero and ending with closing.")
+
+    source = Path("src/generate_content.py").read_text(encoding="utf-8")
+    if source.count(f'"{topic}",') != 4:
+        raise SystemExit("Day 13 must be present in the plan and all three deterministic-fallback routing sets.")
+
+    print(f"Day 13 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
 
 
 if __name__ == "__main__":
