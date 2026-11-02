@@ -228,6 +228,63 @@ def validate_day21():
         raise SystemExit("Day 21 must be present in the plan and all three deterministic-fallback routing sets.")
 
     print(f"Day 21 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
+    validate_day22()
+
+
+def validate_day22():
+    topic = "Why the TechFest site was built as an alternative to Google Forms"
+    matches = [entry for entry in TOPIC_PLAN if entry.get("topic") == topic]
+    if len(matches) != 1:
+        raise SystemExit("Day 22 must appear exactly once in TOPIC_PLAN.")
+
+    data = source_grounded_fallback(topic)
+    if data.get("topic") != topic:
+        raise SystemExit("Day 22 fallback returned the wrong topic.")
+
+    post = data.get("post", "")
+    word_count = len(post.split())
+    if not 70 <= word_count <= 95:
+        raise SystemExit(f"Day 22 fallback must contain 70-95 words; got {word_count}.")
+    paragraphs = [paragraph for paragraph in post.split("\\n\\n") if paragraph.strip()]
+    if len(paragraphs) != 3:
+        raise SystemExit(f"Day 22 fallback must contain exactly three paragraphs; got {len(paragraphs)}.")
+    for fact in ("registration website", "Google Forms", "frontend developer volunteer",
+                 "National Post Graduate College", "December 2024", "February 2025"):
+        if fact.casefold() not in post.casefold():
+            raise SystemExit(f"Day 22 fallback must preserve the verified source fact: {fact}.")
+
+    slides = data.get("slides")
+    if not isinstance(slides, list) or len(slides) != 5:
+        raise SystemExit("Day 22 fallback must contain exactly five slides.")
+    slide_fields = {"title", "body", "visual_type", "layout", "visual_labels"}
+    allowed_visual_types = {"chart", "flow", "code", "product", "database", "form",
+                            "checklist", "git", "stack", "learning", "website"}
+    layouts = set()
+    for index, slide in enumerate(slides, start=1):
+        if not isinstance(slide, dict) or not slide_fields.issubset(slide):
+            raise SystemExit(f"Day 22 fallback slide {index} is missing required fields.")
+        if not slide.get("title") or not slide.get("body") or not slide.get("visual_labels"):
+            raise SystemExit(f"Day 22 fallback slide {index} has empty title, body, or visual labels.")
+        if slide.get("visual_type") not in allowed_visual_types:
+            raise SystemExit(f"Day 22 fallback slide {index} uses an unsupported visual type.")
+        if not 3 <= len(slide["title"].split()) <= 7:
+            raise SystemExit(f"Day 22 fallback slide {index} title must contain 3-7 words.")
+        if not 5 <= len(slide["body"].split()) <= 18:
+            raise SystemExit(f"Day 22 fallback slide {index} body must contain 5-18 words.")
+        if not 2 <= len(slide["visual_labels"]) <= 4:
+            raise SystemExit(f"Day 22 fallback slide {index} must contain 2-4 visual labels.")
+        layouts.add(slide["layout"])
+
+    if any(slide.get("visual_type") == "website" for slide in slides):
+        raise SystemExit("Day 22 TechFest fallback must not use the TruLoop website screenshot.")
+    if slides[0].get("layout") != "hero" or slides[-1].get("layout") != "closing" or len(layouts) != 5:
+        raise SystemExit("Day 22 fallback must use five distinct layouts, starting with hero and ending with closing.")
+
+    source = Path("src/generate_content.py").read_text(encoding="utf-8")
+    if source.count(f'"{topic}"') != 5:
+        raise SystemExit("Day 22 must appear in the plan, direct route, fallback function, and both fallback guards.")
+
+    print(f"Day 22 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
 
 
 def validate_day9():
