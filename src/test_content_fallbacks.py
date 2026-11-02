@@ -245,9 +245,13 @@ def validate_day22():
     word_count = len(post.split())
     if not 70 <= word_count <= 95:
         raise SystemExit(f"Day 22 fallback must contain 70-95 words; got {word_count}.")
-    paragraphs = [paragraph for paragraph in post.split("\\n\\n") if paragraph.strip()]
+    paragraph_separator = chr(10) * 2
+    paragraphs = [paragraph for paragraph in post.split(paragraph_separator) if paragraph.strip()]
     if len(paragraphs) != 3:
-        raise SystemExit(f"Day 22 fallback must contain exactly three paragraphs; got {len(paragraphs)}.")
+        raise SystemExit(
+            f"Day 22 fallback must contain exactly three paragraphs; got {len(paragraphs)} "
+            f"with {post.count(paragraph_separator)} blank-line separators."
+        )
     for fact in ("registration website", "Google Forms", "frontend developer volunteer",
                  "National Post Graduate College", "December 2024", "February 2025"):
         if fact.casefold() not in post.casefold():
