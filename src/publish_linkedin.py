@@ -357,6 +357,36 @@ def merge_ledger_changes(base, local, remote):
     if not all(isinstance(value, dict) for value in (base_dates, local_dates, remote_dates)):
         raise RuntimeError("Cannot safely merge publication ledgers without a dates object.")
 
+    # Different workflows intentionally use separate concurrency groups. If a
+    # second workflow reserved another key for the same India-local day after
+    # this run checked out main, fail closed before either run starts an upload.
+    active_statuses = {"published", "publishing", "needs_review"}
+    for local_key, local_value in local_dates.items():
+        base_local_value = base_dates.get(local_key, missing)
+        if (
+            not isinstance(local_value, dict)
+            or local_value.get("status") != "publishing"
+            or local_value == base_local_value
+        ):
+            continue
+
+        local_day = str(local_key)[:10]
+        for remote_key, remote_value in remote_dates.items():
+            if not str(remote_key).startswith(local_day):
+                continue
+            base_remote_value = base_dates.get(remote_key, missing)
+            if remote_value == base_remote_value:
+                continue
+            if remote_key == local_key:
+                raise RuntimeError(
+                    f"Concurrent publication reservation for {local_key!r} already exists; refusing to upload."
+                )
+            if isinstance(remote_value, dict) and remote_value.get("status") in active_statuses:
+                raise RuntimeError(
+                    f"Concurrent same-day publication attempt {remote_key!r} detected while reserving "
+                    f"{local_key!r}; refusing to upload."
+                )
+
     merged_dates = merged.setdefault("dates", {})
     for key in set(base_dates) | set(local_dates):
         base_value = base_dates.get(key, missing)

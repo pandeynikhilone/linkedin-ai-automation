@@ -230,7 +230,53 @@ jobs:
               pass
           else:
               raise SystemExit("Conflicting same-key ledger state must fail closed.")
-          print("Concurrent ledger merge tests passed: unrelated entries preserved; same-key conflicts rejected.")
+          same_day_base = {"timezone": "Asia/Kolkata", "dates": {}}
+          reservation = {"status": "publishing", "video_sha256": "same-hash"}
+          same_key_local = {
+              "timezone": "Asia/Kolkata",
+              "dates": {"2026-11-06-request-local": reservation},
+          }
+          try:
+              merge_ledger_changes(same_day_base, same_key_local, same_key_local)
+          except RuntimeError:
+              pass
+          else:
+              raise SystemExit("An identical concurrent reservation must fail closed.")
+
+          competing_remote = {
+              "timezone": "Asia/Kolkata",
+              "dates": {"2026-11-06": {"status": "published", "post_id": "urn:confirmed"}},
+          }
+          try:
+              merge_ledger_changes(same_day_base, same_key_local, competing_remote)
+          except RuntimeError:
+              pass
+          else:
+              raise SystemExit("A different same-day publication reservation must fail closed.")
+
+          baseline = {"status": "published", "post_id": "urn:baseline"}
+          authorized_base = {
+              "timezone": "Asia/Kolkata",
+              "dates": {"2026-11-06": baseline},
+          }
+          authorized_local = {
+              "timezone": "Asia/Kolkata",
+              "dates": {
+                  "2026-11-06": baseline,
+                  "2026-11-06-correction-test": reservation,
+              },
+          }
+          authorized_remote = {
+              "timezone": "Asia/Kolkata",
+              "dates": {
+                  "2026-11-06": baseline,
+                  "2026-11-05": {"status": "published", "post_id": "urn:other-day"},
+              },
+          }
+          authorized_merge = merge_ledger_changes(authorized_base, authorized_local, authorized_remote)
+          if authorized_merge["dates"].get("2026-11-06-correction-test", {}).get("status") != "publishing":
+              raise SystemExit("An explicitly authorized follow-up after an existing baseline must remain mergeable.")
+          print("Concurrent ledger merge tests passed: unrelated entries preserved; same-key and same-day races rejected; authorized follow-ups retained.")
           PY
 
       - name: Test deterministic TruLoop fallback content

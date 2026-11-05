@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-from generate_content import TOPIC_PLAN, source_grounded_fallback
+from generate_content import TOPIC_PLAN, ensure_truloop_website_slide, source_grounded_fallback
 
 TOPIC = "Validating the data required to submit a Truloop review"
 REQUIRED_FIELDS = ("productId", "rating", "comment", "reviewer", "usageDuration", "recommend")
@@ -203,6 +203,19 @@ def validate_day21():
 
     if sum(slide.get("visual_type") == "website" for slide in slides) != 1:
         raise SystemExit("Day 21 TruLoop fallback must contain exactly one genuine website slide.")
+
+    generated_without_website = [dict(slide) for slide in slides]
+    website_index = next(
+        index for index, slide in enumerate(generated_without_website)
+        if slide.get("visual_type") == "website"
+    )
+    generated_without_website[website_index]["visual_type"] = "git"
+    recovered_slides, used_fallback = ensure_truloop_website_slide(topic, generated_without_website)
+    if not used_fallback or recovered_slides != slides:
+        raise SystemExit("Day 21 must replace a generated slide set missing its website visual with the verified fallback.")
+    unchanged_slides, used_fallback = ensure_truloop_website_slide(topic, slides)
+    if used_fallback or unchanged_slides != slides:
+        raise SystemExit("A valid Day 21 slide set must not be replaced unnecessarily.")
     slide_fields = {"title", "body", "visual_type", "layout", "visual_labels"}
     allowed_visual_types = {"chart", "flow", "code", "product", "database", "form", "checklist", "git", "stack", "learning", "website"}
     layouts = set()

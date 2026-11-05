@@ -1270,6 +1270,65 @@ def source_grounded_fallback(topic):
         ],
     }
 
+def ensure_truloop_website_slide(topic, slides):
+    """Use verified fallback slides when a TruLoop draft omits its required website visual."""
+    website_count = (
+        sum(
+            1 for slide in slides
+            if isinstance(slide, dict) and slide.get("visual_type") == "website"
+        )
+        if isinstance(slides, list)
+        else 0
+    )
+    if website_count == 1:
+        return slides, False
+
+    fallback_slides = source_grounded_fallback(topic).get("slides")
+    if not isinstance(fallback_slides, list) or len(fallback_slides) != 5:
+        raise RuntimeError("The verified TruLoop fallback must contain exactly five slides.")
+
+    cleaned = []
+    used_layouts = set()
+    for number, slide in enumerate(fallback_slides, start=1):
+        if not isinstance(slide, dict):
+            raise RuntimeError(f"Verified TruLoop fallback slide {number} is not an object.")
+        title = clean_text(slide.get("title", ""))
+        body = clean_text(slide.get("body", ""))
+        visual_type = clean_text(slide.get("visual_type", "")).casefold()
+        layout = clean_text(slide.get("layout", "")).casefold()
+        raw_labels = slide.get("visual_labels", [])
+        if not isinstance(raw_labels, list):
+            raw_labels = []
+        visual_labels = [
+            clean_text(item)[:28] for item in raw_labels if clean_text(item)
+        ]
+        if not title or not body:
+            raise RuntimeError(f"Verified TruLoop fallback slide {number} is missing text.")
+        if not 3 <= len(title.split()) <= 7:
+            raise RuntimeError(f"Verified TruLoop fallback slide {number} has an invalid title length.")
+        if not 5 <= len(body.split()) <= 18:
+            raise RuntimeError(f"Verified TruLoop fallback slide {number} has an invalid body length.")
+        if visual_type not in SLIDE_VISUAL_TYPES:
+            raise RuntimeError(f"Verified TruLoop fallback slide {number} has an unsupported visual type.")
+        if layout not in SLIDE_LAYOUTS or layout in used_layouts:
+            raise RuntimeError(f"Verified TruLoop fallback slide {number} has an invalid or repeated layout.")
+        if not 2 <= len(visual_labels) <= 4:
+            raise RuntimeError(f"Verified TruLoop fallback slide {number} must have 2-4 visual labels.")
+        used_layouts.add(layout)
+        cleaned.append({
+            "title": title,
+            "body": body,
+            "visual_type": visual_type,
+            "layout": layout,
+            "visual_labels": visual_labels,
+        })
+
+    if sum(slide["visual_type"] == "website" for slide in cleaned) != 1:
+        raise RuntimeError("The verified TruLoop fallback must contain exactly one website slide.")
+    if cleaned[0]["layout"] != "hero" or cleaned[-1]["layout"] != "closing" or len(used_layouts) != 5:
+        raise RuntimeError("The verified TruLoop fallback must use five distinct layouts from hero to closing.")
+    return cleaned, True
+
 def main():
     today = datetime.now(ZoneInfo("Asia/Kolkata"))
     requested_day = os.getenv("PUBLISH_TOPIC_DAY", "").strip()
@@ -1754,6 +1813,14 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         raise RuntimeError("Each slide must use a distinct composition.")
 
     website_count = sum(1 for slide in cleaned_slides if slide["visual_type"] == "website")
+    if is_truloop_topic and website_count != 1:
+        cleaned_slides, used_fallback = ensure_truloop_website_slide(topic, cleaned_slides)
+        if used_fallback:
+            print(
+                "WARNING: Generated TruLoop slides did not contain exactly one website visual; "
+                "using verified, source-grounded fallback slides."
+            )
+        website_count = sum(1 for slide in cleaned_slides if slide["visual_type"] == "website")
     if is_truloop_topic and website_count != 1:
         raise RuntimeError("TruLoop video must contain exactly one website slide using the genuine deployed screenshot.")
     if not is_truloop_topic and website_count:
