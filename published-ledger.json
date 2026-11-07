@@ -372,13 +372,16 @@
       "video_urn": "urn:li:video:D5610AQFDTCO6O1l4Aw"
     },
     "2026-11-07-request-78": {
-      "status": "publishing",
+      "status": "published",
       "started_at": "2026-11-07T22:52:54+05:30",
       "topic": "Your Quiet Work Is Building You",
       "video_sha256": "1b597aeeb5a6b1045e986aafdd61880bdcdf8215a512ecfbc1a6d9012ea9875b",
       "video_size_bytes": 59319748,
       "video_dimensions": "1080x1920",
-      "note": "Reserved before upload to prevent duplicate daily posts."
+      "note": "LinkedIn API confirmed video-post creation.",
+      "published_at": "2026-11-07T22:53:20+05:30",
+      "post_id": "urn:li:ugcPost:7524884204367634432",
+      "video_urn": "urn:li:video:D5610AQHZ5s_Dzr79dw"
     }
   }
 }
