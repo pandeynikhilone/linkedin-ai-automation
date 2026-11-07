@@ -1,0 +1,290 @@
+name: Publish Motivational LinkedIn Post
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: linkedin-publishing
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish motivational LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_MOTIVATIONAL_NOW')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      should_run: \${{ steps.slot.outputs.should_run }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check today's publication slot
+        id: slot
+        env:
+          PUBLISH_INTENT: request
+          PUBLISH_REQUEST_ID: \${{ github.event.issue.number }}
+        run: python3 src/check_publication_slot.py
+
+  publish:
+    needs: preflight
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish motivational LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_MOTIVATIONAL_NOW') &&
+      needs.preflight.result == 'success' &&
+      needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install FFmpeg and fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Create motivational post and five-slide video script
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          post = """Your quietest days may be building your strongest skills.
+
+          Progress is not always a finished project or a solved problem. Sometimes it is understanding one concept you kept avoiding, finding why your code failed, or returning to your work after losing momentum. These moments rarely look impressive on a feed, but they are part of how real ability develops.
+
+          I am learning to measure growth less by what I announce and more by what I can do today that I could not do yesterday. Keep showing up. Small, honest progress compounds."""
+
+          data = {
+              "topic": "Your Quiet Work Is Building You",
+              "post": post,
+              "hashtags": ["Consistency", "LearningInPublic", "StudentDeveloper", "GrowthMindset"],
+              "video_title": "Your Quiet Work Is Building You",
+              "slides": [
+                  {
+                      "title": "The Quiet Work Counts",
+                      "body": "The effort nobody sees is still shaping what you can do.",
+                      "visual_type": "learning",
+                      "layout": "hero",
+                      "visual_labels": ["Quiet practice", "Small steps", "Real growth"]
+                  },
+                  {
+                      "title": "Progress Is Not Always Visible",
+                      "body": "Understanding one difficult concept is progress, even without a finished project.",
+                      "visual_type": "checklist",
+                      "layout": "split",
+                      "visual_labels": ["Understand", "Practice", "Improve"]
+                  },
+                  {
+                      "title": "Returning Is Also Progress",
+                      "body": "After a pause, one focused step can restart your momentum.",
+                      "visual_type": "flow",
+                      "layout": "evidence",
+                      "visual_labels": ["Pause", "Return", "Continue"]
+                  },
+                  {
+                      "title": "Measure What You Can Do",
+                      "body": "Notice what you can solve, explain, and build today.",
+                      "visual_type": "learning",
+                      "layout": "process",
+                      "visual_labels": ["Solve", "Explain", "Build"]
+                  },
+                  {
+                      "title": "Keep Showing Up",
+                      "body": "Small, honest progress compounds into stronger skills over time.",
+                      "visual_type": "learning",
+                      "layout": "closing",
+                      "visual_labels": ["Today", "Tomorrow", "Stronger skills"]
+                  }
+              ]
+          }
+
+          words = len(post.split())
+          if not 70 <= words <= 95 or len(post.split("\n\n")) != 3:
+              raise SystemExit(f"Caption validation failed: {words} words.")
+          if len(data["slides"]) != 5:
+              raise SystemExit("Exactly five slides are required.")
+          Path("content.json").write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(f"Created a {words}-word motivational caption and five distinct video scenes.")
+          PY
+
+      - name: Render vertical animated video
+        env:
+          PUBLISH_ASPECT_RATIO: "9:16"
+        run: python src/create_video.py
+
+      - name: Validate caption, scenes, and final MP4
+        env:
+          PUBLISH_ASPECT_RATIO: "9:16"
+        run: |
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,pix_fmt,profile,level,bit_rate -show_entries format=duration,format_name -of json linkedin_video.mp4 > video_metadata.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path("content.json").read_text(encoding="utf-8"))
+          post = data["post"]
+          paragraphs = [part for part in post.split("\n\n") if part.strip()]
+          words = len(post.split())
+          if data.get("topic") != "Your Quiet Work Is Building You":
+              raise SystemExit("Unexpected post topic.")
+          if not 70 <= words <= 95 or len(paragraphs) != 3:
+              raise SystemExit(f"Caption must be 70-95 words in three paragraphs; got {words}.")
+          if len(data.get("slides", [])) != 5:
+              raise SystemExit("Exactly five slides are required.")
+          layouts = [slide.get("layout") for slide in data["slides"]]
+          if layouts != ["hero", "split", "evidence", "process", "closing"]:
+              raise SystemExit(f"Unexpected slide layouts: {layouts}")
+          if len(data.get("hashtags", [])) < 3:
+              raise SystemExit("At least three hashtags are required.")
+
+          metadata = json.loads(Path("video_metadata.json").read_text(encoding="utf-8"))
+          streams = metadata.get("streams", [])
+          video = next((stream for stream in streams if stream.get("codec_type") == "video"), None)
+          duration = float(metadata.get("format", {}).get("duration", 0))
+          formats = metadata.get("format", {}).get("format_name", "").split(",")
+          size = Path("linkedin_video.mp4").stat().st_size
+          if not video or video.get("codec_name") != "h264":
+              raise SystemExit("Video must use H.264.")
+          if video.get("width") != 1080 or video.get("height") != 1920:
+              raise SystemExit("Video must be 1080x1920 (9:16).")
+          if video.get("r_frame_rate") != "24/1" or video.get("pix_fmt") != "yuv420p":
+              raise SystemExit("Video must be 24 fps with yuv420p pixel format.")
+          if video.get("profile") != "High" or video.get("level") != 42:
+              raise SystemExit("Video must use H.264 High Profile Level 4.2.")
+          if "mp4" not in formats or any(stream.get("codec_type") == "audio" for stream in streams):
+              raise SystemExit("Video must be a silent MP4.")
+          bitrate = int(video.get("bit_rate") or 0)
+          if not 25_000_000 <= bitrate <= 31_000_000:
+              raise SystemExit(f"Unexpected video bitrate: {bitrate}.")
+          if not 50_000_000 <= size <= 70_000_000:
+              raise SystemExit(f"Video size outside 50-70 MB: {size:,} bytes.")
+          if not 15.5 <= duration <= 16.2:
+              raise SystemExit(f"Unexpected video duration: {duration:.2f}s.")
+          print(f"Validated {words}-word post and five slides.")
+          print(f"Validated 1080x1920 H.264 MP4, 24 fps, {duration:.2f}s, {size:,} bytes.")
+          PY
+
+      - name: Publish motivational video to LinkedIn
+        env:
+          LINKEDIN_ACCESS_TOKEN: \${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PUBLISH_TO_LINKEDIN: "true"
+          PUBLISH_INTENT: request
+          PUBLISH_REQUEST_ID: \${{ github.event.issue.number }}
+          PUBLISH_ASPECT_RATIO: "9:16"
+          LINKEDIN_VIDEO_API_VERSION: "202606"
+          LINKEDIN_POSTS_API_VERSION: "202609"
+        run: python src/publish_linkedin.py
+
+      - name: Confirm publication and close request
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const ledger = JSON.parse(fs.readFileSync('published-ledger.json', 'utf8'));
+            const suffix = '-request-' + context.issue.number;
+            const match = Object.entries(ledger.dates || {}).find(([key, value]) =>
+              key.endsWith(suffix) && value && value.status === 'published' && value.post_id
+            );
+            if (!match) {
+              throw new Error('The publisher finished but no confirmed post ID was found in the ledger.');
+            }
+            const postUrl = 'https://www.linkedin.com/feed/update/' + match[1].post_id + '/';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'LinkedIn confirmed publication of the motivational video post: ' + postUrl
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: (context.payload.issue.body || '').replace('REQUEST_STATUS: OPEN', 'REQUEST_STATUS: PUBLISHED'),
+              state: 'closed'
+            });
+
+  report-skip:
+    needs: preflight
+    if: >-
+      always() &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish motivational LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_MOTIVATIONAL_NOW') &&
+      needs.preflight.result == 'success' &&
+      needs.preflight.outputs.should_run == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Report publication-slot protection
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "No post was generated or published because today's India-local slot is already used. The duplicate-post safeguard left LinkedIn unchanged."
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: (context.payload.issue.body || '').replace('REQUEST_STATUS: OPEN', 'REQUEST_STATUS: SKIPPED'),
+              state: 'closed'
+            });
+
+  report-failure:
+    needs: [preflight, publish]
+    if: >-
+      always() &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.issue.title == 'Publish motivational LinkedIn post now' &&
+      contains(github.event.issue.body, 'PUBLISH_MOTIVATIONAL_NOW') &&
+      (needs.preflight.result == 'failure' || needs.publish.result == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Report failure without blind retry
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "The motivational post workflow did not complete. Review the Actions run and publication ledger before retrying; if an upload began, the ledger will mark it for review rather than risking a duplicate. Run: https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/actions/runs/" + context.runId
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: (issue.body || '').replace('REQUEST_STATUS: OPEN', 'REQUEST_STATUS: FAILED'),
+              state: 'closed'
+            });
