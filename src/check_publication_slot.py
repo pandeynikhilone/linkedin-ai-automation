@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from scheduled_run_guard import scheduled_run_eligibility
+
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER_FILE = ROOT / "published-ledger.json"
 TIME_ZONE = ZoneInfo("Asia/Kolkata")
@@ -46,15 +48,24 @@ def main() -> int:
         raise RuntimeError("A numeric PUBLISH_REQUEST_ID is required for one-off publication requests.")
 
     now = datetime.now(TIME_ZONE)
-    if intent == "scheduled" and (
-        now.weekday() not in {1, 4} or not (9 <= now.hour < 15)
-    ):
-        print(
-            "SKIP: Scheduled LinkedIn run started outside the Tuesday/Friday "
-            f"09:00-14:59 Asia/Kolkata window ({now.isoformat()}); refusing to publish."
+    if intent == "scheduled":
+        schedule_expression = os.getenv("PUBLISH_SCHEDULE_EXPRESSION", "").strip()
+        eligible, explanation, is_late = scheduled_run_eligibility(
+            now, schedule_expression
         )
-        write_output("should_run", "false")
-        return 0
+        if not eligible:
+            print(
+                "SKIP: Scheduled LinkedIn run is not eligible: "
+                f"{explanation} ({now.isoformat()}); refusing to generate or publish."
+            )
+            write_output("should_run", "false")
+            return 0
+        if is_late:
+            print(
+                "LATE DELIVERY: "
+                f"{explanation}. Continuing with the same-day publication ledger "
+                "and duplicate safeguards enabled."
+            )
 
     today = now.date().isoformat()
     dates = load_dates()
