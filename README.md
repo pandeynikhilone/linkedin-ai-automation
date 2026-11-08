@@ -3,7 +3,7 @@
 A goal focused content workflow that turns verified project work and learning into natural LinkedIn posts and five slide animated videos for an early career developer profile.
 
 ## Scheduled automatic publishing
-- Scheduled for Tuesdays and Fridays at 09:00 Asia/Kolkata. Hourly recovery attempts continue through 14:00 IST if no publication is recorded.
+- Scheduled for Tuesdays and Fridays at 09:00 Asia/Kolkata. Hourly recovery attempts run through 14:00 IST, with a final same-day recovery trigger at 22:00 IST.
 - Uses a 30-topic learning series across the Techqueto internship, TruLoop, and the TechFest registration project.
 - Writes 70 to 95 words of copy, with a hard maximum of 110 words.
 - Captions aim for 70 to 95 words in three short paragraphs, with a specific hook, a verified technical detail, and a personal learning takeaway. Openings vary by topic. Captions use no emojis, headings, bullets, or inline hashtags, and avoid long dash punctuation.
@@ -13,7 +13,7 @@ A goal focused content workflow that turns verified project work and learning in
 - Uploads the MP4 through LinkedIn's Videos API, waits for processing to complete, then publishes the post text and video together through the Posts API.
 - Scheduled runs publish automatically without per-post approval when the required APIs, credentials, and GitHub runner are available.
 - Manually running the scheduled workflow creates a preview only. Use the separate manual publisher input when you intentionally want an immediate public post.
-- A lightweight ledger preflight runs before FFmpeg, dependency installation, or Gemini. If today's India-local slot is already published, the generation/publishing job is skipped. Ambiguous `publishing` or `needs_review` entries stop safely for manual inspection.
+- A lightweight ledger preflight runs before FFmpeg, dependency installation, or Gemini. If today's India-local slot is already published, the generation/publishing job is skipped. Ambiguous `publishing` or `needs_review` entries stop safely for manual inspection. If GitHub delivers a scheduled event late, it may still publish on the intended Tuesday or Friday up to 22:59 IST; a separate final 22:00 IST trigger adds one more recovery opportunity. Events delivered on the wrong weekday or at/after 23:00 IST are refused, and the publisher repeats the day check immediately before upload.
 - Scheduled posts upload directly to LinkedIn without duplicating the MP4 as an Actions artifact. Manual preview runs retain the video artifact for one day.
 - If content generation, video rendering, upload, or LinkedIn processing fails, the workflow stops instead of publishing a text-only substitute.
 
@@ -35,7 +35,7 @@ The live [LinkedIn Content Control Room](https://pandeynikhilone.github.io/linke
 - Only the **next topic in the publication sequence** can be manually requested. The request workflow independently checks this against the last confirmed publication in `published-ledger.json`.
 - The **Publish next post** button (or the enabled button on the next topic's row) opens a prefilled GitHub issue. As a static public website cannot safely hold a GitHub authorization token, click **Submit new issue** on GitHub to trigger the actual workflow. Only the repository owner’s issue can start publication.
 - If a just-published post has a formatting problem, the owner-only correction workflow can publish one corrected replacement for the same topic on the same India-local date. It does not advance the plan beyond that topic or change the next Tuesday or Friday 09:00 IST scheduled slot.
-- After a successful manual post, the publication ledger advances to the next topic. The automatic schedule runs on **Tuesdays and Fridays at 09:00 Asia/Kolkata**, with hourly recovery attempts through 14:00 IST. The manual post consumes the current local date's slot; it does not move the next scheduled Tuesday or Friday slot.
+- After a successful manual post, the publication ledger advances to the next topic. The automatic schedule runs on **Tuesdays and Fridays at 09:00 Asia/Kolkata**, with hourly recovery attempts through 14:00 IST and a final same-day recovery at 22:00 IST. Delayed events are accepted only on their intended local publishing weekday, before the 23:00 IST cutoff. The manual post consumes the current local date's slot; it does not move the next scheduled Tuesday or Friday slot.
 - The public status feed contains topic titles, dates, statuses, and confirmed LinkedIn post links only. **The repository itself is public**, so source files such as `content-plan.json` and `published-ledger.json` are also publicly readable. Never add tokens or other secrets to this repo.
 
 ## Preview a video before publishing
@@ -43,7 +43,7 @@ The live [LinkedIn Content Control Room](https://pandeynikhilone.github.io/linke
 2. Select **Run workflow**. Manual runs are preview-only.
 3. Download the `linkedin-video-content` artifact.
 4. Inspect `content.json` and play `linkedin_video.mp4`.
-5. Scheduled runs begin automatically at 09:00 IST on Tuesdays and Fridays; video generation and LinkedIn processing may mean the post appears a few minutes later. Hourly recovery attempts continue until 14:00 IST if no publication is recorded.
+5. Scheduled runs begin automatically at 09:00 IST on Tuesdays and Fridays; video generation and LinkedIn processing may mean the post appears a few minutes later. Hourly recovery attempts continue through 14:00 IST, followed by one final same-day recovery attempt at 22:00 IST if no publication is recorded.
 
 ## Required GitHub Actions secrets
 - `GEMINI_API_KEY`
