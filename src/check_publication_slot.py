@@ -8,7 +8,11 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from scheduled_run_guard import scheduled_run_eligibility
+try:
+    from scheduled_run_guard import scheduled_run_eligibility
+except ModuleNotFoundError:
+    # Also support package-style imports from the repository root.
+    from src.scheduled_run_guard import scheduled_run_eligibility
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER_FILE = ROOT / "published-ledger.json"
