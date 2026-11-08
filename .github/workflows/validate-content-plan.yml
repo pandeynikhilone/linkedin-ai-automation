@@ -564,8 +564,17 @@ jobs:
               raise SystemExit("The daily publishing concurrency guard must remain enabled.")
           if "actions/deploy-pages@" not in deployer or "DASHBOARD_ISSUES_FILE" not in deployer:
               raise SystemExit("The dashboard deployment workflow must publish Pages with a sanitized status snapshot.")
-          if 'cron: "35 18 * * *"' not in deployer or 'cron: "30 3-8 * * 2,5"' not in Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8"):
-              raise SystemExit("The dashboard must refresh after midnight IST without changing the Tuesday and Friday publishing schedule.")
+          daily_schedule = Path(".github/workflows/daily-linkedin.yml").read_text(encoding="utf-8")
+          expected_schedule_expressions = [
+              'cron: "30 3-8 * * 2"',
+              'cron: "30 3-8 * * 5"',
+              'cron: "30 16 * * 2"',
+              'cron: "30 16 * * 5"',
+          ]
+          if 'cron: "35 18 * * *"' not in deployer or any(
+              expression not in daily_schedule for expression in expected_schedule_expressions
+          ):
+              raise SystemExit("The dashboard must refresh after midnight IST and the Tue/Fri publisher must retain its normal and final recovery schedules.")
           from datetime import date, datetime
           from zoneinfo import ZoneInfo
           from scripts.build_dashboard_data import scheduled_date_after, first_available_publish_date
