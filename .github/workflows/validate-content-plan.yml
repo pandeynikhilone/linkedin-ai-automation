@@ -155,9 +155,20 @@ jobs:
           readme = Path("README.md").read_text(encoding="utf-8")
           if 'PUBLISH_TO_LINKEDIN: "true"' not in daily:
               raise SystemExit("Scheduled publishing is not enabled.")
-          # GitHub Actions cron is UTC: 03:30 UTC maps to 09:00 IST on Tuesday and Friday.
-          if 'cron: "30 3-8 * * 2,5"' not in daily or "03:30 UTC = 09:00 IST" not in daily or "08:30 UTC = 14:00 IST" not in daily:
-              raise SystemExit("Expected Tuesday and Friday publishing at 09:00 IST with hourly recovery through 14:00 IST.")
+          # GitHub Actions cron is UTC. Main attempts run 09:00-14:00 IST,
+          # and the last same-day recovery trigger runs at 22:00 IST.
+          expected_crons = [
+              'cron: "30 3-8 * * 2"',
+              'cron: "30 3-8 * * 5"',
+              'cron: "30 16 * * 2"',
+              'cron: "30 16 * * 5"',
+          ]
+          if any(cron not in daily for cron in expected_crons):
+              raise SystemExit("Expected Tue/Fri hourly attempts plus the 22:00 IST same-day recovery trigger.")
+          if "PUBLISH_SCHEDULE_EXPRESSION" not in daily:
+              raise SystemExit("Scheduled preflight and publisher must receive the originating cron expression.")
+          if "final same-day recovery trigger at 22:00 IST" not in readme:
+              raise SystemExit("README must document the final 22:00 IST same-day recovery trigger.")
           if "Tuesday and Friday at 09:00 Asia/Kolkata" not in plan_doc.get("schedule", "") or "Tuesdays and Fridays at 09:00 Asia/Kolkata" not in readme:
               raise SystemExit("The README and content plan must document the twice weekly 09:00 IST schedule.")
           if "next_topic_index_from_ledger" not in source or "published-ledger.json" not in source:
