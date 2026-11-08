@@ -13,6 +13,7 @@ on:
       - "src/capture_truloop_site.py"
       - "src/publish_linkedin.py"
       - "src/check_publication_slot.py"
+      - "src/scheduled_run_guard.py"
       - "src/test_publication_slot.py"
       - "src/test_linkedin_video_upload.py"
       - "src/test_content_fallbacks.py"
@@ -54,7 +55,7 @@ jobs:
 
       - name: Validate source and video-only publishing pipeline
         run: |
-          python -m py_compile src/generate_content.py src/create_video.py src/capture_truloop_site.py src/publish_linkedin.py src/check_publication_slot.py src/test_publication_slot.py src/test_linkedin_video_upload.py src/test_content_fallbacks.py
+          python -m py_compile src/generate_content.py src/create_video.py src/capture_truloop_site.py src/publish_linkedin.py src/check_publication_slot.py src/scheduled_run_guard.py src/test_publication_slot.py src/test_linkedin_video_upload.py src/test_content_fallbacks.py
           python src/test_publication_slot.py
           python src/test_content_fallbacks.py
           python - <<'PY'
