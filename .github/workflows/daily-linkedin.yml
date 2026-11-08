@@ -2,9 +2,14 @@ name: LinkedIn Developer Story Video
 
 on:
   schedule:
-    # Two focused posts each week: Tuesday and Friday at 09:00 IST.
-    # GitHub Actions cron uses UTC. 03:30 UTC = 09:00 IST; final recovery run 08:30 UTC = 14:00 IST.
-    - cron: "30 3-8 * * 2,5"
+    # Main attempts: Tuesday and Friday, 09:00-14:00 IST (03:30-08:30 UTC).
+    # Separate weekday expressions let preflight reject a stale event delivered
+    # on the other publishing day.
+    - cron: "30 3-8 * * 2"
+    - cron: "30 3-8 * * 5"
+    # Final same-day recovery: 22:00 IST (16:30 UTC), if no post is recorded.
+    - cron: "30 16 * * 2"
+    - cron: "30 16 * * 5"
   workflow_dispatch:
 
 permissions:
@@ -30,6 +35,7 @@ jobs:
         id: slot
         env:
           PUBLISH_INTENT: ${{ github.event_name == 'workflow_dispatch' && 'preview' || 'scheduled' }}
+          PUBLISH_SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
         run: python3 src/check_publication_slot.py
 
   generate-video-and-publish:
@@ -157,6 +163,8 @@ jobs:
         env:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PUBLISH_TO_LINKEDIN: "true"
+          PUBLISH_INTENT: "scheduled"
+          PUBLISH_SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
           LINKEDIN_VIDEO_API_VERSION: "202606"
           LINKEDIN_POSTS_API_VERSION: "202609"
         run: python src/publish_linkedin.py
