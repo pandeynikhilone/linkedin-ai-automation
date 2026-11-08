@@ -11,7 +11,11 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from scheduled_run_guard import scheduled_run_eligibility
+try:
+    from scheduled_run_guard import scheduled_run_eligibility
+except ModuleNotFoundError:
+    # Also support runpy/import-based validation from the repository root.
+    from src.scheduled_run_guard import scheduled_run_eligibility
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTENT_FILE = ROOT / "content.json"
