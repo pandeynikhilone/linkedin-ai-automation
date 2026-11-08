@@ -95,7 +95,7 @@ def main():
     _, output, outputs, error = run_preflight(
         {}, now=RealDateTime(2026, 10, 28, 10, 0)
     )
-    if error or outputs.get("should_run") != "false" or "outside the Tuesday/Friday" not in output:
+    if error or outputs.get("should_run") != "false" or "Tuesday schedule was delivered on Wednesday" not in output:
         raise SystemExit("A queued scheduled run on a non-publishing weekday must skip.")
 
     # A delayed Tuesday event at 15:00 and 16:40 IST must still be able
