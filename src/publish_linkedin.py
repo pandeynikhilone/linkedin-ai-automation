@@ -11,6 +11,8 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+from scheduled_run_guard import scheduled_run_eligibility
+
 ROOT = Path(__file__).resolve().parent.parent
 CONTENT_FILE = ROOT / "content.json"
 VIDEO_FILE = ROOT / "linkedin_video.mp4"
@@ -548,7 +550,27 @@ def main():
 
     now = datetime.now(TIME_ZONE)
     request_id = os.getenv("PUBLISH_REQUEST_ID", "").strip()
-    publish_intent = os.getenv("PUBLISH_INTENT", "scheduled").strip().lower()
+    raw_publish_intent = os.getenv("PUBLISH_INTENT", "").strip().lower()
+    publish_intent = raw_publish_intent or "scheduled"
+
+    # Recheck the intended local publishing day immediately before reserving
+    # the ledger slot or starting a LinkedIn upload. Generation can take long
+    # enough for a late-night run to cross midnight after preflight.
+    if raw_publish_intent == "scheduled":
+        schedule_expression = os.getenv("PUBLISH_SCHEDULE_EXPRESSION", "").strip()
+        eligible, explanation, is_late = scheduled_run_eligibility(
+            now, schedule_expression
+        )
+        if not eligible:
+            raise RuntimeError(
+                "Final pre-upload schedule guard refused this run: " + explanation
+            )
+        if is_late:
+            print(
+                "LATE DELIVERY: final pre-upload check passed on the intended "
+                f"publishing day. {explanation}."
+            )
+
     is_correction = publish_intent == "correction"
     is_extra = publish_intent == "extra"
     is_extra_override = publish_intent == "extra_override"
