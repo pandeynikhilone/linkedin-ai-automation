@@ -382,6 +382,15 @@
       "published_at": "2026-11-07T22:53:20+05:30",
       "post_id": "urn:li:ugcPost:7524884204367634432",
       "video_urn": "urn:li:video:D5610AQHZ5s_Dzr79dw"
+    },
+    "2026-11-10-request-79": {
+      "status": "publishing",
+      "started_at": "2026-11-10T08:04:05+05:30",
+      "topic": "Why the TechFest site was built as an alternative to Google Forms",
+      "video_sha256": "576fef67b19711853e019b4ec6793727d472ac2bcfe46d893b0db5fe24a05068",
+      "video_size_bytes": 59319746,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
