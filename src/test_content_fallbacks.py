@@ -62,6 +62,7 @@ def main():
 
     print(f"Day 18 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
     validate_day9()
+    validate_legacy_real_usage_fallback()
     validate_day13()
     validate_day19()
 
@@ -327,6 +328,18 @@ def validate_day9():
     slides = data.get("slides")
     if not isinstance(slides, list) or len(slides) != 5:
         raise SystemExit("Day 9 fallback must contain exactly five slides.")
+    if sum(slide.get("visual_type") == "website" for slide in slides) != 1:
+        raise SystemExit("Day 9 TruLoop fallback must contain exactly one genuine website slide.")
+
+    generated_without_website = [dict(slide) for slide in slides]
+    website_index = next(
+        index for index, slide in enumerate(generated_without_website)
+        if slide.get("visual_type") == "website"
+    )
+    generated_without_website[website_index]["visual_type"] = "learning"
+    recovered_slides, used_fallback = ensure_truloop_website_slide(topic, generated_without_website)
+    if not used_fallback or recovered_slides != slides:
+        raise SystemExit("Day 9 must restore the verified fallback when a generated draft omits its website visual.")
     slide_fields = {"title", "body", "visual_type", "layout", "visual_labels"}
     allowed_visual_types = {"chart", "flow", "code", "product", "database", "form", "checklist", "git", "stack", "learning", "website"}
     layouts = set()
@@ -352,6 +365,44 @@ def validate_day9():
 
     print(f"Day 9 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
 
+
+
+
+def validate_legacy_real_usage_fallback():
+    topic = "What Truloop means by real usage experience"
+    data = source_grounded_fallback(topic)
+    if data.get("topic") != topic:
+        raise SystemExit("Legacy real-usage fallback returned the wrong topic.")
+
+    post = data.get("post", "")
+    word_count = len(post.split())
+    if not 70 <= word_count <= 95:
+        raise SystemExit(f"Legacy real-usage fallback must contain 70-95 words; got {word_count}.")
+    paragraphs = [paragraph for paragraph in post.split("\\n\\n") if paragraph.strip()]
+    if len(paragraphs) != 3:
+        raise SystemExit(f"Legacy real-usage fallback must contain exactly three paragraphs; got {len(paragraphs)}.")
+
+    slides = data.get("slides")
+    if not isinstance(slides, list) or len(slides) != 5:
+        raise SystemExit("Legacy real-usage fallback must contain exactly five slides.")
+    if sum(slide.get("visual_type") == "website" for slide in slides) != 1:
+        raise SystemExit("Legacy real-usage fallback must contain exactly one genuine website slide.")
+    if slides[0].get("layout") != "hero" or slides[-1].get("layout") != "closing":
+        raise SystemExit("Legacy real-usage fallback must start with hero and end with closing.")
+    if len({slide.get("layout") for slide in slides}) != 5:
+        raise SystemExit("Legacy real-usage fallback must use five distinct layouts.")
+
+    generated_without_website = [dict(slide) for slide in slides]
+    website_index = next(
+        index for index, slide in enumerate(generated_without_website)
+        if slide.get("visual_type") == "website"
+    )
+    generated_without_website[website_index]["visual_type"] = "learning"
+    recovered_slides, used_fallback = ensure_truloop_website_slide(topic, generated_without_website)
+    if not used_fallback or recovered_slides != slides:
+        raise SystemExit("Legacy real-usage fallback must restore the genuine website visual.")
+
+    print(f"Legacy real-usage fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
 
 
 def validate_day13():
