@@ -484,9 +484,9 @@ def source_grounded_fallback(topic):
                 {
                     "title": "The Trust Problem Behind TruLoop",
                     "body": "Sponsored content and incentivized reviews can make product research harder to trust.",
-                    "visual_type": "learning",
+                    "visual_type": "website",
                     "layout": "hero",
-                    "visual_labels": ["Product reviews", "Trust signals", "TruLoop README"],
+                    "visual_labels": ["Live TruLoop homepage", "Product review platform", "Review context"],
                 },
                 {
                     "title": "Focus On Honest Product Reviews",
@@ -1087,9 +1087,9 @@ def source_grounded_fallback(topic):
                 {
                     "title": "Real Usage Shapes Better Reviews",
                     "body": "TruLoop's README centers reviews on real product experience.",
-                    "visual_type": "learning",
+                    "visual_type": "website",
                     "layout": "hero",
-                    "visual_labels": ["Real usage", "Review context", "Product experience"],
+                    "visual_labels": ["Live TruLoop homepage", "Product review platform", "Review context"],
                 },
                 {
                     "title": "Look Beyond A Star Rating",
