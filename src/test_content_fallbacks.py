@@ -3,13 +3,14 @@
 
 from pathlib import Path
 
-from generate_content import TOPIC_PLAN, ensure_truloop_website_slide, source_grounded_fallback
+from generate_content import TOPIC_PLAN, ensure_truloop_website_slide, resolve_model_name, source_grounded_fallback
 
 TOPIC = "Validating the data required to submit a Truloop review"
 REQUIRED_FIELDS = ("productId", "rating", "comment", "reviewer", "usageDuration", "recommend")
 
 
 def main():
+    validate_model_resolution()
     matches = [entry for entry in TOPIC_PLAN if entry.get("topic") == TOPIC]
     if len(matches) != 1:
         raise SystemExit("Day 18 must appear exactly once in TOPIC_PLAN.")
@@ -303,6 +304,23 @@ def validate_day22():
         raise SystemExit("Day 22 must appear in the plan, direct route, fallback function, and both fallback guards.")
 
     print(f"Day 22 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
+
+
+def validate_model_resolution():
+    cases = [
+        ("gemini-flash-latest", "gemini-3.8-flash"),
+        ("gemini-3.8-flash", "gemini-3.8-flash"),
+        ("", "gemini-3.8-flash"),
+        (None, "gemini-3.8-flash"),
+        ("custom-model", "custom-model"),
+    ]
+    for configured, expected in cases:
+        actual = resolve_model_name(configured)
+        if actual != expected:
+            raise SystemExit(
+                f"Gemini model resolution for {configured!r} expected {expected!r}, got {actual!r}."
+            )
+    print("Gemini model resolution passed: unsupported alias maps to stable model.")
 
 
 def validate_day9():
