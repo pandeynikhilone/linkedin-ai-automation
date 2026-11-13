@@ -71,7 +71,7 @@ jobs:
       - name: Generate source-grounded LinkedIn post and five slides
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-flash-latest' }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.8-flash' }}
         run: python src/generate_content.py
 
       - name: Check whether a genuine website screenshot is needed
