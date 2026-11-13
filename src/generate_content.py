@@ -425,6 +425,20 @@ def generate_with_retry(client, model, prompt):
             time.sleep(delay)
 
 
+def resolve_model_name(configured_model):
+    """Map the retired/unsupported floating alias to a stable supported model."""
+    model = str(configured_model or "").strip()
+    if not model:
+        return "gemini-3.8-flash"
+    if model == "gemini-flash-latest":
+        print(
+            "Configured Gemini model alias 'gemini-flash-latest' returned HTTP 404; "
+            "using stable model 'gemini-3.8-flash'."
+        )
+        return "gemini-3.8-flash"
+    return model
+
+
 def clean_text(value):
     return str(value).replace("\u2014", ",").replace("\u2013", "-").strip()
 
@@ -1633,7 +1647,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
             api_key=api_key,
             http_options=types.HttpOptions(timeout=60_000),
         )
-        model = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+        model = resolve_model_name(os.getenv("GEMINI_MODEL", "gemini-3.8-flash"))
         try:
             with client:
                 response = generate_with_retry(client, model, prompt)
