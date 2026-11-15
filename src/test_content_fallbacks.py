@@ -355,7 +355,7 @@ def validate_day23():
         raise SystemExit("Day 23 fallback must use five distinct layouts, starting with hero and ending with closing.")
 
     source = Path("src/generate_content.py").read_text(encoding="utf-8")
-    if source.count(f'"{topic}"') != 4:
+    if source.count(f'"{topic}"') != 5:
         raise SystemExit("Day 23 must be present in the plan, direct route, fallback function, and both fallback guards.")
 
     print(f"Day 23 deterministic fallback passed: {word_count} words, 3 paragraphs, 5 slides.")
