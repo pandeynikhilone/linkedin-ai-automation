@@ -394,6 +394,15 @@
       "published_at": "2026-11-10T08:04:39+05:30",
       "post_id": "urn:li:ugcPost:7525747724760166400",
       "video_urn": "urn:li:video:D5610AQFLaCT7-hOtlw"
+    },
+    "2026-11-15-request-81": {
+      "status": "publishing",
+      "started_at": "2026-11-15T19:03:14+05:30",
+      "topic": "Helping students browse and choose a TechFest event",
+      "video_sha256": "7533bab8685dbef745994356832101e50b1b6f8e6df469dd308e25c3a240db79",
+      "video_size_bytes": 59319731,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
