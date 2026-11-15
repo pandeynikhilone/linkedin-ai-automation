@@ -1187,6 +1187,59 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Helping students browse and choose a TechFest event":
+        return {
+            "topic": topic,
+            "post": (
+                "TechFest's registration website includes student registration and event selection as documented features. "
+                "That makes choosing an event part of the experience the project is designed to support.\n\n"
+                "On the frontend side, I worked on the TechFest registration platform. The event-selection feature gives "
+                "students a way to choose which event they want to register for, rather than treating registration as only "
+                "a collection of fields.\n\n"
+                "My takeaway is that a registration flow should make its choices easy to understand. A clear event-selection "
+                "step helps connect the student's choice with the purpose of the registration website."
+            ),
+            "hashtags": ["WebDevelopment", "FrontendDevelopment", "StudentProjects", "MCAStudent"],
+            "video_title": "Helping Students Browse And Choose A TechFest Event",
+            "slides": [
+                {
+                    "title": "Make Event Choice Part Of Registration",
+                    "body": "TechFest documents student registration and event selection as features.",
+                    "visual_type": "flow",
+                    "layout": "hero",
+                    "visual_labels": ["TechFest site", "Student registration", "Event selection"],
+                },
+                {
+                    "title": "Help Students Choose An Event",
+                    "body": "Event selection is one part of the documented registration experience.",
+                    "visual_type": "form",
+                    "layout": "split",
+                    "visual_labels": ["Event selection", "Student choice", "Registration"],
+                },
+                {
+                    "title": "Connect The Two Project Features",
+                    "body": "The project identifies registration and event selection as features.",
+                    "visual_type": "checklist",
+                    "layout": "process",
+                    "visual_labels": ["Registration", "Event choice", "Project feature"],
+                },
+                {
+                    "title": "Keep The Frontend Flow Clear",
+                    "body": "Clear choices help students understand the experience the site supports.",
+                    "visual_type": "code",
+                    "layout": "editorial",
+                    "visual_labels": ["Frontend", "Event choice", "Clear flow"],
+                },
+                {
+                    "title": "Design Around Student Decisions",
+                    "body": "A clear choice is part of a useful registration flow.",
+                    "visual_type": "learning",
+                    "layout": "closing",
+                    "visual_labels": ["Student choice", "Clear flow", "Registration"],
+                },
+            ],
+        }
+
     if topic == "Why the TechFest site was built as an alternative to Google Forms":
         return {
             "topic": topic,
@@ -1671,6 +1724,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Organizing Truloop's routes by responsibility",
         "Iterating on Truloop with Git",
         "Why the TechFest site was built as an alternative to Google Forms",
+        "Helping students browse and choose a TechFest event",
             }
             if topic not in fallback_topics:
                 raise
@@ -1711,6 +1765,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Organizing Truloop's routes by responsibility",
         "Iterating on Truloop with Git",
         "Why the TechFest site was built as an alternative to Google Forms",
+        "Helping students browse and choose a TechFest event",
         }
         if topic in fallback_topics and not (custom_binary_search or custom_java_polymorphism):
             print(
