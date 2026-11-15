@@ -1692,6 +1692,9 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     elif topic == "Why the TechFest site was built as an alternative to Google Forms":
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded Day 22 content without depending on Gemini availability.")
+    elif topic == "Helping students browse and choose a TechFest event":
+        data = source_grounded_fallback(topic)
+        print("Using deterministic, source-grounded Day 23 content without depending on Gemini availability.")
     else:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
