@@ -1292,6 +1292,60 @@ def source_grounded_fallback(topic):
             ],
         }
 
+    if topic == "Making manual payment details clearer in TechFest":
+        return {
+            "topic": topic,
+            "post": (
+                "One detail in the TechFest registration project is its manual payment method. "
+                "The README describes it with an organized summary and detailed information. "
+                "That is the documented feature, so I would describe it as a manual payment option, "
+                "not an online payment gateway.\n\n"
+                "For a student, payment instructions are part of the registration experience. "
+                "Keeping the summary and supporting details together gives the feature a clear place in the flow.\n\n"
+                "I want to describe this accurately: the project documentation confirms the manual method "
+                "and its information layout, not an integrated payment processor."
+            ),
+            "hashtags": ["JavaScript", "FrontendDevelopment", "WebDevelopment", "MCAStudent"],
+            "video_title": "Making Manual Payment Details Clearer In TechFest",
+            "slides": [
+                {
+                    "title": "A Manual Payment Option",
+                    "body": "The TechFest README lists a manual payment method.",
+                    "visual_type": "form",
+                    "layout": "hero",
+                    "visual_labels": ["Manual method", "TechFest README", "Registration"],
+                },
+                {
+                    "title": "Keep Payment Details Together",
+                    "body": "The documented option includes an organized summary and detailed information.",
+                    "visual_type": "checklist",
+                    "layout": "split",
+                    "visual_labels": ["Organized summary", "Detailed information", "Payment option"],
+                },
+                {
+                    "title": "Explain The Documented Option",
+                    "body": "The summary and details belong to the manual payment explanation.",
+                    "visual_type": "flow",
+                    "layout": "process",
+                    "visual_labels": ["Manual method", "Summary", "Details"],
+                },
+                {
+                    "title": "Avoid Unsupported Gateway Claims",
+                    "body": "The documented feature is a manual option, not an online payment gateway.",
+                    "visual_type": "learning",
+                    "layout": "editorial",
+                    "visual_labels": ["Manual payment", "No gateway claim", "Accurate scope"],
+                },
+                {
+                    "title": "Describe What The README Confirms",
+                    "body": "Keep the explanation limited to the documented manual payment option.",
+                    "visual_type": "stack",
+                    "layout": "closing",
+                    "visual_labels": ["Verified feature", "Clear explanation", "Project scope"],
+                },
+            ],
+        }
+
     if topic != "Replacing hardcoded chart values with JSON-driven data":
         raise RuntimeError("No deterministic fallback is defined for this topic.")
     return {
@@ -1695,6 +1749,9 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
     elif topic == "Helping students browse and choose a TechFest event":
         data = source_grounded_fallback(topic)
         print("Using deterministic, source-grounded Day 23 content without depending on Gemini availability.")
+    elif topic == "Making manual payment details clearer in TechFest":
+        data = source_grounded_fallback(topic)
+        print("Using deterministic, source-grounded Day 24 content without depending on Gemini availability.")
     else:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
@@ -1728,6 +1785,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Iterating on Truloop with Git",
         "Why the TechFest site was built as an alternative to Google Forms",
         "Helping students browse and choose a TechFest event",
+        "Making manual payment details clearer in TechFest",
             }
             if topic not in fallback_topics:
                 raise
@@ -1769,6 +1827,7 @@ Return only JSON with topic, post, hashtags, video_title, and slides.
         "Iterating on Truloop with Git",
         "Why the TechFest site was built as an alternative to Google Forms",
         "Helping students browse and choose a TechFest event",
+        "Making manual payment details clearer in TechFest",
         }
         if topic in fallback_topics and not (custom_binary_search or custom_java_polymorphism):
             print(
