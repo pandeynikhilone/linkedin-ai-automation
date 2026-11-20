@@ -406,6 +406,15 @@
       "published_at": "2026-11-15T19:03:46+05:30",
       "post_id": "urn:li:ugcPost:7527725536555585536",
       "video_urn": "urn:li:video:D5610AQGwP-SPO6yUUw"
+    },
+    "2026-11-20": {
+      "status": "publishing",
+      "started_at": "2026-11-20T17:28:50+05:30",
+      "topic": "Making manual payment details clearer in TechFest",
+      "video_sha256": "9036747ec9dd2e997375bb84a35d49f0adeb44b5314fc2a7a9f45b2644efb18c",
+      "video_size_bytes": 59319732,
+      "video_dimensions": "1080x1350",
+      "note": "Reserved before upload to prevent duplicate daily posts."
     }
   }
 }
